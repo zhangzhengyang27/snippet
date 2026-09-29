@@ -267,6 +267,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
 
 <style scoped>
 .collection-row {
+  min-width: 0;
   --sb-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --sb-text: rgb(var(--color-text-rgb));
   --sb-text-muted: rgb(var(--color-text-secondary-rgb));
@@ -281,6 +282,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
 
 /* 主项 */
 .collection-row__item {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -466,6 +468,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
 /* 子集合容器：左侧竖线（视觉对齐 ToolsSidebar 的子菜单），缩进由嵌套叠加形成。
    始终渲染（不再 v-if），收起态与拖拽态通过以下类控制显隐。 */
 .collection-row__children {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;

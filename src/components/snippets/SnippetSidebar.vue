@@ -311,7 +311,11 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  width: var(--sidebar-width-knowledge);
+  /* 固定宽度：原 --sidebar-width-knowledge 变量从未定义，宽度实际由内容撑开，
+     展开子集合时侧栏会随长名变宽。收缩链见下方 min-width: 0 一组规则。 */
+  width: 236px;
+  min-width: 236px;
+  flex: none;
   height: 100%;
   padding: 12px;
   border-right: 1px solid rgb(var(--color-border-glass-rgb) / 0.1);
@@ -434,6 +438,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
 /* ─── Body ──────────────────────────────────────────────────────────────── */
 .snippet-sidebar__body {
+  min-width: 0;
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -442,6 +447,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
 .snippet-sidebar__body--scroll {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -666,6 +672,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
 /* ─── 列表容器（根可投放区） ────────────────────────────────────────────── */
 .snippet-sidebar__list {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
