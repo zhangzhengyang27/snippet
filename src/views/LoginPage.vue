@@ -30,7 +30,7 @@ onMounted(async () => {
     const result = await checkMe()
     if (result.user) {
       authStore.setAuth(result.user)
-      router.replace({ name: 'TopicHub' })
+      router.replace({ name: 'dashboard' })
     }
   } catch {
     // 无会话或网络错误，保持登录页
@@ -52,7 +52,7 @@ async function handleSubmit() {
     })
     authStore.setAuth(result.user)
     toast.success('登录成功')
-    router.push({ name: 'TopicHub' })
+    router.push({ name: 'dashboard' })
   } catch (e) {
     if (e instanceof Error && e.message.includes('401')) {
       error.value = '用户名或密码错误'
@@ -113,7 +113,7 @@ async function handleSubmit() {
         测试账号一键登录
       </button>
 
-      <router-link :to="{ name: 'TopicHub' }" class="login-back"> ← 返回首页 </router-link>
+      <router-link :to="{ name: 'dashboard' }" class="login-back"> ← 返回首页 </router-link>
     </div>
   </div>
 </template>

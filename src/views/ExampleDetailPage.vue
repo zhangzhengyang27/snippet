@@ -152,9 +152,9 @@ function goBack() {
  } else {
    const ex = example.value
    if (ex?.sourceGroup) {
-     router.push({ name: 'ExamplesHub', query: { group: ex.sourceGroup } })
+     router.push({ name: 'example-library', query: { search: ex.sourceGroup ?? undefined } })
    } else {
-     router.push({ name: 'TopicHub' })
+     router.push({ name: 'dashboard' })
    }
  }
 }
@@ -162,9 +162,9 @@ function goBack() {
 function goExamples() {
  const ex = example.value
  if (ex?.sourceGroup) {
-   router.push({ name: 'ExamplesHub', query: { group: ex.sourceGroup } })
+   router.push({ name: 'example-library', query: { search: ex.sourceGroup ?? undefined } })
  } else {
-   router.push({ name: 'ExamplesHub' })
+   router.push({ name: 'example-library' })
  }
 }
 
