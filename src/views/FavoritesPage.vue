@@ -73,7 +73,7 @@ onMounted(() => {
 
     <!-- 登录提示 -->
     <div v-if="!authStore.isLoggedIn" class="favorites__hint">
-      <AppIcon icon="ms:info" :size="16" />
+      <AppIcon icon="material-symbols:info" :size="16" />
       登录后才能查看收藏的示例，代码片段收藏仍会展示。
     </div>
 

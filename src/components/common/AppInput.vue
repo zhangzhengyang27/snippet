@@ -65,7 +65,7 @@ function handleClear() {
   >
     <template v-if="showClear && !props.disabled && modelValue" #suffix>
       <button type="button" class="app-input__clear" aria-label="清空" @click.stop="handleClear">
-        <AppIcon icon="ms:cancel" :size="13" />
+        <AppIcon icon="material-symbols:cancel" :size="13" />
       </button>
     </template>
   </el-input>

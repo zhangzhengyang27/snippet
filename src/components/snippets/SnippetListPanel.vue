@@ -80,7 +80,7 @@ watch(
       v-if="props.error"
       class="mx-4 my-3 flex items-start gap-2 rounded-md bg-error/10 px-3 py-2 text-body-sm text-error"
     >
-      <AppIcon icon="ms:error" :size="14" class="mt-0.5 shrink-0" />
+      <AppIcon icon="material-symbols:error" :size="14" class="mt-0.5 shrink-0" />
       <span>{{ props.error }}</span>
     </div>
 
@@ -130,7 +130,7 @@ watch(
       class="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center"
     >
       <AppIcon
-        icon="ms:code_off"
+        icon="material-symbols:code-off"
         :size="28"
         class="mb-3 text-[var(--color-text-tertiary)] opacity-50"
       />
@@ -142,7 +142,7 @@ watch(
           size="small"
           @click="emit('clearFilters')"
         >
-          <AppIcon icon="ms:filter_alt_off" :size="14" />
+          <AppIcon icon="material-symbols:filter-alt-off" :size="14" />
           清除筛选
         </AppButton>
         <AppButton
@@ -151,7 +151,7 @@ watch(
           size="small"
           @click="emit('createSnippet')"
         >
-          <AppIcon icon="ms:add" :size="14" />
+          <AppIcon icon="material-symbols:add" :size="14" />
           新建片段
         </AppButton>
       </div>
@@ -182,7 +182,7 @@ watch(
         v-if="isCompact && hasMore()"
         class="flex items-center justify-center gap-2 py-3 text-body-sm text-[var(--color-text-tertiary)]"
       >
-        <AppIcon v-if="props.loading" icon="ms:loading" :size="14" class="animate-spin" />
+        <AppIcon v-if="props.loading" icon="material-symbols:loading" :size="14" class="animate-spin" />
         <span>{{ props.loading ? '加载中…' : '上滑加载更多' }}</span>
       </div>
       <div
@@ -218,7 +218,7 @@ watch(
         v-if="isCompact && hasMore()"
         class="col-span-full flex items-center justify-center gap-2 py-3 text-body-sm text-[var(--color-text-tertiary)]"
       >
-        <AppIcon v-if="props.loading" icon="ms:loading" :size="14" class="animate-spin" />
+        <AppIcon v-if="props.loading" icon="material-symbols:loading" :size="14" class="animate-spin" />
         <span>{{ props.loading ? '加载中…' : '上滑加载更多' }}</span>
       </div>
       <div

@@ -119,7 +119,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
     <!-- 快速筛选 -->
     <section class="snippet-sidebar__section">
       <div class="snippet-sidebar__header">
-        <AppIcon icon="ms:bookmarks" :size="14" class="snippet-sidebar__header-icon" />
+        <AppIcon icon="material-symbols:bookmarks" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">快速筛选</span>
       </div>
 
@@ -130,7 +130,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           :class="{ 'is-active': isAllActive }"
           @click="selectAll"
         >
-          <AppIcon icon="ms:folder_copy" :size="15" class="snippet-sidebar__item-icon" />
+          <AppIcon icon="material-symbols:folder-copy" :size="15" class="snippet-sidebar__item-icon" />
           <span class="snippet-sidebar__item-label">所有 Snippet</span>
           <span class="snippet-sidebar__item-count">{{ props.snippetCount }}</span>
         </button>
@@ -143,7 +143,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           @click="selectFavorites"
         >
           <AppIcon
-            :icon="isFavoritesActive ? 'ms:star' : 'ms:star_outline'"
+            :icon="isFavoritesActive ? 'material-symbols:star' : 'material-symbols:star-outline'"
             :size="15"
             class="snippet-sidebar__item-icon"
           />
@@ -155,7 +155,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
     <!-- 文件夹 -->
     <section class="snippet-sidebar__section snippet-sidebar__section--flex">
       <div class="snippet-sidebar__header snippet-sidebar__header--with-action">
-        <AppIcon icon="ms:folder" :size="14" class="snippet-sidebar__header-icon" />
+        <AppIcon icon="material-symbols:folder" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">文件夹</span>
         <button
           v-if="props.isLoggedIn"
@@ -164,13 +164,13 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           title="新建集合"
           @click="emit('create-collection', null)"
         >
-          <AppIcon icon="ms:add" :size="14" />
+          <AppIcon icon="material-symbols:add" :size="14" />
         </button>
       </div>
 
       <div class="snippet-sidebar__body snippet-sidebar__body--scroll">
         <div v-if="props.collectionError" class="snippet-sidebar__error">
-          <AppIcon icon="ms:error" :size="14" class="snippet-sidebar__error-icon" />
+          <AppIcon icon="material-symbols:error" :size="14" class="snippet-sidebar__error-icon" />
           <span>{{ props.collectionError }}</span>
         </div>
 
@@ -220,13 +220,13 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
     <!-- 标签：仅登录用户可见（公共片段无标签，标签面板只服务个人片段） -->
     <section v-if="props.isLoggedIn" class="snippet-sidebar__section">
       <div class="snippet-sidebar__header">
-        <AppIcon icon="ms:label" :size="14" class="snippet-sidebar__header-icon" />
+        <AppIcon icon="material-symbols:label" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">标签</span>
       </div>
 
       <div class="snippet-sidebar__body">
         <div v-if="props.tagError" class="snippet-sidebar__error">
-          <AppIcon icon="ms:error" :size="14" class="snippet-sidebar__error-icon" />
+          <AppIcon icon="material-symbols:error" :size="14" class="snippet-sidebar__error-icon" />
           <span>{{ props.tagError }}</span>
         </div>
 
@@ -269,7 +269,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
     <!-- 详情视图切换（桌面专属，移动端 Bottom Sheet 无需切换） -->
     <section v-if="!isCompact" class="snippet-sidebar__section">
       <div class="snippet-sidebar__header">
-        <AppIcon icon="ms:view_agenda" :size="14" class="snippet-sidebar__header-icon" />
+        <AppIcon icon="material-symbols:view-agenda" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">详情视图</span>
       </div>
       <div class="snippet-sidebar__viewgroup" role="group" aria-label="详情视图切换">
@@ -279,7 +279,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           :class="{ 'is-active': props.detailLayout === 'split' }"
           @click="emit('update:detail-layout', 'split')"
         >
-          <AppIcon icon="ms:view_column" :size="14" />
+          <AppIcon icon="material-symbols:view-column" :size="14" />
           分屏
         </button>
         <button
@@ -288,7 +288,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           :class="{ 'is-active': props.detailLayout === 'page' }"
           @click="emit('update:detail-layout', 'page')"
         >
-          <AppIcon icon="ms:open_in_full" :size="14" />
+          <AppIcon icon="material-symbols:open-in-full" :size="14" />
           独立页
         </button>
       </div>

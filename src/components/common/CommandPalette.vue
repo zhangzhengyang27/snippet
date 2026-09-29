@@ -43,13 +43,13 @@ const actionItems = computed<CommandItem[]>(() => [
   {
     type: 'action',
     label: '新建代码片段',
-    icon: 'ms:add_circle',
+    icon: 'material-symbols:add-circle',
     run: () => router.push('/snippets?new=1'),
   },
   {
     type: 'action',
     label: '打开示例库',
-    icon: 'ms:web',
+    icon: 'material-symbols:web',
     run: () => router.push('/example'),
   },
 ])
@@ -255,9 +255,9 @@ const itemSub = (item: CommandItem) => {
 
 const itemIcon = (item: CommandItem) => {
   if (item.type === 'action') return item.icon
-  if (item.type === 'snippet' || item.type === 'recent') return 'ms:code_blocks'
-  if (item.type === 'example') return 'ms:web'
-  return 'ms:arrow_forward'
+  if (item.type === 'snippet' || item.type === 'recent') return 'material-symbols:code-blocks'
+  if (item.type === 'example') return 'material-symbols:web'
+  return 'material-symbols:arrow-forward'
 }
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
@@ -276,7 +276,7 @@ defineExpose({ open: openPalette, close })
         <div class="cmdk__panel" role="dialog" aria-label="命令面板">
           <!-- 搜索输入 -->
           <div class="cmdk__input-row">
-            <AppIcon icon="ms:search" :size="18" class="cmdk__input-icon" />
+            <AppIcon icon="material-symbols:search" :size="18" class="cmdk__input-icon" />
             <input
               v-model="keyword"
               type="text"

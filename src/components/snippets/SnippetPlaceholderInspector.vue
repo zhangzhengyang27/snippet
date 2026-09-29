@@ -48,7 +48,7 @@ function formatOptions(def: SnippetPlaceholderDef): string {
   >
     <!-- 头部：标题 + 数量 -->
     <header class="snippet-placeholder-inspector__header">
-      <AppIcon :icon="hasError ? 'ms:error' : 'ms:label'" :size="14" />
+      <AppIcon :icon="hasError ? 'material-symbols:error' : 'material-symbols:label'" :size="14" />
       <span class="snippet-placeholder-inspector__title">占位符</span>
       <span v-if="!hasError" class="snippet-placeholder-inspector__count">
         {{ props.defs.length }} 个

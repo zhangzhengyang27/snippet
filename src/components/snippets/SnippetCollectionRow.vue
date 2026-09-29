@@ -50,7 +50,7 @@ const hasChildren = computed(
   () => Array.isArray(props.item.children) && props.item.children.length > 0
 )
 const folderIcon = computed(() =>
-  hasChildren.value && isExpanded.value ? 'ms:folder_open' : 'ms:folder'
+  hasChildren.value && isExpanded.value ? 'material-symbols:folder-open' : 'material-symbols:folder'
 )
 
 const menuVisible = ref(false)
@@ -60,18 +60,18 @@ const menuY = ref(0)
 const menuItems = computed<MenuItem[]>(() => [
   {
     label: '新建子集合',
-    icon: 'ms:create_new_folder',
+    icon: 'material-symbols:create-new-folder',
     action: () => handlers.createChild(props.item.id),
   },
   { separator: true },
   {
     label: '重命名',
-    icon: 'ms:edit',
+    icon: 'material-symbols:edit',
     action: () => handlers.edit(props.item.id),
   },
   {
     label: '删除集合',
-    icon: 'ms:delete',
+    icon: 'material-symbols:delete',
     danger: true,
     action: () => handlers.remove(props.item.id),
   },
@@ -182,7 +182,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
         :class="{ 'is-expanded': isExpanded }"
         @click.stop="handlers.toggleExpand(props.item.id)"
       >
-        <AppIcon icon="ms:chevron_right" :size="12" />
+        <AppIcon icon="material-symbols:chevron-right" :size="12" />
       </span>
       <span v-else class="collection-row__spacer" aria-hidden="true" />
 

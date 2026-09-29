@@ -21,6 +21,9 @@ const route = useRoute()
 const commandPalette = ref<{ open: () => void; close: () => void } | null>(null)
 const openCommandPalette = () => commandPalette.value?.open()
 
+// 供无 props 通道的深层页面（如概览快捷卡）通过 window 事件唤起命令面板
+window.addEventListener('snippet:open-command-palette', () => openCommandPalette())
+
 /** 登录页不展示 App Shell（顶栏 + 内容），保持沉浸式居中布局 */
 const isAuthPage = computed(() => route.name === 'login')
 
@@ -127,6 +130,7 @@ onBeforeUnmount(() => {
 }
 
 .app-main {
+  padding-top: var(--header-height);
   flex: 1;
   min-height: 0;
   display: flex;

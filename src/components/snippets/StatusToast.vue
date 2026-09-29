@@ -19,7 +19,7 @@ const toastMeta = computed(() => {
       shellClass: 'border-error/40 bg-error/10 text-error',
       iconClass: 'bg-error/20 text-error',
       label: '错误',
-      icon: 'ms:error',
+      icon: 'material-symbols:error',
     }
   }
 
@@ -28,7 +28,7 @@ const toastMeta = computed(() => {
       shellClass: 'border-m3-outline bg-m3-surface-container-high text-text-secondary',
       iconClass: 'bg-surface-variant text-text-secondary',
       label: '提示',
-      icon: 'ms:info',
+      icon: 'material-symbols:info',
     }
   }
 
@@ -36,7 +36,7 @@ const toastMeta = computed(() => {
     shellClass: 'border-success/40 bg-success/10 text-success',
     iconClass: 'bg-success/20 text-success',
     label: '成功',
-    icon: 'ms:check_circle',
+    icon: 'material-symbols:check-circle',
   }
 })
 </script>

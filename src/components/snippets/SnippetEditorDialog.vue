@@ -66,7 +66,7 @@ const handleCancel = () => {
 }
 
 const titleText = computed(() => (props.mode === 'create' ? '新建片段' : '编辑片段'))
-const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:edit_note'))
+const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:note-add' : 'material-symbols:edit-note'))
 </script>
 
 <template>
@@ -138,7 +138,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:
         <div class="snippet-editor-dialog__editor">
           <div class="snippet-editor-dialog__editor-toolbar">
             <span class="snippet-editor-dialog__editor-title">
-              <AppIcon icon="ms:code" :size="14" />
+              <AppIcon icon="material-symbols:code" :size="14" />
               代码内容
             </span>
             <div class="snippet-editor-dialog__editor-options">
@@ -185,7 +185,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:
         />
 
         <div v-if="validationMessage" class="snippet-editor-dialog__error">
-          <AppIcon icon="ms:error" :size="14" />
+          <AppIcon icon="material-symbols:error" :size="14" />
           <span>{{ validationMessage }}</span>
         </div>
       </div>
@@ -194,7 +194,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:
       <div class="snippet-editor-dialog__footer">
         <AppButton variant="glass" @click="handleCancel">取消</AppButton>
         <AppButton variant="primary" :loading="props.saving" @click="handleSubmit">
-          <AppIcon icon="ms:save" :size="16" />
+          <AppIcon icon="material-symbols:save" :size="16" />
           {{ props.mode === 'create' ? '创建' : '保存' }}
         </AppButton>
       </div>

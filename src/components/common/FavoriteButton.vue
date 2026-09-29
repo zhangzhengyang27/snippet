@@ -39,7 +39,7 @@ function handleClick() {
     :aria-pressed="favorited"
     @click="handleClick"
   >
-    <AppIcon :icon="favorited ? 'ms:star' : 'ms:star_outline'" :size="16" />
+    <AppIcon :icon="favorited ? 'material-symbols:star' : 'material-symbols:star-outline'" :size="16" />
     {{ favorited ? '已收藏' : '收藏' }}
   </AppButton>
 </template>

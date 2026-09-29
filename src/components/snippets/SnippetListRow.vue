@@ -141,12 +141,12 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
       <span class="snippet-list__end">
         <AppIcon
           v-if="props.snippet.favorite"
-          icon="ms:star"
+          icon="material-symbols:star"
           :size="12"
           class="snippet-list__fav"
         />
         <button type="button" class="snippet-list__action" title="复制代码" @click="handleCopy">
-          <AppIcon icon="ms:content_copy" :size="13" />
+          <AppIcon icon="material-symbols:content-copy" :size="13" />
         </button>
       </span>
     </template>
@@ -172,10 +172,10 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
             class="snippet-card__action snippet-card__favorite"
             title="已收藏"
           >
-            <AppIcon icon="ms:star" :size="14" />
+            <AppIcon icon="material-symbols:star" :size="14" />
           </button>
           <button type="button" class="snippet-card__action" title="复制代码" @click="handleCopy">
-            <AppIcon icon="ms:content_copy" :size="14" />
+            <AppIcon icon="material-symbols:content-copy" :size="14" />
           </button>
         </span>
       </div>

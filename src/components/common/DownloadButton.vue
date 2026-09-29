@@ -62,7 +62,7 @@ function handleDownload() {
     :title="`下载「${props.example.title}」源码`"
     @click="handleDownload"
   >
-    <AppIcon icon="ms:file_download" :size="16" />
+    <AppIcon icon="material-symbols:file-download" :size="16" />
     下载
   </AppButton>
 </template>

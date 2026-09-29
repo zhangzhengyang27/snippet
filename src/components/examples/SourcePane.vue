@@ -537,14 +537,14 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
       <div v-if="!props.readOnly" class="edit-actions">
         <template v-if="!isEditing">
           <AppButton class="edit-btn" @click="enterEditMode">
-            <AppIcon icon="ms:edit" :size="14" />
+            <AppIcon icon="material-symbols:edit" :size="14" />
             <span>编辑</span>
           </AppButton>
         </template>
 
         <template v-else>
           <AppButton :class="{ 'run-btn-active': isRunning }" @click="handleRun">
-            <AppIcon icon="ms:play_circle" :size="14" />
+            <AppIcon icon="material-symbols:play-circle" :size="14" />
             <span>{{ isRunning ? '已运行' : '运行' }}</span>
           </AppButton>
           <AppButton
@@ -556,19 +556,19 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
             :disabled="isSaving || !hasUnsavedChanges"
             @click="handleSave"
           >
-            <AppIcon v-if="isSaving" icon="ms:progress_activity" :size="14" class="spin" />
-            <AppIcon v-else-if="saveStatus === 'success'" icon="ms:check" :size="14" />
-            <AppIcon v-else icon="ms:save" :size="14" />
+            <AppIcon v-if="isSaving" icon="material-symbols:progress-activity" :size="14" class="spin" />
+            <AppIcon v-else-if="saveStatus === 'success'" icon="material-symbols:check" :size="14" />
+            <AppIcon v-else icon="material-symbols:save" :size="14" />
             <span>{{
               saveStatus === 'success' ? '已保存' : saveStatus === 'error' ? '保存失败' : '保存'
             }}</span>
           </AppButton>
           <AppButton :disabled="!hasUnsavedChanges" @click="handleReset">
-            <AppIcon icon="ms:restart_alt" :size="14" />
+            <AppIcon icon="material-symbols:restart-alt" :size="14" />
             <span>重置</span>
           </AppButton>
           <AppButton class="exit-edit-btn" @click="exitEditMode">
-            <AppIcon icon="ms:cancel" :size="14" />
+            <AppIcon icon="material-symbols:cancel" :size="14" />
             <span>退出编辑</span>
           </AppButton>
         </template>
@@ -580,8 +580,8 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
           :title="copied ? '已复制！' : '复制代码'"
           @click="handleCopy"
         >
-          <AppIcon v-if="copied" icon="ms:check" :size="14" />
-          <AppIcon v-else icon="ms:content_copy" :size="14" />
+          <AppIcon v-if="copied" icon="material-symbols:check" :size="14" />
+          <AppIcon v-else icon="material-symbols:content-copy" :size="14" />
           <span>{{ copied ? '已复制' : '复制' }}</span>
         </AppButton>
       </div>

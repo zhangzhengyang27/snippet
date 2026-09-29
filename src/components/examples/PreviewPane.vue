@@ -116,7 +116,7 @@ defineExpose({ toggleFullscreen: handleFullscreen })
       </DeviceFrame>
       <!-- Placeholder while waiting for intersection -->
       <div v-else class="preview-placeholder">
-        <AppIcon icon="ms:monitor" :size="32" class="placeholder-icon" />
+        <AppIcon icon="material-symbols:monitor" :size="32" class="placeholder-icon" />
         <span class="placeholder-text">加载预览中...</span>
       </div>
     </div>
@@ -128,7 +128,7 @@ defineExpose({ toggleFullscreen: handleFullscreen })
       title="退出全屏 (ESC)"
       @click="handleFullscreen"
     >
-      <AppIcon icon="ms:fullscreen_exit" :size="18" />
+      <AppIcon icon="material-symbols:fullscreen-exit" :size="18" />
     </AppButton>
   </div>
 </template>

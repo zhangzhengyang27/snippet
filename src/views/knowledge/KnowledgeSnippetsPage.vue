@@ -548,7 +548,7 @@ async function handleBatchDelete() {
             class="mobile-filter-btn"
             @click="sidebarOpen = true"
           >
-            <AppIcon icon="ms:filter_list" :size="16" />
+            <AppIcon icon="material-symbols:filter-list" :size="16" />
             筛选
             <span v-if="hasActiveFilters" class="mobile-filter-btn__dot" aria-hidden="true" />
           </button>
@@ -588,7 +588,7 @@ async function handleBatchDelete() {
               :disabled="!snippets.length"
               @click="exportOpen = true"
             >
-              <AppIcon icon="ms:file_download" :size="14" />
+              <AppIcon icon="material-symbols:file-download" :size="14" />
               导出
             </AppButton>
             <AppButton
@@ -597,7 +597,7 @@ async function handleBatchDelete() {
               :disabled="importing"
               @click="importFileInput?.click()"
             >
-              <AppIcon icon="ms:file_upload" :size="14" />
+              <AppIcon icon="material-symbols:file-upload" :size="14" />
               {{
                 importing && importProgress
                   ? `导入中 ${importProgress.done}/${importProgress.total}`
@@ -618,7 +618,7 @@ async function handleBatchDelete() {
               :disabled="!selectedIds.length"
               @click="batchTagOpen = true"
             >
-              <AppIcon icon="ms:sell" :size="14" />
+              <AppIcon icon="material-symbols:sell" :size="14" />
               加标签
             </AppButton>
             <AppButton
@@ -629,7 +629,7 @@ async function handleBatchDelete() {
               :disabled="!selectedIds.length"
               @click="handleBatchDelete"
             >
-              <AppIcon icon="ms:delete" :size="14" />
+              <AppIcon icon="material-symbols:delete" :size="14" />
               删除
             </AppButton>
           </div>

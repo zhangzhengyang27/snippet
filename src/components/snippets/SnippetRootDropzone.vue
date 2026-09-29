@@ -9,7 +9,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 
 <template>
   <div class="snippet-sidebar__dropzone">
-    <AppIcon icon="ms:drive_file_move" :size="13" class="snippet-sidebar__dropzone-icon" />
+    <AppIcon icon="material-symbols:drive-file-move" :size="13" class="snippet-sidebar__dropzone-icon" />
     <span>拖到这里移动到根目录</span>
   </div>
 </template>

@@ -84,7 +84,7 @@ function formatDateTime(value: string | null): string {
               aria-label="关闭详情"
               @click="emit('close')"
             >
-              <AppIcon icon="ms:close" :size="16" />
+              <AppIcon icon="material-symbols:close" :size="16" />
             </button>
           </div>
           <p v-if="snippet.description" class="snippet-detail-drawer__desc">
@@ -132,7 +132,7 @@ function formatDateTime(value: string | null): string {
             </el-tag>
           </div>
           <AppButton variant="primary" size="small" @click="emit('copy', snippet, activeCode)">
-            <AppIcon icon="ms:content_copy" :size="15" />
+            <AppIcon icon="material-symbols:content-copy" :size="15" />
             复制代码
           </AppButton>
           <AppButton
@@ -141,19 +141,19 @@ function formatDateTime(value: string | null): string {
             size="small"
             @click="openPreviewWindow"
           >
-            <AppIcon icon="ms:open_in_new" :size="15" />
+            <AppIcon icon="material-symbols:open-in-new" :size="15" />
             预览
           </AppButton>
         </div>
         <span class="snippet-detail-drawer__updated">
-          <AppIcon icon="ms:schedule" :size="12" />
+          <AppIcon icon="material-symbols:schedule" :size="12" />
           更新 {{ formatDateTime(snippet.updatedAt) }}
         </span>
       </div>
     </div>
 
     <div v-else class="detail-pane__empty">
-      <AppIcon icon="ms:description" :size="28" />
+      <AppIcon icon="material-symbols:description" :size="28" />
       <p>从左侧列表选择片段以查看详情</p>
     </div>
   </aside>

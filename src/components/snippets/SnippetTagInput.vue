@@ -121,7 +121,7 @@ function closeDropdown() {
         <span class="sti-tag__dot" />
         {{ tag }}
         <button type="button" class="sti-tag__remove" aria-label="移除标签" @click="removeTag(tag)">
-          <AppIcon icon="ms:close" :size="14" />
+          <AppIcon icon="material-symbols:close" :size="14" />
         </button>
       </span>
       <!-- 输入框内嵌 -->

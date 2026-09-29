@@ -90,7 +90,7 @@ const handleClose = () => {
             aria-label="关闭"
             @click="handleClose"
           >
-            <AppIcon icon="ms:close" :size="20" />
+            <AppIcon icon="material-symbols:close" :size="20" />
           </button>
         </div>
 
@@ -103,15 +103,15 @@ const handleClose = () => {
             {{ difficultyText }}
           </span>
           <span v-if="props.snippet.collectionName" class="snippet-detail-drawer__meta">
-            <AppIcon icon="ms:folder" :size="12" />
+            <AppIcon icon="material-symbols:folder" :size="12" />
             {{ props.snippet.collectionName }}
           </span>
           <span v-if="props.snippet.isPublic" class="snippet-detail-drawer__meta">
-            <AppIcon icon="ms:public" :size="12" />
+            <AppIcon icon="material-symbols:public" :size="12" />
             公共
           </span>
           <span class="snippet-detail-drawer__meta">
-            <AppIcon icon="ms:play_arrow" :size="12" />
+            <AppIcon icon="material-symbols:play-arrow" :size="12" />
             使用 {{ props.snippet.usageCount }} 次
           </span>
         </div>
@@ -123,15 +123,15 @@ const handleClose = () => {
             :class="props.snippet.favorite ? 'text-warning' : ''"
             @click="emit('toggleFavorite', props.snippet)"
           >
-            <AppIcon :icon="props.snippet.favorite ? 'ms:star' : 'ms:star_outline'" :size="15" />
+            <AppIcon :icon="props.snippet.favorite ? 'material-symbols:star' : 'material-symbols:star-outline'" :size="15" />
             {{ props.snippet.favorite ? '取消收藏' : '收藏' }}
           </AppButton>
           <AppButton variant="glass" size="small" @click="emit('edit', props.snippet)">
-            <AppIcon icon="ms:edit" :size="15" />
+            <AppIcon icon="material-symbols:edit" :size="15" />
             编辑
           </AppButton>
           <AppButton variant="glass" size="small" danger @click="emit('delete', props.snippet)">
-            <AppIcon icon="ms:delete" :size="15" />
+            <AppIcon icon="material-symbols:delete" :size="15" />
             删除
           </AppButton>
         </div>
@@ -182,12 +182,12 @@ const handleClose = () => {
             size="small"
             @click="emit('copy', props.snippet, activeCode)"
           >
-            <AppIcon icon="ms:content_copy" :size="15" />
+            <AppIcon icon="material-symbols:content-copy" :size="15" />
             复制代码
           </AppButton>
         </div>
         <span class="snippet-detail-drawer__updated">
-          <AppIcon icon="ms:schedule" :size="12" />
+          <AppIcon icon="material-symbols:schedule" :size="12" />
           更新 {{ formatDateTime(props.snippet.updatedAt) }}
         </span>
       </div>

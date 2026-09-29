@@ -136,7 +136,7 @@ const { activeIndex } = useListShortcuts({
     <!-- ── 工具栏：搜索 + 刷新 ── -->
     <div class="library-toolbar">
       <div class="library-search">
-        <AppIcon icon="ms:search" :size="16" class="library-search__icon" />
+        <AppIcon icon="material-symbols:search" :size="16" class="library-search__icon" />
         <input
           ref="searchRef"
           v-model="keyword"
@@ -152,11 +152,11 @@ const { activeIndex } = useListShortcuts({
           aria-label="清空搜索"
           @click="clearSearch"
         >
-          <AppIcon icon="ms:close" :size="14" />
+          <AppIcon icon="material-symbols:close" :size="14" />
         </button>
       </div>
       <AppButton variant="glass" size="small" :loading="loading" @click="load">
-        <AppIcon icon="ms:refresh" :size="16" />
+        <AppIcon icon="material-symbols:refresh" :size="16" />
         刷新
       </AppButton>
     </div>

@@ -96,7 +96,7 @@ const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'n
         <template #image>
           <div class="empty-state__icon" aria-hidden="true">
             <AppIcon
-              :icon="props.type === 'error' ? 'ms:error' : props.type === 'not-found' ? 'ms:search_off' : 'ms:folder_open'"
+              :icon="props.type === 'error' ? 'material-symbols:error' : props.type === 'not-found' ? 'material-symbols:search-off' : 'material-symbols:folder-open'"
               :size="props.compact ? 26 : 34"
             />
           </div>
@@ -116,7 +116,7 @@ const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'n
       <!-- 操作区：重试按钮或自定义插槽 -->
       <div v-if="props.showRetry || $slots.action" class="empty-state__action">
         <AppButton v-if="props.showRetry" variant="glass" size="small" @click="emit('retry')">
-          <AppIcon icon="ms:refresh" :size="14" />
+          <AppIcon icon="material-symbols:refresh" :size="14" />
           重试
         </AppButton>
         <slot name="action" />

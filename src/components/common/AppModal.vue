@@ -100,7 +100,7 @@ function handleConfirm() {
         <template v-else-if="showDefaultFooter">
           <el-button @click="handleClose">取消</el-button>
           <el-button type="primary" @click="handleConfirm">
-            <AppIcon icon="ms:check" :size="14" />
+            <AppIcon icon="material-symbols:check" :size="14" />
             确认
           </el-button>
         </template>

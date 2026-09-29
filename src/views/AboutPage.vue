@@ -16,12 +16,12 @@ const shortcuts = [
 
 /** 技术栈速览（与 README「技术栈」一节对齐） */
 const techStack = [
-  { icon: 'ms:code', name: 'Vue 3 + TypeScript', detail: '组合式 API + 严格类型约束' },
-  { icon: 'ms:bolt', name: 'Vite + Tailwind CSS', detail: '极速冷启动与原子化样式' },
-  { icon: 'ms:account_tree', name: 'vue-router + Pinia', detail: '路由与全局状态管理' },
-  { icon: 'ms:edit_note', name: 'Monaco Editor', detail: '片段编辑与 Diff 视图' },
-  { icon: 'ms:lightbulb', name: 'Shiki', detail: '高质量代码高亮' },
-  { icon: 'ms:dns', name: 'NestJS + PostgreSQL', detail: '配套后端与数据持久化' },
+  { icon: 'material-symbols:code', name: 'Vue 3 + TypeScript', detail: '组合式 API + 严格类型约束' },
+  { icon: 'material-symbols:bolt', name: 'Vite + Tailwind CSS', detail: '极速冷启动与原子化样式' },
+  { icon: 'material-symbols:account-tree', name: 'vue-router + Pinia', detail: '路由与全局状态管理' },
+  { icon: 'material-symbols:edit-note', name: 'Monaco Editor', detail: '片段编辑与 Diff 视图' },
+  { icon: 'material-symbols:lightbulb', name: 'Shiki', detail: '高质量代码高亮' },
+  { icon: 'material-symbols:dns', name: 'NestJS + PostgreSQL', detail: '配套后端与数据持久化' },
 ]
 
 /** 沙箱安全要点（与 README「安全说明」一节对齐） */
@@ -53,7 +53,7 @@ const securityNotes = [
     <!-- ============================== 项目介绍 ============================== -->
     <section class="about-card" aria-labelledby="about-intro">
       <h2 id="about-intro" class="about-card__title">
-        <AppIcon icon="ms:info" :size="18" />
+        <AppIcon icon="material-symbols:info" :size="18" />
         项目介绍
       </h2>
       <p class="about-card__text">
@@ -71,7 +71,7 @@ const securityNotes = [
     <!-- ============================== 快捷键说明 ============================== -->
     <section class="about-card" aria-labelledby="about-shortcuts">
       <h2 id="about-shortcuts" class="about-card__title">
-        <AppIcon icon="ms:keyboard" :size="18" />
+        <AppIcon icon="material-symbols:keyboard" :size="18" />
         快捷键说明
       </h2>
       <p class="about-card__text about-card__text--muted">在列表页可直接使用以下键盘流：</p>
@@ -88,7 +88,7 @@ const securityNotes = [
     <!-- ============================== 技术栈说明 ============================== -->
     <section class="about-card" aria-labelledby="about-tech">
       <h2 id="about-tech" class="about-card__title">
-        <AppIcon icon="ms:layers" :size="18" />
+        <AppIcon icon="material-symbols:layers" :size="18" />
         技术栈说明
       </h2>
       <div class="tech-grid">
@@ -105,7 +105,7 @@ const securityNotes = [
     <!-- ============================== 安全说明 ============================== -->
     <section class="about-card" aria-labelledby="about-security">
       <h2 id="about-security" class="about-card__title">
-        <AppIcon icon="ms:security" :size="18" />
+        <AppIcon icon="material-symbols:security" :size="18" />
         安全说明
       </h2>
       <p class="about-card__text about-card__text--muted">
@@ -113,7 +113,7 @@ const securityNotes = [
       </p>
       <ul class="security-list">
         <li v-for="note in securityNotes" :key="note.title" class="security-list__item">
-          <AppIcon icon="ms:verified_user" :size="16" class="security-list__icon" />
+          <AppIcon icon="material-symbols:verified-user" :size="16" class="security-list__icon" />
           <div class="security-list__body">
             <span class="security-list__title">{{ note.title }}</span>
             <span class="security-list__detail">{{ note.detail }}</span>

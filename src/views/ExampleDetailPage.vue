@@ -246,7 +246,7 @@ useEventListener(window, 'keydown', handleKeyDown)
    >
      <template #action>
        <AppButton @click="goBack">
-         <AppIcon icon="ms:arrow_back" :size="16" />
+         <AppIcon icon="material-symbols:arrow-back" :size="16" />
          返回列表
        </AppButton>
      </template>
@@ -258,7 +258,7 @@ useEventListener(window, 'keydown', handleKeyDown)
      <header v-if="!isCompact" class="detail-header">
        <nav class="detail-breadcrumb" aria-label="面包屑">
          <router-link to="/" class="detail-breadcrumb__link" aria-label="概览" @click.prevent="goBack">
-           <AppIcon icon="ms:home" :size="14" />
+           <AppIcon icon="material-symbols:home" :size="14" />
          </router-link>
          <span class="detail-breadcrumb__sep">/</span>
          <router-link to="/example" class="detail-breadcrumb__link" @click.prevent="goExamples">示例库</router-link>
@@ -270,7 +270,7 @@ useEventListener(window, 'keydown', handleKeyDown)
          <ShareButton :example="example" />
          <DownloadButton :example="example" />
          <AppButton variant="glass" size="small" @click="openImport">
-           <AppIcon icon="ms:note_add" :size="16" />
+           <AppIcon icon="material-symbols:note-add" :size="16" />
            导入为片段
          </AppButton>
        </div>
@@ -285,7 +285,7 @@ useEventListener(window, 'keydown', handleKeyDown)
          aria-label="返回"
          @click="goBack"
        >
-         <AppIcon icon="ms:arrow_back" :size="20" />
+         <AppIcon icon="material-symbols:arrow-back" :size="20" />
        </AppButton>
        <div class="mobile-header__title">
          <span class="mobile-header__title-text">{{ example.title }}</span>
@@ -304,7 +304,7 @@ useEventListener(window, 'keydown', handleKeyDown)
            :aria-expanded="moreMenuOpen"
            @click.stop="toggleMoreMenu"
          >
-           <AppIcon icon="ms:more_horiz" :size="22" />
+           <AppIcon icon="material-symbols:more-horiz" :size="22" />
          </AppButton>
          <Transition name="mobile-menu">
            <div v-if="moreMenuOpen" class="mobile-header__dropdown" @click.stop>
@@ -318,7 +318,7 @@ useEventListener(window, 'keydown', handleKeyDown)
                <DownloadButton :example="example" />
              </div>
              <button class="mobile-header__dropdown-btn" @click="importFromMoreMenu">
-               <AppIcon icon="ms:note_add" :size="18" />
+               <AppIcon icon="material-symbols:note-add" :size="18" />
                <span>导入为片段</span>
              </button>
            </div>
@@ -401,7 +401,7 @@ useEventListener(window, 'keydown', handleKeyDown)
            :class="{ 'is-active': mobileTab === 'preview' }"
            @click="switchMobileTab('preview')"
          >
-           <AppIcon icon="ms:play_circle" :size="22" />
+           <AppIcon icon="material-symbols:play-circle" :size="22" />
            <span>预览</span>
          </button>
          <button
@@ -409,7 +409,7 @@ useEventListener(window, 'keydown', handleKeyDown)
            :class="{ 'is-active': mobileTab === 'source' }"
            @click="switchMobileTab('source')"
          >
-           <AppIcon icon="ms:code" :size="22" />
+           <AppIcon icon="material-symbols:code" :size="22" />
            <span>源码</span>
          </button>
        </nav>

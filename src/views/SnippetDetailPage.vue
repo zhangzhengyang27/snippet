@@ -176,33 +176,33 @@ watch(
    <div class="snippet-detail__topbar">
      <div class="snippet-detail__crumb">
        <button class="snippet-detail__back" type="button" @click="goBack">
-         <AppIcon icon="ms:arrow_back" :size="18" />
+         <AppIcon icon="material-symbols:arrow-back" :size="18" />
        </button>
        <button class="snippet-detail__crumb-link" type="button" @click="goList">代码块</button>
-       <AppIcon icon="ms:chevron_right" :size="14" class="snippet-detail__crumb-sep" />
+       <AppIcon icon="material-symbols:chevron-right" :size="14" class="snippet-detail__crumb-sep" />
        <span v-if="snippet" class="snippet-detail__crumb-current">{{ snippet.name }}</span>
        <span v-else class="snippet-detail__crumb-current">详情</span>
      </div>
 
      <div v-if="snippet" class="snippet-detail__top-actions">
        <AppButton variant="glass" size="small" :loading="favoriteBusy" @click="toggleFavorite">
-         <AppIcon :icon="snippet.favorite ? 'ms:star' : 'ms:star_outline'" :size="15" />
+         <AppIcon :icon="snippet.favorite ? 'material-symbols:star' : 'material-symbols:star-outline'" :size="15" />
          {{ snippet.favorite ? '已收藏' : '收藏' }}
        </AppButton>
        <AppButton variant="glass" size="small" @click="copyCode">
-         <AppIcon icon="ms:content_copy" :size="15" />
+         <AppIcon icon="material-symbols:content-copy" :size="15" />
          复制
        </AppButton>
        <AppButton v-if="!snippet.isPublic" variant="glass" size="small" @click="editSnippet">
-         <AppIcon icon="ms:edit" :size="15" />
+         <AppIcon icon="material-symbols:edit" :size="15" />
          编辑
        </AppButton>
        <AppButton v-if="canPreview" variant="glass" size="small" @click="openPreview">
-         <AppIcon icon="ms:open_in_new" :size="15" />
+         <AppIcon icon="material-symbols:open-in-new" :size="15" />
          预览
        </AppButton>
        <AppButton v-if="!snippet.isPublic" variant="glass" size="small" danger @click="askDelete">
-         <AppIcon icon="ms:delete" :size="15" />
+         <AppIcon icon="material-symbols:delete" :size="15" />
          删除
        </AppButton>
      </div>
@@ -214,7 +214,7 @@ watch(
    </div>
 
    <div v-else-if="error" class="snippet-detail__state">
-     <AppIcon icon="ms:error" :size="28" class="snippet-detail__state-icon" />
+     <AppIcon icon="material-symbols:error" :size="28" class="snippet-detail__state-icon" />
      <p>{{ error }}</p>
      <AppButton variant="primary" size="small" @click="goList">返回列表</AppButton>
    </div>
@@ -329,7 +329,7 @@ watch(
 
          <!-- 复制按钮 -->
          <AppButton variant="primary" class="snippet-detail__copy" @click="copyCode">
-           <AppIcon icon="ms:content_copy" :size="16" />
+           <AppIcon icon="material-symbols:content-copy" :size="16" />
            复制全部代码
          </AppButton>
        </aside>

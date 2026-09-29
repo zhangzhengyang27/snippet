@@ -149,7 +149,7 @@ watch(
           :title="isCollapsed ? '展开' : '折叠'"
           @click="toggleCollapse"
         >
-          <AppIcon :icon="isCollapsed ? 'ms:arrow_drop_down' : 'ms:arrow_drop_up'" :size="14" />
+          <AppIcon :icon="isCollapsed ? 'material-symbols:arrow-drop-down' : 'material-symbols:arrow-drop-up'" :size="14" />
         </AppButton>
         <AppButton
           v-if="showCopyButton"
@@ -158,7 +158,7 @@ watch(
           :title="copied ? '已复制' : '复制代码'"
           @click="handleCopy"
         >
-          <AppIcon :icon="copied ? 'ms:check' : 'ms:content_copy'" :size="14" />
+          <AppIcon :icon="copied ? 'material-symbols:check' : 'material-symbols:content-copy'" :size="14" />
         </AppButton>
       </div>
     </div>

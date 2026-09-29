@@ -90,17 +90,17 @@ const devices: DeviceOption[] = [
   {
     mode: 'desktop',
     label: '桌面端',
-    icon: 'ms:monitor',
+    icon: 'material-symbols:monitor',
   },
   {
     mode: 'tablet',
     label: '平板端',
-    icon: 'ms:tablet',
+    icon: 'material-symbols:tablet',
   },
   {
     mode: 'mobile',
     label: '移动端',
-    icon: 'ms:smartphone',
+    icon: 'material-symbols:smartphone',
   },
 ]
 </script>
@@ -123,7 +123,7 @@ const devices: DeviceOption[] = [
       <!-- Right: action buttons + device switch buttons -->
       <div class="toolbar-right">
         <AppButton aria-label="刷新预览" title="刷新预览" @click="emit('refresh')">
-          <AppIcon icon="ms:refresh" :size="16" />
+          <AppIcon icon="material-symbols:refresh" :size="16" />
         </AppButton>
 
         <AppButton
@@ -132,11 +132,11 @@ const devices: DeviceOption[] = [
           title="在新窗口打开"
           @click="emit('openInNewWindow')"
         >
-          <AppIcon icon="ms:open_in_new" :size="16" />
+          <AppIcon icon="material-symbols:open-in-new" :size="16" />
         </AppButton>
 
         <AppButton aria-label="切换全屏" title="切换全屏 (F)" @click="emit('toggleFullscreen')">
-          <AppIcon icon="ms:fullscreen" :size="16" />
+          <AppIcon icon="material-symbols:fullscreen" :size="16" />
         </AppButton>
 
         <template v-if="showDeviceControls && !compact">

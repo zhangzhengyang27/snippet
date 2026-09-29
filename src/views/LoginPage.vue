@@ -67,70 +67,177 @@ async function handleSubmit() {
 
 <template>
   <div class="login-page">
-    <div class="login-card glass">
-      <h1 class="login-title">欢迎回来</h1>
-      <p class="login-desc">登录以同步你的收藏与浏览历史</p>
+    <!-- 左：品牌面板（桌面专属） -->
+    <aside class="login-brand" aria-hidden="true">
+      <div class="login-brand__glow"></div>
+      <div class="login-brand__inner">
+        <div class="login-brand__logo"><span class="login-brand__gem">◆</span> Snippet</div>
+        <h2 class="login-brand__title">知识片段，<br />随手可得。</h2>
+        <p class="login-brand__desc">
+          3,000+ 条代码片段与 392 个可在线编辑的示例，<br />
+          集合树、标签、命令面板与全文搜索，一站管理。
+        </p>
+        <ul class="login-brand__points">
+          <li>◆ 集合树与多文件片段</li>
+          <li>◆ ⌘K 命令面板秒级跳转</li>
+          <li>◆ JSON 导出 / 导入回灌</li>
+        </ul>
+      </div>
+    </aside>
 
-      <form class="login-form" @submit.prevent="handleSubmit">
-        <div class="login-field">
-          <label for="username" class="login-label">用户名</label>
-          <input
-            id="username"
-            v-model="username"
-            type="text"
-            autocomplete="username"
-            class="login-input"
-            placeholder="请输入用户名"
-          />
-        </div>
+    <!-- 右：表单 -->
+    <div class="login-main">
+      <div class="login-card glass">
+        <h1 class="login-title">欢迎回来</h1>
+        <p class="login-desc">登录以同步你的收藏与浏览历史</p>
 
-        <div class="login-field">
-          <label for="password" class="login-label">密码</label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            autocomplete="current-password"
-            class="login-input"
-            placeholder="请输入密码"
-          />
-        </div>
+        <form class="login-form" @submit.prevent="handleSubmit">
+          <div class="login-field">
+            <label for="username" class="login-label">用户名</label>
+            <input
+              id="username"
+              v-model="username"
+              type="text"
+              autocomplete="username"
+              class="login-input"
+              placeholder="请输入用户名"
+            />
+          </div>
 
-        <div v-if="error" class="login-error" role="alert">{{ error }}</div>
+          <div class="login-field">
+            <label for="password" class="login-label">密码</label>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              autocomplete="current-password"
+              class="login-input"
+              placeholder="请输入密码"
+            />
+          </div>
 
-        <button type="submit" class="login-submit" :disabled="loading">
-          {{ loading ? '登录中...' : '登录' }}
+          <div v-if="error" class="login-error" role="alert">{{ error }}</div>
+
+          <button type="submit" class="login-submit" :disabled="loading">
+            {{ loading ? '登录中...' : '登录' }}
+          </button>
+        </form>
+
+        <button
+          v-if="isDev"
+          type="button"
+          class="login-test-btn"
+          :disabled="loading"
+          @click="loginWithTestAccount"
+        >
+          测试账号一键登录
         </button>
-      </form>
 
-      <button
-        v-if="isDev"
-        type="button"
-        class="login-test-btn"
-        :disabled="loading"
-        @click="loginWithTestAccount"
-      >
-        测试账号一键登录
-      </button>
-
-      <router-link :to="{ name: 'dashboard' }" class="login-back"> ← 返回首页 </router-link>
+        <router-link :to="{ name: 'dashboard' }" class="login-back"> ← 返回首页 </router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* 分屏布局：左品牌右表单 */
 .login-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.login-brand {
+  position: relative;
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  background:
+    radial-gradient(520px 360px at 20% 12%, rgb(var(--color-primary-rgb) / 0.22), transparent 62%),
+    radial-gradient(420px 300px at 78% 82%, rgb(56 189 248 / 0.12), transparent 60%),
+    rgb(var(--color-background-rgb));
+  border-right: 1px solid rgb(var(--color-border-rgb) / 0.5);
+}
+
+.login-brand__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(300px 300px at 70% 30%, rgb(var(--color-primary-rgb) / 0.12), transparent 70%);
+}
+
+.login-brand__inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  height: 100%;
+  padding: 0 10%;
+}
+
+.login-brand__logo {
+  font-size: 19px;
+  font-weight: 700;
+  color: rgb(var(--color-text-rgb));
+}
+
+.login-brand__gem {
+  color: rgb(var(--color-primary-rgb));
+  text-shadow: 0 0 16px rgb(var(--color-primary-rgb) / 0.8);
+}
+
+.login-brand__title {
+  font-size: 40px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: rgb(var(--color-text-rgb));
+}
+
+.login-brand__desc {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+.login-brand__points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+@media (min-width: 900px) {
+  .login-brand {
+    display: block;
+  }
+}
+
+/* 以下是原 .login-page 旧声明（保留兜底） */
+.login-page {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 0;
+  box-sizing: border-box;
+  background: rgb(var(--color-background-rgb));
+}
+
+/* 右侧表单列：垂直水平居中卡片 */
+.login-main {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 64px);
   padding: 24px;
-  box-sizing: border-box;
 }
 
 .login-card {
   width: 100%;
   max-width: 420px;
+  flex: none;
   padding: 40px;
   border-radius: var(--radius-xl);
   background: rgb(var(--color-surface-bright-rgb) / 0.6);

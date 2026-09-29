@@ -76,7 +76,7 @@ onMounted(load)
     <PageHeader title="最近使用" description="快速回访最近浏览或最近使用过的代码片段。">
       <template #actions>
         <AppButton v-if="recentSnippets.length" variant="glass" size="small" @click="handleClearRecent">
-          <AppIcon icon="ms:delete" :size="14" />
+          <AppIcon icon="material-symbols:delete" :size="14" />
           清空记录
         </AppButton>
       </template>
@@ -95,7 +95,7 @@ onMounted(load)
         <!-- 最近使用（后端 lastUsedAt） -->
         <section v-if="usedSnippets.length" class="recent__section">
           <h2 class="recent__section-title">
-            <AppIcon icon="ms:schedule" :size="16" />
+            <AppIcon icon="material-symbols:schedule" :size="16" />
             最近使用
           </h2>
           <div class="recent__list">
@@ -110,7 +110,7 @@ onMounted(load)
               <span class="recent-item__name">{{ s.name }}</span>
               <span class="recent-item__desc">{{ s.description || '无描述' }}</span>
               <span class="recent-item__time">{{ formatDate(s.lastUsedAt) }}</span>
-              <AppIcon icon="ms:arrow_forward" :size="16" class="recent-item__arrow" />
+              <AppIcon icon="material-symbols:arrow-forward" :size="16" class="recent-item__arrow" />
             </button>
           </div>
         </section>
@@ -118,7 +118,7 @@ onMounted(load)
         <!-- 最近浏览（localStorage） -->
         <section v-if="recentSnippets.length" class="recent__section">
           <h2 class="recent__section-title">
-            <AppIcon icon="ms:visibility" :size="16" />
+            <AppIcon icon="material-symbols:visibility" :size="16" />
             最近浏览
           </h2>
           <div class="recent__list">
@@ -133,7 +133,7 @@ onMounted(load)
               <span class="recent-item__name">{{ s.name }}</span>
               <span class="recent-item__desc">{{ s.description || '无描述' }}</span>
               <span class="recent-item__time">{{ formatDate(s.updatedAt) }}</span>
-              <AppIcon icon="ms:arrow_forward" :size="16" class="recent-item__arrow" />
+              <AppIcon icon="material-symbols:arrow-forward" :size="16" class="recent-item__arrow" />
             </button>
           </div>
         </section>

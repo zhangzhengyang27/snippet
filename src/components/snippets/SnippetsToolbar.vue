@@ -65,7 +65,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
     <!-- 左侧：标题 + 计数（对齐 BaseGenerator 页面标题风格） -->
     <div class="flex items-center gap-2.5 shrink-0">
       <AppIcon
-        icon="ms:list_alt"
+        icon="material-symbols:list-alt"
         :size="24"
         class="text-brand drop-shadow-[0_0_12px_rgb(139_92_246/0.45)]"
       />
@@ -104,7 +104,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
 
     <div v-if="!props.compact" class="group relative w-full min-w-0 shrink-0 sm:w-64">
       <AppIcon
-        icon="ms:search"
+        icon="material-symbols:search"
         :size="14"
         class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary"
       />
@@ -126,12 +126,12 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       title="仅显示收藏"
       @click="emit('update:favoritesOnly', !props.favoritesOnly)"
     >
-      <AppIcon icon="ms:favorite" :size="14" />
+      <AppIcon icon="material-symbols:favorite" :size="14" />
       收藏
     </AppButton>
 
     <AppButton variant="glass" class="h-8" @click="handleCreateClick">
-      <AppIcon icon="ms:add" :size="14" />
+      <AppIcon icon="material-symbols:add" :size="14" />
       新建片段
     </AppButton>
 
@@ -143,7 +143,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       title="刷新数据"
       @click="emit('refresh')"
     >
-      <AppIcon icon="ms:refresh" :size="14" :class="props.loading ? 'animate-spin' : ''" />
+      <AppIcon icon="material-symbols:refresh" :size="14" :class="props.loading ? 'animate-spin' : ''" />
       刷新
     </AppButton>
   </div>

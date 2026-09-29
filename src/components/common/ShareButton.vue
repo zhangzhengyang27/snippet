@@ -40,7 +40,7 @@ async function handleShare() {
     :title="`分享「${props.example.title}」`"
     @click="handleShare"
   >
-    <AppIcon :icon="copied ? 'ms:check' : 'ms:share'" :size="16" />
+    <AppIcon :icon="copied ? 'material-symbols:check' : 'material-symbols:share'" :size="16" />
     {{ shareLabel }}
   </AppButton>
 </template>

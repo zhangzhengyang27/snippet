@@ -117,7 +117,7 @@ const onSheetTouchEnd = () => {
                   aria-label="关闭筛选"
                   @click="closeSidebar"
                 >
-                  <AppIcon icon="ms:close" :size="20" />
+                  <AppIcon icon="material-symbols:close" :size="20" />
                 </button>
               </div>
               <div class="ws-drawer__body">
