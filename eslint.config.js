@@ -105,7 +105,8 @@ export default tseslint.config(
   {
   // 恢复注记：scripts/ 下的历史一次性脚本（数据迁移/审计）未经 lint 规整，
   // 本次恢复按原样保留，不纳入 lint 范围。
-  ignores: ['dist', 'scripts/**', '**/*.damaged', 'node_modules', '*.d.ts', 'server/**', 'public/**', '.worktrees/**', 'src/transform/**', 'src/views/data-visualization/bigscreen/**', '_downloads/**', '备份/**'] },
+  // src/generated/ 为构建期生成物（icons:build 产出），同样不纳入 lint。
+  ignores: ['dist', 'scripts/**', 'src/generated/**', '**/*.damaged', 'node_modules', '*.d.ts', 'server/**', 'public/**', '.worktrees/**', 'src/transform/**', 'src/views/data-visualization/bigscreen/**', '_downloads/**', '备份/**'] },
 
   // 全局基础规则
   js.configs.recommended,

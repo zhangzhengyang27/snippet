@@ -7,6 +7,10 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@/assets/main.css'
+// 图标离线化：把项目用到的 Iconify 图标注入本地存储，使 <Icon> 不再请求
+// api.iconify.design（离线/内网可用，且消除首屏图标闪烁）。
+// 该文件由 scripts/build-iconify-offline.mjs 生成，新增图标后跑 npm run icons:build。
+import '@/generated/iconify-offline'
 import { initToast } from '@/composables/useToast'
 
 const app = createApp(App)

@@ -14,6 +14,9 @@ pnpm-lock.yaml
 # 静态站点快照与抓取资源（第三方产物，不应被格式化改写）
 public
 
+# 构建期生成物（由 scripts/build-iconify-offline.mjs 生成，格式化会破坏 --check 比对）
+src/generated
+
 # 日志与编辑器
 logs
 *.log
