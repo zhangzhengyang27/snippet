@@ -237,7 +237,8 @@ onMounted(() => {
 
 .fav-card:hover {
   border-color: rgb(var(--color-primary-rgb) / 0.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgb(var(--color-shadow-rgb) / 0.1);
 }
 
 .fav-card__top {
@@ -248,11 +249,14 @@ onMounted(() => {
 }
 
 .fav-card__lang {
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgb(var(--color-primary-rgb) / 0.25);
   background: rgb(var(--color-primary-rgb) / 0.12);
   color: rgb(var(--color-primary-rgb));
-  font-size: 12px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
 }
 
 .fav-card__meta {

@@ -93,10 +93,11 @@ onMounted(load)
 
       <template v-else>
         <!-- 最近使用（后端 lastUsedAt） -->
-        <section v-if="usedSnippets.length" class="recent__section">
+        <section v-if="usedSnippets.length" class="recent__section bento-card">
           <h2 class="recent__section-title">
             <AppIcon icon="material-symbols:schedule" :size="16" />
             最近使用
+            <span class="recent__section-cnt">{{ usedSnippets.length }}</span>
           </h2>
           <div class="recent__list">
             <button
@@ -116,10 +117,11 @@ onMounted(load)
         </section>
 
         <!-- 最近浏览（localStorage） -->
-        <section v-if="recentSnippets.length" class="recent__section">
+        <section v-if="recentSnippets.length" class="recent__section bento-card">
           <h2 class="recent__section-title">
             <AppIcon icon="material-symbols:visibility" :size="16" />
             最近浏览
+            <span class="recent__section-cnt">{{ recentSnippets.length }}</span>
           </h2>
           <div class="recent__list">
             <button
@@ -158,52 +160,69 @@ onMounted(load)
 .recent__section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
+  padding: 14px 10px 12px;
+  border-radius: 16px;
+  background: rgb(var(--color-surface-rgb) / 0.6);
+  border: 1px solid rgb(var(--color-border-rgb) / 0.6);
 }
 
 .recent__section-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
+  gap: 7px;
+  padding: 2px 10px 10px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: rgb(var(--color-text-rgb));
+}
+
+.recent__section-cnt {
+  color: rgb(var(--color-text-secondary-rgb));
+  font-weight: 500;
 }
 
 .recent__list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .recent-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   padding: 10px 12px;
-  border: 1px solid rgb(var(--color-border-rgb) / 0.5);
-  border-radius: 10px;
-  background: rgb(var(--color-surface-rgb) / 0.5);
+  border: none;
+  border-radius: 11px;
+  background: transparent;
   font-size: 13px;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s ease;
+  color: inherit;
+  transition: background 0.13s ease;
 }
 
 .recent-item:hover {
-  border-color: rgb(var(--color-primary-rgb) / 0.5);
+  background: rgb(var(--color-text-rgb) / 0.05);
 }
 
 .recent-item__lang {
   flex: none;
-  padding: 2px 8px;
-  border-radius: 999px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
   background: rgb(var(--color-primary-rgb) / 0.12);
   color: rgb(var(--color-primary-rgb));
-  font-size: 12px;
+  border: 1px solid rgb(var(--color-primary-rgb) / 0.25);
 }
 
 .recent-item__name {
-  font-weight: 600;
+  font-weight: 550;
+  color: rgb(var(--color-text-rgb));
+  white-space: nowrap;
 }
 
 .recent-item__desc {
@@ -216,12 +235,18 @@ onMounted(load)
 
 .recent-item__time {
   flex: none;
-  font-size: 12px;
-  color: rgb(var(--color-text-secondary-rgb));
+  font-size: 11.5px;
+  color: rgb(var(--color-text-secondary-rgb) / 0.85);
 }
 
 .recent-item__arrow {
   flex: none;
-  color: rgb(var(--color-text-secondary-rgb));
+  color: rgb(var(--color-primary-rgb));
+  opacity: 0;
+  transition: opacity 0.13s ease;
+}
+
+.recent-item:hover .recent-item__arrow {
+  opacity: 1;
 }
 </style>
