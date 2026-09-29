@@ -350,10 +350,12 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 .snippet-sidebar__viewbtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   flex: 1;
   height: 32px;
   padding: 0 8px;
+  white-space: nowrap;
   border: 1px solid var(--sb-border);
   border-radius: var(--radius-sm);
   background: transparent;

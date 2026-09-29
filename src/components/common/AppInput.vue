@@ -72,10 +72,8 @@ function handleClear() {
 </template>
 
 <style scoped>
-.app-input {
-  width: 100%;
-}
-
+/* 不设默认宽度（el-input 默认即撑满容器）：
+ * scoped 样式是未分层 CSS，会压过 @layer utilities 里的 Tailwind 宽度类，故宽度交给调用方 */
 /* 主题 token 对接 EP 输入框 */
 .app-input :deep(.el-input__wrapper),
 .app-input :deep(.el-textarea__inner) {

@@ -133,6 +133,10 @@ function handleSizeChange(size: number) {
   color: rgb(var(--color-text-rgb));
 }
 
+.pagination-bar :deep(.el-pagination .el-select) {
+  width: 110px;
+}
+
 .pagination-bar :deep(.el-pagination .el-select .el-input),
 .pagination-bar :deep(.el-pagination .el-input__wrapper) {
   height: 28px;

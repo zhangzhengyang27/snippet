@@ -59,10 +59,8 @@ const modelValue = computed({
 </template>
 
 <style scoped>
-.app-select {
-  width: 100%;
-}
-
+/* 不设默认宽度：el-select 收缩为内容宽，需要撑满的调用方显式加 w-full
+ * （scoped 样式是未分层 CSS，在层叠中永远压过 @layer utilities 里的 Tailwind 宽度类） */
 /* 主题 token 对接 EP 下拉 */
 .app-select :deep(.el-select__wrapper) {
   background: rgb(var(--color-surface-rgb));

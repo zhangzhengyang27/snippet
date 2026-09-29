@@ -196,7 +196,7 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
           :class="`is-${snippetDifficulty}`"
         >
           {{ difficultyText }}
-      </el-tag>n>
+        </el-tag>
         <span
           v-for="tag in (props.snippet.tags ?? []).slice(0, 2)"
           :key="tag"

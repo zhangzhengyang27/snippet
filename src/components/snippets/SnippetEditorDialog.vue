@@ -102,6 +102,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:
             <label class="snippet-editor-dialog__field">
               <span class="snippet-editor-dialog__label">集合</span>
               <AppSelect
+                class="flex-1 min-w-0"
                 :value="form.collectionId"
                 :options="collectionOptions"
                 @update:value="
@@ -142,19 +143,19 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'ms:note_add' : 'ms:
             </span>
             <div class="snippet-editor-dialog__editor-options">
               <AppSelect
-                class="snippet-editor-dialog__select--sm"
+                class="snippet-editor-dialog__select--sm flex-1 min-w-0"
                 :value="form.language"
                 :options="languageOptions"
                 @update:value="Object.assign(form, { language: String($event ?? 'text') })"
               />
               <AppSelect
-                class="snippet-editor-dialog__select--sm"
+                class="snippet-editor-dialog__select--sm flex-1 min-w-0"
                 :value="form.theme"
                 :options="themeOptions"
                 @update:value="Object.assign(form, { theme: $event as typeof form.theme })"
               />
               <AppSelect
-                class="snippet-editor-dialog__select--sm"
+                class="snippet-editor-dialog__select--sm flex-1 min-w-0"
                 :value="form.difficulty"
                 :options="difficultyOptions"
                 @update:value="

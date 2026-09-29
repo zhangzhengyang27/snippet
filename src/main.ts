@@ -2,13 +2,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from '@/router'
 import App from '@/App.vue'
-import '@/assets/main.css'
-import 'material-symbols/outlined.css'
-import { initToast } from '@/composables/useToast'
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
+import '@/assets/main.css'
+import 'material-symbols/outlined.css'
+import { initToast } from '@/composables/useToast'
 
 const app = createApp(App)
 

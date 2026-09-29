@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-@theme inline {
+@theme {
   --color-primary: rgb(var(--color-primary-rgb) / <alpha-value>);
   --color-primary-container: rgb(var(--color-primary-container-rgb) / <alpha-value>);
   --color-secondary: rgb(var(--color-secondary-rgb) / <alpha-value>);
@@ -206,6 +206,32 @@
     --color-shadow-rgb: 0 0 0;
     --color-surface-glass-alpha: 0.03;
     --color-border-glass-alpha: 0.1;
+  }
+
+  /* 复合色变量：引用上方 -rgb 基础值动态解析（随 .dark 自动切换）。
+     这些是组件里 var(--color-xxx) 直接消费的运行时变量；
+     @theme 发射的同名变量含 <alpha-value> 占位符，浏览器不可解析，故必须在此覆盖。 */
+  :root {
+    --color-primary: rgb(var(--color-primary-rgb));
+    --color-primary-container: rgb(var(--color-primary-container-rgb));
+    --color-secondary: rgb(var(--color-secondary-rgb));
+    --color-tertiary: rgb(var(--color-tertiary-rgb));
+    --color-surface: rgb(var(--color-surface-rgb));
+    --color-surface-dim: rgb(var(--color-surface-dim-rgb));
+    --color-surface-bright: rgb(var(--color-surface-bright-rgb));
+    --color-surface-bright-2: rgb(var(--color-surface-bright-2-rgb));
+    --color-surface-variant: rgb(var(--color-surface-variant-rgb));
+    --color-surface-variant-high: rgb(var(--color-surface-variant-high-rgb));
+    --color-background: rgb(var(--color-background-rgb));
+    --color-surface-glass: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
+    --color-border-glass: rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
+    --color-text: rgb(var(--color-text-rgb));
+    --color-text-secondary: rgb(var(--color-text-secondary-rgb));
+    --color-text-tertiary: rgb(var(--color-text-tertiary-rgb, var(--color-text-secondary-rgb)));
+    --color-success: rgb(var(--color-success-rgb));
+    --color-error: rgb(var(--color-error-rgb));
+    --color-warning: rgb(var(--color-warning-rgb, 234 179 8));
+    --color-shadow: rgb(var(--color-shadow-rgb));
   }
 
   *,
@@ -630,4 +656,18 @@
 .p-tag-secondary {
   background: rgb(var(--color-surface-variant-rgb));
   color: rgb(var(--color-text-secondary-rgb));
+}
+
+/* ─── Element Plus 全局对齐（须在 EP 样式之后加载以生效） ─── */
+/* el-select 默认 128px 定宽与 block 化：回归 inline-flex + 由调用方控制宽度 */
+.el-select {
+  display: inline-flex;
+  width: auto;
+}
+
+/* EP 输入框/选择框圆角与字体对齐设计系统 */
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: 8px;
 }
