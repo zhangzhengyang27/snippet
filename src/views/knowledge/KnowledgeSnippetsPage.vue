@@ -91,6 +91,7 @@ const {
   openCreateCollectionDialog,
   openEditCollectionDialog,
   toggleCollectionExpanded,
+  expandCollectionWithAncestors,
   isLoggedIn,
   setPageSize,
   loadMore,
@@ -283,6 +284,16 @@ watch(
     const pageNum = parseInt(read('page'), 10)
     page.value = Number.isFinite(pageNum) && pageNum > 1 ? pageNum : 1
     // 待下个宏任务清标志，确保状态 watcher 在本次应用后不反向写回
+
+// 深链 / 命令面板选中子集合时，自动展开其祖先链，否则选中行藏在折叠的父级里不可见。
+// 监听集合树本身：加载完成或树变化后，对当前选中集合再补一次祖先展开（幂等）。
+watch(
+  [selectedCollectionId, () => collections.value.length],
+  ([cid]) => {
+    if (cid) expandCollectionWithAncestors(cid)
+  },
+  { immediate: true }
+)
     setTimeout(() => {
       isApplyingFromUrl = false
     }, 0)

@@ -226,6 +226,18 @@ export const useSnippetCollectionsState = () => {
   const loadingCollections = ref(false)
   const collectionError = ref('')
   const expandedCollectionIds = ref<Set<string>>(new Set())
+
+  // 恢复上次的展开偏好（updateExpandedCollectionIds 会过滤已删除的集合 id）
+  const EXPANDED_STORAGE_KEY = 'snippet-expanded-collections'
+  try {
+    const rawExpanded = localStorage.getItem(EXPANDED_STORAGE_KEY)
+    if (rawExpanded) {
+      const parsed = JSON.parse(rawExpanded)
+      if (Array.isArray(parsed)) expandedCollectionIds.value = new Set(parsed)
+    }
+  } catch {
+    // 存储不可用或内容损坏时从空集开始
+  }
   const draggedCollectionId = ref('')
   const collectionDialogSaving = ref(false)
   const collectionDialog = ref<SnippetCollectionDialogState>({
@@ -257,6 +269,39 @@ export const useSnippetCollectionsState = () => {
     // if (expandedCollectionIds.value.size === 0) {
     //   expandedCollectionIds.value = new Set(items.map((item) => item.id))
     // }
+  }
+
+  /** 展开态持久化：刷新后保留用户的展开/收起偏好。 */
+  const persistExpandedCollectionIds = () => {
+    try {
+      localStorage.setItem(
+        EXPANDED_STORAGE_KEY,
+        JSON.stringify(Array.from(expandedCollectionIds.value))
+      )
+    } catch {
+      // 存储不可用（隐私模式等）时静默降级
+    }
+  }
+
+  /** 收集目标集合的完整祖先链（含自身）；找不到时返回空数组。 */
+  const collectAncestorIds = (
+    items: KnowledgeSnippetCollection[],
+    targetId: string
+  ): string[] => {
+    for (const item of items) {
+      if (item.id === targetId) return [item.id]
+      const childChain = collectAncestorIds(item.children, targetId)
+      if (childChain.length) return [item.id, ...childChain]
+    }
+    return []
+  }
+
+  /** 确保目标集合及其全部祖先处于展开态（深链 / 选中子集合时调用，幂等）。 */
+  const expandCollectionWithAncestors = (targetId: string | null | undefined) => {
+    if (!targetId) return
+    const chain = collectAncestorIds(collections.value, targetId)
+    if (!chain.length) return
+    expandedCollectionIds.value = new Set([...expandedCollectionIds.value, ...chain])
   }
 
   const loadCollections = async () => {
@@ -292,6 +337,9 @@ export const useSnippetCollectionsState = () => {
     } else {
       next.add(id)
     }
+
+    expandedCollectionIds.value = next
+    persistExpandedCollectionIds()
 
     expandedCollectionIds.value = next
   }
@@ -478,6 +526,7 @@ export const useSnippetCollectionsState = () => {
     normalizeCollectionTree,
     flattenCollectionReorderItems,
     updateExpandedCollectionIds,
+    expandCollectionWithAncestors,
     loadCollections,
     toggleCollectionExpanded,
     openCreateCollectionDialog,
