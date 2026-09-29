@@ -2,6 +2,7 @@
 
 @theme {
   --color-primary: rgb(var(--color-primary-rgb) / <alpha-value>);
+  --color-brand: rgb(var(--color-brand-rgb) / <alpha-value>);
   --color-primary-container: rgb(var(--color-primary-container-rgb) / <alpha-value>);
   --color-secondary: rgb(var(--color-secondary-rgb) / <alpha-value>);
   --color-secondary-container: rgb(var(--color-secondary-container-rgb) / <alpha-value>);
@@ -162,9 +163,20 @@
     --color-surface-glass-rgb: 255 255 255;
     --color-surface-glass-alpha: 1;
     --color-border-glass-rgb: 226 232 240;
+    --color-border-rgb: 226 232 240;
     --color-border-glass-alpha: 1;
     --color-text-rgb: 15 23 42;
     --color-text-secondary-rgb: 71 85 105;
+    --color-text-tertiary-rgb: 148 163 184;
+    --color-bg-rgb: 255 255 255;
+    --color-bg-elevated-rgb: 255 255 255;
+    --color-surface-hover-rgb: 241 245 249;
+    --color-brand-rgb: 99 102 241;
+    --color-danger-rgb: 239 68 68;
+    --color-warning-rgb: 234 179 8;
+    --color-codeblock-lang-text-rgb: 100 116 139;
+    --m3-surface-container-rgb: 243 244 246;
+    --m3-outline-variant-rgb: 229 231 235;
     --color-success-rgb: 34 197 94;
     --color-error-rgb: 239 68 68;
     --color-accent-pink-rgb: 244 114 182;
@@ -193,8 +205,19 @@
     --color-background-rgb: 10 10 15;
     --color-surface-glass-rgb: 255 255 255;
     --color-border-glass-rgb: 255 255 255;
+    --color-border-rgb: 39 39 46;
     --color-text-rgb: 224 224 230;
     --color-text-secondary-rgb: 180 180 190;
+    --color-text-tertiary-rgb: 110 110 122;
+    --color-bg-rgb: 10 10 15;
+    --color-bg-elevated-rgb: 27 27 32;
+    --color-surface-hover-rgb: 42 41 47;
+    --color-brand-rgb: 192 193 255;
+    --color-danger-rgb: 248 113 113;
+    --color-warning-rgb: 250 204 21;
+    --color-codeblock-lang-text-rgb: 148 163 184;
+    --m3-surface-container-rgb: 31 31 37;
+    --m3-outline-variant-rgb: 63 63 70;
     --color-success-rgb: 34 197 94;
     --color-error-rgb: 239 68 68;
     --color-accent-pink-rgb: 244 114 182;
@@ -212,6 +235,42 @@
      这些是组件里 var(--color-xxx) 直接消费的运行时变量；
      @theme 发射的同名变量含 <alpha-value> 占位符，浏览器不可解析，故必须在此覆盖。 */
   :root {
+    /* 设计刻度：恢复组件大量消费以下 token（部分带默认值），统一定义保证一致 */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --text-body-sm: 0.875rem;
+    --text-code-sm: 0.75rem;
+    --text-headline-sm: 1.5rem;
+    --text-label-caps: 0.6875rem;
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --shadow-lg: 0 12px 32px rgb(var(--color-shadow-rgb) / 0.14);
+    --page-padding-x: 22px;
+    --z-toast: 2000;
+    --monaco-editor-bg: rgb(var(--color-surface-bright-rgb));
+    --color-bg: rgb(var(--color-bg-rgb));
+    --color-danger: rgb(var(--color-danger-rgb));
+    --color-warning: rgb(var(--color-warning-rgb, 234 179 8));
+    --color-success: rgb(var(--color-success-rgb, 34 197 94));
+    --color-codeblock-lang-text: rgb(var(--color-codeblock-lang-text-rgb, 100 116 139));
+    --color-codeblock-macos-green: #22c55e;
+    --color-codeblock-macos-red: #ef4444;
+    --color-codeblock-macos-yellow: #eab308;
+    --list-width: 360px;
+    --accent: rgb(var(--color-primary-rgb));
+    --accent-soft: rgb(var(--color-primary-rgb) / 0.12);
+
+    /* 复合色变量：引用上方 -rgb 基础值动态解析（随 .dark 自动切换）。
+       这些是组件里 var(--color-xxx) 直接消费的运行时变量；
+       @theme 发射的同名变量含 <alpha-value> 占位符，浏览器不可解析，故必须在此覆盖。 */
     --color-primary: rgb(var(--color-primary-rgb));
     --color-primary-container: rgb(var(--color-primary-container-rgb));
     --color-secondary: rgb(var(--color-secondary-rgb));
