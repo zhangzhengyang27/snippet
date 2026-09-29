@@ -6,7 +6,6 @@
  */
 import { computed, ref, watch } from 'vue'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
-import { useIsMobile } from '@/composables/useIsMobile'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -31,7 +30,6 @@ const emit = defineEmits<{
   delete: [snippet: KnowledgeSnippet]
 }>()
 
-const { isCompact } = useIsMobile()
 
 const snippetFiles = computed(() => props.snippet?.displayAttrs?.files ?? [])
 const hasFiles = computed(() => snippetFiles.value.length > 0)
@@ -112,7 +110,7 @@ function formatDateTime(value: string | null): string {
             :language="activeLanguage"
             read-only
             :show-line-numbers="snippet.displayAttrs.lineNumbers"
-            :word-wrap="isCompact ? true : snippet.displayAttrs.wrap"
+            :word-wrap="snippet.displayAttrs.wrap"
             min-height="100%"
             max-height="100%"
           />

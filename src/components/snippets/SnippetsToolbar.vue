@@ -102,7 +102,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       @update:value="emit('update:sort', $event as SnippetSortOption)"
     />
 
-    <div v-if="!props.compact" class="group relative w-full min-w-0 shrink-0 sm:w-64">
+    <div v-if="!props.compact" class="group relative w-64 min-w-0 shrink-0">
       <AppIcon
         icon="material-symbols:search"
         :size="14"

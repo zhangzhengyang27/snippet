@@ -43,10 +43,4 @@ defineProps<{
   color: rgb(var(--color-text-secondary-rgb) / 0.78);
 }
 
-@media (max-width: 640px) {
-  .page-header {
-    padding: 16px 18px;
-    border-radius: 18px;
-  }
-}
 </style>

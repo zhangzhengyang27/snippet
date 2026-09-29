@@ -382,9 +382,4 @@ async function handleSubmit() {
   color: rgb(var(--color-primary-rgb));
 }
 
-@media (max-width: 480px) {
-  .login-card {
-    padding: 28px 24px;
-  }
-}
 </style>

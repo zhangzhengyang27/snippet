@@ -301,14 +301,4 @@ const securityNotes = [
   color: rgb(var(--color-text-secondary-rgb));
 }
 
-@media (max-width: 640px) {
-  .about {
-    padding: 16px 18px 32px;
-  }
-
-  .about-card {
-    padding: 16px 18px;
-    border-radius: 18px;
-  }
-}
 </style>

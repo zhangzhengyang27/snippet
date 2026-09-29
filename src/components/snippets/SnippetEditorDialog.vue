@@ -360,39 +360,4 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
   border-top: 1px solid rgb(var(--color-border-glass-rgb) / 0.1);
 }
 
-@media (max-width: 640px) {
-  .snippet-editor-dialog__row--2 {
-    grid-template-columns: 1fr;
-  }
-
-  .snippet-editor-dialog__editor-options {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .snippet-editor-dialog__select--sm {
-    width: 110px;
-  }
-
-  .snippet-editor-dialog__body {
-    padding: 16px;
-    gap: 16px;
-  }
-
-  .snippet-editor-dialog__field {
-    align-items: flex-start;
-  }
-
-  .snippet-editor-dialog__label {
-    width: 48px;
-  }
-
-  .snippet-editor-dialog__footer {
-    padding: 12px 16px;
-  }
-
-  .snippet-editor-dialog__code {
-    min-height: 240px;
-  }
-}
 </style>

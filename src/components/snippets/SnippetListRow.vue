@@ -10,12 +10,10 @@
  */
 import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
-import { useIsMobile } from '@/composables/useIsMobile'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
 import { languageLabel, languageColor } from '@/utils/snippet-languages'
 
-const { isCompact } = useIsMobile()
 
 const props = defineProps<{
   snippet: KnowledgeSnippet
@@ -97,7 +95,6 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
       'is-checked': !!props.checked,
       'has-check': props.checkable,
       'is-list': props.variant === 'list',
-      'is-mobile': isCompact,
     }"
     tabindex="0"
     role="button"

@@ -3,7 +3,6 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import type { CodeExample, CodeTab } from '@/types'
 import { toast } from '@/composables/useToast'
 import { useCopy } from '@/composables/useCopy'
-import { useIsMobile } from '@/composables/useIsMobile'
 import * as prettierStandalone from 'prettier/standalone'
 import parserHtml from 'prettier/plugins/html'
 import parserPostcss from 'prettier/plugins/postcss'
@@ -19,7 +18,6 @@ import AppButton from '@/components/common/AppButton.vue'
 import AppModal from '@/components/common/AppModal.vue'
 
 // ── Props / Emits ────────────────────────────────────────────────────────────
-const { isCompact } = useIsMobile()
 
 const props = defineProps<{
   example: CodeExample
@@ -596,7 +594,7 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
           :read-only="isReadOnly"
           :min-height="'100%'"
           :max-height="'100%'"
-          :word-wrap="isCompact ? true : false"
+          :word-wrap="false"
           :update-delay="200"
           @change="handleMonacoChange"
         />
@@ -888,22 +886,4 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
 }
 
 /* ── 移动端适配 ── */
-@media (max-width: 1023px) {
-  .tab-bar {
-    height: 44px;
-    padding: 0 8px;
-    flex-wrap: nowrap;
-  }
-
-  .tab-trigger {
-    padding: 0 12px;
-    font-size: 12px;
-    min-width: 44px;
-  }
-
-  .edit-actions {
-    margin-left: 8px;
-    gap: 2px;
-  }
-}
 </style>

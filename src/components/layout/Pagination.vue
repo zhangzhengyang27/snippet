@@ -144,13 +144,6 @@ function handleSizeChange(size: number) {
   box-shadow: 0 0 0 1px rgb(var(--color-border-rgb) / 0.5) inset;
 }
 
-@media (max-width: 640px) {
-  .pagination-bar :deep(.el-pagination) {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-}
-
 /* 紧凑分页 */
 .pagination-bar--compact {
   display: inline-flex;

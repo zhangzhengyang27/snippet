@@ -690,23 +690,4 @@ watch(
  width: 100%;
 }
 
-@media (max-width: 900px) {
- .snippet-detail__main {
-   flex-direction: column;
- }
-
- .snippet-detail__info {
-   width: 100%;
-   max-height: 40vh;
-   border-left: none;
-   border-top: 1px solid rgb(var(--color-border-rgb));
- }
-}
-
-@media (max-width: 640px) {
- .snippet-detail__topbar {
-   padding: 10px 12px;
-   gap: 10px;
- }
-}
 </style>

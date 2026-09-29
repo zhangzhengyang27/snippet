@@ -368,13 +368,4 @@ const { activeIndex } = useListShortcuts({
   color: rgb(var(--color-text-tertiary-rgb));
 }
 
-@media (max-width: 640px) {
-  .example-library {
-    padding: 16px 18px 32px;
-  }
-
-  .library-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 </style>

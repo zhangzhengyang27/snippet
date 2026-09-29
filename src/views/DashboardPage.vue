@@ -683,19 +683,4 @@ onMounted(load)
 }
 
 /* ─── 响应式 ─── */
-@media (max-width: 900px) {
-  .dash__bento {
-    grid-template-columns: 1fr;
-  }
-
-  .dash__stats {
-    grid-template-columns: 1fr;
-  }
-
-  .dash__greet {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }
-}
 </style>

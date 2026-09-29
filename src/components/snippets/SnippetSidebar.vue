@@ -8,7 +8,6 @@
  */
 import { computed, provide, ref } from 'vue'
 import draggable from 'vuedraggable'
-import { useIsMobile } from '@/composables/useIsMobile'
 import AppIcon from '@/components/common/AppIcon.vue'
 import SnippetCollectionRow from '@/components/snippets/SnippetCollectionRow.vue'
 import SnippetRootDropzone from '@/components/snippets/SnippetRootDropzone.vue'
@@ -53,7 +52,6 @@ const emit = defineEmits<{
   'update:detail-layout': [value: 'page' | 'split']
 }>()
 
-const { isCompact } = useIsMobile()
 
 // 拖拽进行中标记：根 <draggable> 与递归行内的 <draggable> 都会切换它，
 // 用于显示根目录放置区。provide 给行内组件，避免逐层透传事件。
@@ -115,7 +113,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 </script>
 
 <template>
-  <aside class="snippet-sidebar" :class="{ 'is-in-drawer': isCompact }" aria-label="代码片段导航">
+  <aside class="snippet-sidebar"  aria-label="代码片段导航">
     <!-- 快速筛选 -->
     <section class="snippet-sidebar__section">
       <div class="snippet-sidebar__header">
@@ -191,7 +189,6 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           :animation="180"
           ghost-class="collection-row--ghost"
           :draggable="'.collection-row:not(.is-public)'"
-          :disabled="isCompact"
           class="snippet-sidebar__list"
           :class="{ 'is-drag-active': dragging }"
           :move="onRootMove"
@@ -267,7 +264,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
     </section>
 
     <!-- 详情视图切换（桌面专属，移动端 Bottom Sheet 无需切换） -->
-    <section v-if="!isCompact" class="snippet-sidebar__section">
+    <section class="snippet-sidebar__section">
       <div class="snippet-sidebar__header">
         <AppIcon icon="material-symbols:view-agenda" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">详情视图</span>
@@ -321,15 +318,6 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   border-right: 1px solid rgb(var(--color-border-glass-rgb) / 0.1);
   background: var(--sb-surface);
   overflow: hidden;
-}
-
-/* 移动端抽屉内：占满抽屉宽度，去除固定宽度与右边框，自身可滚动 */
-.snippet-sidebar.is-in-drawer {
-  width: 100%;
-  height: 100%;
-  border-right: none;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* ─── 分区 ──────────────────────────────────────────────────────────────── */

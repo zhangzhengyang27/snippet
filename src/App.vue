@@ -5,13 +5,11 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import CommandPalette from '@/components/common/CommandPalette.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/composables/useTheme'
-import { useIsMobile } from '@/composables/useIsMobile'
 import { isTypingTarget } from '@/utils/keyboard'
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 const { reapplyTheme } = useTheme()
-const { isCompact } = useIsMobile()
 
 // 主题：useTheme 在 html 上切换 .dark/.light；Element Plus 暗色由 dark/css-vars.css 联动
 
@@ -39,7 +37,6 @@ const onGlobalKeydown = (e: KeyboardEvent) => {
   if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return
   if (isTypingTarget(e)) return
   // 移动端不响应全局快捷键（无实体键盘，且避免与输入法/系统手势冲突）
-  if (isCompact.value) return
   const key = e.key.toLowerCase()
   if (pendingG) {
     if (gTimer !== null) window.clearTimeout(gTimer)

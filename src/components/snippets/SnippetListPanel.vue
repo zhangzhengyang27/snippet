@@ -6,10 +6,8 @@ import AppButton from '@/components/common/AppButton.vue'
 import Pagination from '@/components/layout/Pagination.vue'
 import SnippetListRow from '@/components/snippets/SnippetListRow.vue'
 import { snippetPageSizeOptions } from '@/composables/useSnippetListState'
-import { useIsMobile } from '@/composables/useIsMobile'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 
-const { isCompact } = useIsMobile()
 
 const props = defineProps<{
   snippets: KnowledgeSnippet[]
@@ -47,21 +45,9 @@ const emit = defineEmits<{
 
 const isChecked = (id: string) => props.selectedIds?.includes(id) ?? false
 
-/** 列表滚动容器引用（移动端无限滚动监听） */
+/** 列表滚动容器引用（翻页/筛选替换数据时归顶） */
 const scrollContainer = ref<HTMLElement | null>(null)
-/** 是否还有更多数据可加载 */
-const hasMore = () => props.page < props.totalPages
 
-/** 移动端滚动到底部时触发加载更多 */
-const onScroll = () => {
-  if (!isCompact.value) return
-  const el = scrollContainer.value
-  if (!el || props.loading || !hasMore()) return
-  // 距离底部不足 120px 时触发
-  if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
-    emit('loadMore')
-  }
-}
 
 // 列表首项 id 变化 = 换页/筛选导致的数据替换（而非 loadMore 追加——追加时首项不变），
 // 此时把滚动容器归位到顶部；追加加载保持滚动位置，避免用户被甩回列表开头。
@@ -162,8 +148,8 @@ watch(
       v-else-if="props.viewMode === 'list'"
       ref="scrollContainer"
       class="flex flex-1 flex-col gap-[1px] overflow-auto p-1 transition-opacity duration-150"
-      :class="{ 'pointer-events-none opacity-55': props.loading && !isCompact }"
-      @scroll="onScroll"
+      :class="{ 'pointer-events-none opacity-55': props.loading }"
+     
     >
       <SnippetListRow
         v-for="item in props.snippets"
@@ -177,20 +163,6 @@ watch(
         @copy="emit('copySnippet', item.id)"
         @toggle-check="emit('toggleCheck', $event)"
       />
-      <!-- 移动端加载更多指示 -->
-      <div
-        v-if="isCompact && hasMore()"
-        class="flex items-center justify-center gap-2 py-3 text-body-sm text-[var(--color-text-tertiary)]"
-      >
-        <AppIcon v-if="props.loading" icon="material-symbols:loading" :size="14" class="animate-spin" />
-        <span>{{ props.loading ? '加载中…' : '上滑加载更多' }}</span>
-      </div>
-      <div
-        v-else-if="isCompact && props.snippets.length > 0"
-        class="flex items-center justify-center py-3 text-body-sm text-[var(--color-text-tertiary)]"
-      >
-        已加载全部 {{ props.total }} 条
-      </div>
     </div>
 
     <!-- 列表：卡片（基于面板宽度的容器查询：每列舒适宽度≈240px，最多 5 列）。刷新态同条状列表 -->
@@ -198,8 +170,8 @@ watch(
       v-else
       ref="scrollContainer"
       class="grid w-full flex-1 grid-cols-1 items-start content-start gap-x-[14px] gap-y-[12px] overflow-auto p-2 transition-opacity duration-150 @min-[480px]:grid-cols-2 @min-[720px]:grid-cols-3 @min-[960px]:grid-cols-4 @min-[1200px]:grid-cols-5"
-      :class="{ 'pointer-events-none opacity-55': props.loading && !isCompact }"
-      @scroll="onScroll"
+      :class="{ 'pointer-events-none opacity-55': props.loading }"
+     
     >
       <SnippetListRow
         v-for="item in props.snippets"
@@ -213,25 +185,11 @@ watch(
         @copy="emit('copySnippet', item.id)"
         @toggle-check="emit('toggleCheck', $event)"
       />
-      <!-- 移动端加载更多指示 -->
-      <div
-        v-if="isCompact && hasMore()"
-        class="col-span-full flex items-center justify-center gap-2 py-3 text-body-sm text-[var(--color-text-tertiary)]"
-      >
-        <AppIcon v-if="props.loading" icon="material-symbols:loading" :size="14" class="animate-spin" />
-        <span>{{ props.loading ? '加载中…' : '上滑加载更多' }}</span>
-      </div>
-      <div
-        v-else-if="isCompact && props.snippets.length > 0"
-        class="col-span-full flex items-center justify-center py-3 text-body-sm text-[var(--color-text-tertiary)]"
-      >
-        已加载全部 {{ props.total }} 条
-      </div>
     </div>
 
-    <!-- 分页（移动端隐藏） -->
+    <!-- 分页 -->
     <div
-      v-if="!isCompact && props.totalPages > 1"
+      v-if="props.totalPages > 1"
       class="flex items-center justify-end px-4 py-2.5"
     >
       <Pagination

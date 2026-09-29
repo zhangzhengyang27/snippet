@@ -415,25 +415,6 @@ const handleClose = () => {
   color: var(--color-text-secondary);
 }
 
-@media (max-width: 768px) {
-  .snippet-detail-drawer__header,
-  .snippet-detail-drawer__footer {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .snippet-detail-drawer__footer,
-  .snippet-detail-drawer__footer-left {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .snippet-detail-drawer__code-info {
-    right: 8px;
-    bottom: 6px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .snippet-detail-drawer__close,
   .snippet-detail-drawer__tag {
@@ -464,10 +445,4 @@ const handleClose = () => {
 }
 
 /* 移动端：抽屉占满屏幕宽度 */
-@media (max-width: 767px) {
-  .snippet-detail-drawer-root .xy-drawer-content-wrapper {
-    width: 100vw !important;
-    max-width: 100vw !important;
-  }
-}
 </style>
