@@ -1,61 +1,65 @@
 # snippet · 知识片段与可运行示例平台
 
-> **恢复注记（2026-09-29）**：本项目在 2026-09 目录删除事故后从本机开发工具缓存完整恢复
-> （快照/会话重放 + 调用点反推）。typecheck / vitest / vite build / eslint 全部通过。
-> 部分文件为标注「恢复推断」的重建；.git 历史、pnpm-lock.yaml、patches/xiaoye-ui.patch 等
-> 无法恢复的项与使用须知见 `_RESTORE-REPORT.md`。
+面向团队/个人的「知识片段管理 + 在线示例沙箱」Web 工具：代码片段收藏、集合树、标签、
+搜索（⌘K 命令面板）、Monaco 编辑、导出/导入回灌，以及 392+ 可在线预览编辑的示例。
 
-面向团队/个人的「知识片段管理 + 在线示例沙箱」一体化 Web 工具，支持代码片段收藏、标签、集合、版本历史、Monaco 编辑、Shiki 高亮，以及多设备实时预览（SFC 编译）。
+> 项目历史：源码曾于 2026-09 目录事故中丢失，后从本机开发工具缓存完整恢复
+> （详见 `_RESTORE-REPORT.md`），数据库沿用本机 PostgreSQL 中的存量真实数据。
+> UI 组件库于同日从自研 xiaoye-ui 迁移至 Element Plus。
 
 ## 技术栈
 
-- 前端：Vue 3 + TypeScript + Vite 8 + Tailwind CSS + vue-router + Pinia
-- 编辑器/高亮：Monaco Editor、Shiki
-- 沙箱预览：iframe `srcdoc` + 严格 `sandbox` 隔离 + `postMessage` 资源代理
-- 后端（配套）：NestJS + TypeORM + PostgreSQL（位于 `html5-examples/server`）
+| 层 | 技术 |
+|---|---|
+| 前端 | Vue 3 + TypeScript + Vite 8（rolldown）+ vue-router + Pinia |
+| UI 组件 | **Element Plus**（中文 locale + 暗色 css-vars）+ Tailwind CSS v4 + @iconify/vue |
+| 编辑器/高亮 | Monaco Editor（@guolao/vue-monaco-editor）、Shiki |
+| 沙箱预览 | iframe `srcdoc` + 严格 `sandbox` 隔离 + `postMessage` 资源代理 |
+| 后端 | NestJS + TypeORM + PostgreSQL（独立仓库 `../snippet-server`） |
 
 ## 快速开始
 
 ```bash
-pnpm install
-cp .env.example .env   # 按需配置 VITE_API_BASE_URL / VITE_AUTH_PORTAL_URL
-pnpm dev
+# 后端（snippet-server，默认 :3000）
+cd ../snippet-server
+npm install --legacy-peer-deps
+cp .env.example .env            # 本机 PG：localhost:5432 / html5_examples
+npm run start:dev               # 首次启动自动创建 admin 账号
+
+# 前端（:5556，/api 代理到 :3000）
+npm install --legacy-peer-deps
+npm run dev
 ```
 
-常用脚本：
+登录：`admin / admin123`（`ADMIN_DEFAULT_PASSWORD` 可覆盖；会话为 httpOnly cookie）。
 
-| 命令                 | 说明                   |
-| -------------------- | ---------------------- |
-| `pnpm dev`           | 启动开发服务器         |
-| `pnpm build`         | 生产构建               |
-| `pnpm lint`          | ESLint 检查            |
-| `pnpm typecheck`     | 类型检查               |
-| `pnpm test`          | 运行单元测试（Vitest） |
-| `pnpm test:coverage` | 测试覆盖率             |
+## 常用脚本（前端）
 
-## 环境变量
+| 命令 | 说明 |
+|---|---|
+| `npm run dev` | 启动开发服务器（5556） |
+| `npm run build` | 生产构建（vue-tsc + vite） |
+| `npm run typecheck` | 类型检查 |
+| `npm test` | Vitest 单测（36 例） |
+| `npm run lint` | ESLint |
 
-| 变量                   | 说明              | 默认值                        |
-| ---------------------- | ----------------- | ----------------------------- |
-| `VITE_API_BASE_URL`    | 后端接口前缀      | `/api`                        |
-| `VITE_AUTH_PORTAL_URL` | 主站/注册门户地址 | `http://localhost:5555/login` |
+## 架构速览
 
-## 新手引导（核心功能速览）
-
-1. **片段管理**：左侧集合树支持拖拽与嵌套分组；标签用于横向筛选。
-2. **搜索**：顶部搜索框走后端模糊检索（`useSnippetSearch`）。
-3. **版本历史**：每次保存片段自动生成版本快照；在片段详情可查看历史、对比 Diff、一键回滚。
-4. **在线预览**：选中示例后，右侧可在桌面/平板/手机三档设备下实时预览；沙箱严格隔离，禁止访问非白名单资源。
-5. **键盘流**：列表页 `j/k` 上下移动、回车打开、`/` 聚焦搜索、`f` 收藏。
+```
+snippet/          前端
+├─ src/api/             REST 封装（client 统一错误/重试/401 处理）
+├─ src/components/
+│  ├─ common/           AppButton·AppInput·AppSelect·AppModal（全部基于 Element Plus）
+│  ├─ common/code/      Monaco 编辑器封装（主题跟随应用）
+│  ├─ snippets/         片段工作台（集合树/列表/详情/编辑对话框）
+│  └─ layout/           AppHeader·PageHeader·Pagination·EmptyState
+├─ src/composables/     列表状态/搜索/收藏/快捷键等无头逻辑
+└─ src/views/           概览/代码块/示例库/收藏夹/最近/关于
+snippet-server/   后端（裁剪装配版：Auth·Examples·Favorites·KnowledgeSnippets 四模块）
+```
 
 ## 安全说明
 
-- 预览沙箱**永不携带** `allow-same-origin`，与父窗口完全隔离，消除沙箱逃逸。
-- 注入 CSP meta，禁止外部网络连接与表单外跳；同源资源（白名单前缀）经父窗口 `postMessage` 代理加载。
-- 后端版本接口位于 `knowledge/snippets/:id/versions`（列表/详情/删除/回滚）。
-
-## 贡献
-
-1. 请确保 `pnpm lint && pnpm typecheck && pnpm test` 通过。
-2. 提交遵循约定式提交（Conventional Commits）。
-3. 后端改动请在 `html5-examples/server` 单独提交。
+- 沙箱预览永不携带 `allow-same-origin`；注入 CSP，同源资源经 `postMessage` 代理
+- 全局 JWT 守卫为宽容模式：匿名可读公共数据；写接口叠加 `RequireAuthGuard`
+- 片段默认私有（userId 归属），公共片段仅 `userId=NULL` 的运营数据

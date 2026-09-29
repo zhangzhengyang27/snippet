@@ -41,11 +41,8 @@ const variantClass = computed(() => `app-btn--${props.variant}`)
 <style scoped>
 /* 基础重置 */
 .app-btn.el-button {
+  /* 仅做布局归一；背景/边框/内边距交给各变体覆盖 el-button 默认值 */
   display: inline-flex;
-  border: none;
-  background: none;
-  padding: 0;
-  height: auto;
   align-items: center;
   justify-content: center;
   gap: 6px;

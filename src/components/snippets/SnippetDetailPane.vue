@@ -76,7 +76,7 @@ function formatDateTime(value: string | null): string {
       <div class="snippet-detail-drawer__head">
         <div class="snippet-detail-drawer__head-main">
           <div class="snippet-detail-drawer__title-row">
-            <span class="snippet-detail-drawer__lang">{{ snippet.language }}</span>
+            <el-tag size="small" effect="plain" class="snippet-detail-drawer__lang">{{ snippet.language }}</el-tag>
             <h2 class="snippet-detail-drawer__name">{{ snippet.name }}</h2>
             <button
               type="button"
@@ -127,9 +127,9 @@ function formatDateTime(value: string | null): string {
       <div class="snippet-detail-drawer__footer">
         <div class="snippet-detail-drawer__footer-left">
           <div v-if="snippet.tags.length > 0" class="snippet-detail-drawer__tags">
-            <span v-for="tag in snippet.tags" :key="tag" class="snippet-detail-drawer__tag">
+            <el-tag v-for="tag in snippet.tags" :key="tag" size="small" effect="plain" class="snippet-detail-drawer__tag">
               #{{ tag }}
-            </span>
+            </el-tag>
           </div>
           <AppButton variant="primary" size="small" @click="emit('copy', snippet, activeCode)">
             <AppIcon icon="ms:content_copy" :size="15" />

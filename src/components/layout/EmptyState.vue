@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * EmptyState - 空状态 / 状态占位组件（恢复重建）
+ * EmptyState - 空状态 / 状态占位组件（Element Plus el-empty + el-skeleton）
  *
  * 统一展示空列表、加载中、出错、未找到等占位场景，
- * 图标随 type 变化，支持重试按钮与自定义操作插槽。
+ * 支持重试按钮与自定义操作插槽。
  *
  * 用法：
  *   <EmptyState type="loading" compact />
@@ -13,6 +13,7 @@
  *   </EmptyState>
  */
 import { computed } from 'vue'
+import { ElEmpty, ElSkeleton, ElSkeletonItem } from 'element-plus'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 
@@ -46,37 +47,17 @@ const emit = defineEmits<{
   retry: []
 }>()
 
-/** 各状态对应的图标与默认文案 */
+/** 各状态对应的默认文案 */
 const typeMeta = computed(() => {
   switch (props.type) {
     case 'loading':
-      return {
-        icon: 'ms:progress_activity',
-        title: '加载中…',
-        description: '正在获取数据，请稍候。',
-        isLoading: true,
-      }
+      return { title: '加载中…', description: '正在获取数据，请稍候。' }
     case 'error':
-      return {
-        icon: 'ms:error',
-        title: '加载失败',
-        description: '网络似乎出了问题，请稍后重试。',
-        isLoading: false,
-      }
+      return { title: '加载失败', description: '网络似乎出了问题，请稍后重试。' }
     case 'not-found':
-      return {
-        icon: 'ms:search_off',
-        title: '未找到内容',
-        description: '内容不存在或已被移除。',
-        isLoading: false,
-      }
+      return { title: '未找到内容', description: '内容不存在或已被移除。' }
     default:
-      return {
-        icon: 'ms:folder_open',
-        title: '暂无内容',
-        description: '这里还没有任何内容。',
-        isLoading: false,
-      }
+      return { title: '暂无内容', description: '这里还没有任何内容。' }
   }
 })
 
@@ -87,36 +68,60 @@ const displayDescription = computed(() => props.description || typeMeta.value.de
 const showDescription = computed(
   () => !!props.descriptionHtml || !!props.description || !props.title
 )
+
+const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'not-found')
 </script>
 
 <template>
   <div class="empty-state" :class="[`empty-state--${props.type}`, { 'is-compact': props.compact }]">
-    <!-- 图标区：加载态旋转，其余状态带主色光晕底 -->
-    <div class="empty-state__icon" aria-hidden="true">
-      <!-- 旋转类挂在外层 span：AppIcon 的 class prop 仅接受字符串 -->
-      <span class="empty-state__spinner" :class="{ 'is-spinning': typeMeta.isLoading }">
-        <AppIcon :icon="typeMeta.icon" :size="props.compact ? 28 : 40" />
-      </span>
+    <!-- 加载态：EP 骨架屏 -->
+    <div v-if="props.type === 'loading'" class="empty-state__skeleton" aria-label="加载中">
+      <el-skeleton animated :rows="props.compact ? 2 : 3">
+        <template #template>
+          <el-skeleton-item variant="circle" style="width: 48px; height: 48px" />
+          <el-skeleton-item variant="text" style="width: 60%; margin-top: 12px" />
+          <el-skeleton-item variant="text" style="width: 40%" />
+        </template>
+      </el-skeleton>
+      <p class="empty-state__title">{{ displayTitle }}</p>
     </div>
 
-    <!-- 文案区 -->
-    <p class="empty-state__title">{{ displayTitle }}</p>
-    <p v-if="props.descriptionHtml" class="empty-state__description">
-      <!-- eslint-disable-next-line vue/no-v-html -- 调用方已通过 escapeHtml 转义 -->
-      <span v-html="props.descriptionHtml"></span>
-    </p>
-    <p v-else-if="showDescription && displayDescription" class="empty-state__description">
-      {{ displayDescription }}
-    </p>
+    <!-- 空态：el-empty（空 / 未找到 / 错误共用图片位，错误着主色） -->
+    <template v-else>
+      <el-empty
+        :image="isEmptyVisual ? undefined : 'error'"
+        :image-size="props.compact ? 72 : 96"
+        :description="undefined"
+      >
+        <template #image>
+          <div class="empty-state__icon" aria-hidden="true">
+            <AppIcon
+              :icon="props.type === 'error' ? 'ms:error' : props.type === 'not-found' ? 'ms:search_off' : 'ms:folder_open'"
+              :size="props.compact ? 26 : 34"
+            />
+          </div>
+        </template>
+      </el-empty>
 
-    <!-- 操作区：重试按钮或自定义插槽 -->
-    <div v-if="props.showRetry || $slots.action" class="empty-state__action">
-      <AppButton v-if="props.showRetry" variant="glass" size="small" @click="emit('retry')">
-        <AppIcon icon="ms:refresh" :size="14" />
-        重试
-      </AppButton>
-      <slot name="action" />
-    </div>
+      <!-- 文案区 -->
+      <p class="empty-state__title">{{ displayTitle }}</p>
+      <p v-if="props.descriptionHtml" class="empty-state__description">
+        <!-- eslint-disable-next-line vue/no-v-html -- 调用方已通过 escapeHtml 转义 -->
+        <span v-html="props.descriptionHtml"></span>
+      </p>
+      <p v-else-if="showDescription && displayDescription" class="empty-state__description">
+        {{ displayDescription }}
+      </p>
+
+      <!-- 操作区：重试按钮或自定义插槽 -->
+      <div v-if="props.showRetry || $slots.action" class="empty-state__action">
+        <AppButton v-if="props.showRetry" variant="glass" size="small" @click="emit('retry')">
+          <AppIcon icon="ms:refresh" :size="14" />
+          重试
+        </AppButton>
+        <slot name="action" />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -126,14 +131,21 @@ const showDescription = computed(
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 56px 24px;
+  gap: 6px;
+  padding: 32px 24px 40px;
   text-align: center;
 }
 
 .empty-state.is-compact {
-  padding: 36px 16px;
-  gap: 6px;
+  padding: 20px 16px 28px;
+}
+
+.empty-state :deep(.el-empty) {
+  padding: 0;
+}
+
+.empty-state :deep(.el-empty__bottom) {
+  display: none;
 }
 
 /* ─── 图标 ─────────────────────────────────────────────────────────────── */
@@ -143,17 +155,10 @@ const showDescription = computed(
   justify-content: center;
   width: 64px;
   height: 64px;
-  margin-bottom: 8px;
   border-radius: 50%;
   background: rgb(var(--color-primary-rgb) / 0.08);
   color: rgb(var(--color-primary-rgb));
   box-shadow: 0 0 24px rgb(var(--color-primary-rgb) / 0.12);
-}
-
-.is-compact .empty-state__icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 4px;
 }
 
 .empty-state--error .empty-state__icon {
@@ -162,21 +167,29 @@ const showDescription = computed(
   box-shadow: 0 0 24px rgb(var(--color-error-rgb) / 0.12);
 }
 
-.empty-state__spinner {
-  display: inline-flex;
+.is-compact .empty-state__icon {
+  width: 48px;
+  height: 48px;
 }
 
-.empty-state__spinner.is-spinning {
-  animation: empty-state-spin 1.1s linear infinite;
+/* ─── 加载骨架 ─────────────────────────────────────────────────────────── */
+.empty-state__skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
 }
 
-@keyframes empty-state-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.empty-state__skeleton :deep(.el-skeleton) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  --el-skeleton-color: rgb(var(--color-surface-variant-rgb));
+  --el-skeleton-to-color: rgb(var(--color-border-rgb) / 0.5);
 }
 
 /* ─── 文案 ─────────────────────────────────────────────────────────────── */
@@ -213,11 +226,5 @@ const showDescription = computed(
   align-items: center;
   gap: 8px;
   margin-top: 10px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .empty-state__spinner {
-    animation: none;
-  }
 }
 </style>

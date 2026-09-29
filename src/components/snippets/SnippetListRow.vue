@@ -183,20 +183,20 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
         {{ props.snippet.description || '暂无描述' }}
       </p>
       <div class="snippet-card__footer">
-        <span class="snippet-card__lang">
+        <el-tag size="small" effect="plain" class="snippet-card__lang">
           <i
             class="snippet-card__lang-dot"
             :style="{ background: languageColor(props.snippet.language) }"
           />
           {{ languageLabel(props.snippet.language) }}
-        </span>
-        <span
+        </el-tag>
+        <el-tag
           v-if="snippetDifficulty"
           class="snippet-diff-badge"
           :class="`is-${snippetDifficulty}`"
         >
           {{ difficultyText }}
-        </span>
+      </el-tag>n>
         <span
           v-for="tag in (props.snippet.tags ?? []).slice(0, 2)"
           :key="tag"

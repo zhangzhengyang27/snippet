@@ -63,25 +63,16 @@ function handleSizeChange(size: number) {
     v-if="compact && (!hideOnSinglePage || totalPages > 1)"
     class="pagination-bar pagination-bar--compact"
   >
-    <button
-      type="button"
-      class="pagination-compact__btn"
-      :disabled="page <= 1"
-      title="上一页"
-      @click="handleChange(page - 1)"
-    >
-      <span aria-hidden="true">‹</span>
-    </button>
+    <el-pagination
+      :current-page="page"
+      :total="totalRecords"
+      :page-size="pageSize"
+      layout="prev, pager, next"
+      size="small"
+      :pager-count="5"
+      @current-change="handleChange"
+    />
     <span class="pagination-compact__info">{{ page }} / {{ totalPages }}</span>
-    <button
-      type="button"
-      class="pagination-compact__btn"
-      :disabled="page >= totalPages"
-      title="下一页"
-      @click="handleChange(page + 1)"
-    >
-      <span aria-hidden="true">›</span>
-    </button>
   </div>
 
   <!-- 完整模式 -->
@@ -159,8 +150,35 @@ function handleSizeChange(size: number) {
 /* 紧凑分页 */
 .pagination-bar--compact {
   display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 12px 0;
+}
+
+.pagination-bar--compact :deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-text-color: rgb(var(--color-text-secondary-rgb));
+  --el-pagination-hover-color: rgb(var(--color-primary-rgb));
+  --el-pagination-button-height: 26px;
+  --el-pagination-button-width: 26px;
+  font-family: var(--font-mono);
+  gap: 4px;
+}
+
+.pagination-bar--compact :deep(.el-pagination .el-pager li) {
+  min-width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: rgb(var(--color-text-secondary-rgb));
+  font-family: var(--font-mono);
+}
+
+.pagination-bar--compact :deep(.el-pagination .el-pager li.is-active) {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-primary-rgb));
+  font-weight: 600;
 }
 
 .pagination-compact__btn {

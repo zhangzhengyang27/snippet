@@ -1,18 +1,13 @@
 <script setup lang="ts">
 /**
- * AppSelect - 通用下拉选择（恢复重建）
+ * AppSelect - 下拉选择封装（Element Plus el-select）
  *
- * 基于原生 <select> 的玻璃拟态下拉，保证移动端与无障碍体验：
- *   - 受控用法：:value + @update:value
- *   - options 支持 string | null 值（如集合选择中的「根目录」）
- *
- * 用法：
- *   <AppSelect :value="sort" :options="sortOptions" @update:value="..." />
+ * 对外保持项目既有 API：value + @update:value、options: {label, value}[]。
+ * 未声明的 attrs 透传到 el-select。
  */
 import { computed } from 'vue'
-import AppIcon from '@/components/common/AppIcon.vue'
 
-interface AppSelectOption {
+export interface AppSelectOption {
   label: string
   value: string | null
 }
@@ -38,93 +33,53 @@ const emit = defineEmits<{
   'update:value': [value: string | null]
 }>()
 
-/** 当前值对应的选项下标（未命中返回 -1，由占位项兜底） */
-const selectedIndex = computed(() =>
-  props.options.findIndex((option) => option.value === props.value)
-)
+defineOptions({ inheritAttrs: false })
 
-function handleChange(event: Event) {
-  const target = event.target as HTMLSelectElement
-  const option = props.options[target.selectedIndex]
-  if (option) {
-    emit('update:value', option.value)
-  }
-}
+const modelValue = computed({
+  get: () => (props.value ?? undefined) as string | undefined,
+  set: (v) => emit('update:value', v ?? null),
+})
 </script>
 
 <template>
-  <div class="app-select">
-    <select
-      class="app-select__field"
-      :value="selectedIndex"
-      :disabled="props.disabled"
-      @change="handleChange"
-    >
-      <option v-if="selectedIndex < 0" disabled :value="-1">{{ props.placeholder }}</option>
-      <option v-for="(option, index) in props.options" :key="index" :value="index">
-        {{ option.label }}
-      </option>
-    </select>
-    <span class="app-select__arrow" aria-hidden="true">
-      <AppIcon icon="ms:arrow_drop_down" :size="16" />
-    </span>
-  </div>
+  <el-select
+    v-model="modelValue"
+    class="app-select"
+    :placeholder="props.placeholder"
+    :disabled="props.disabled"
+    v-bind="$attrs"
+  >
+    <el-option
+      v-for="opt in props.options"
+      :key="String(opt.value)"
+      :label="opt.label"
+      :value="opt.value ?? ''"
+    />
+  </el-select>
 </template>
 
 <style scoped>
 .app-select {
-  position: relative;
-  display: flex;
-  align-items: center;
   width: 100%;
 }
 
-.app-select__field {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: 100%;
-  padding: 7px 30px 7px 12px;
-  border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
-  border-radius: 10px;
-  background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
+/* 主题 token 对接 EP 下拉 */
+.app-select :deep(.el-select__wrapper) {
+  background: rgb(var(--color-surface-rgb));
+  box-shadow: 0 0 0 1px rgb(var(--color-border-rgb) / 0.6) inset;
+  border-radius: 8px;
+  min-height: 34px;
+}
+
+.app-select :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 1px rgb(var(--color-primary-rgb) / 0.6) inset;
+}
+
+.app-select :deep(.el-select__placeholder) {
+  color: rgb(var(--color-text-secondary-rgb) / 0.6);
+}
+
+.app-select :deep(.el-select__selected-item) {
   color: rgb(var(--color-text-rgb));
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  appearance: none;
-  -webkit-appearance: none;
-  outline: none;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  transition:
-    border-color var(--duration-base, 150ms) var(--ease-out, ease-out),
-    box-shadow var(--duration-base, 150ms) var(--ease-out, ease-out),
-    background var(--duration-base, 150ms) var(--ease-out, ease-out);
-}
-
-.app-select__field:hover:not(:disabled) {
-  border-color: rgb(var(--color-primary-rgb) / 0.3);
-}
-
-.app-select__field:focus {
-  border-color: rgb(var(--color-primary-rgb) / 0.6);
-  box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 0.12);
-}
-
-.app-select__field:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.app-select__arrow {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: rgb(var(--color-text-secondary-rgb));
-  pointer-events: none;
 }
 </style>
