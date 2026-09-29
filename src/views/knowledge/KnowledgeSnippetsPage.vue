@@ -96,6 +96,20 @@ const {
   loadMore,
 } = useKnowledgeSnippetsPage()
 
+/** 深链 / 命令面板选中子集合时，自动展开其祖先链，否则选中行藏在折叠的父级里不可见。
+ * 监听集合树本身：加载完成或树变化后，对当前选中集合再补一次祖先展开（幂等）。
+ *
+ * 必须注册在 setup 顶层。此前这段被误写在下方 route.query watcher 的回调体内，
+ * 而该 watcher 带 immediate —— 每次 query 变化（搜索/翻页/切集合）都会新增一个
+ * 永不停止的监听器，导致操作几十次后每次集合树变化触发几十次展开。 */
+watch(
+  [selectedCollectionId, () => collections.value.length],
+  ([cid]) => {
+    if (cid) expandCollectionWithAncestors(cid)
+  },
+  { immediate: true }
+)
+
 /** 标签下拉选项：基于服务端标签列表映射 */
 const tagOptions = computed(() => tags.value.map((t) => ({ label: t.name, value: t.name })))
 
@@ -273,16 +287,6 @@ watch(
     const pageNum = parseInt(read('page'), 10)
     page.value = Number.isFinite(pageNum) && pageNum > 1 ? pageNum : 1
     // 待下个宏任务清标志，确保状态 watcher 在本次应用后不反向写回
-
-// 深链 / 命令面板选中子集合时，自动展开其祖先链，否则选中行藏在折叠的父级里不可见。
-// 监听集合树本身：加载完成或树变化后，对当前选中集合再补一次祖先展开（幂等）。
-watch(
-  [selectedCollectionId, () => collections.value.length],
-  ([cid]) => {
-    if (cid) expandCollectionWithAncestors(cid)
-  },
-  { immediate: true }
-)
     setTimeout(() => {
       isApplyingFromUrl = false
     }, 0)

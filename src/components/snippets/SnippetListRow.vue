@@ -566,34 +566,4 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
     --card-transition: 0ms;
   }
 }
-
-/* ── 移动端触控优化 ── */
-/* 操作按钮（复制）常显，触控目标 ≥44px */
-.snippet-card.is-mobile .snippet-card__actions {
-  opacity: 1;
-}
-
-.snippet-card.is-mobile .snippet-card__action {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md, 8px);
-  background: rgb(var(--color-surface-variant-rgb));
-}
-
-.snippet-card.is-mobile .snippet-card__action:active {
-  background: rgb(var(--color-brand-rgb) / 0.2);
-  color: rgb(var(--color-brand-rgb));
-}
-
-.snippet-card.is-mobile.is-list .snippet-list__action {
-  width: 44px;
-  height: 44px;
-  opacity: 1;
-}
-
-.snippet-card.is-mobile .snippet-card__checkbox,
-.snippet-card.is-mobile .snippet-list__checkbox {
-  width: 20px;
-  height: 20px;
-}
 </style>

@@ -394,43 +394,4 @@ useEventListener(window, 'keydown', handleKeyDown)
  min-width: 0;
  min-height: 0;
 }
-
-/* ============================================================ */
-/* 移动端布局重构                                              */
-/* ============================================================ */
-
-/* ── 移动端外壳 ── */
-.detail-page.is-mobile {
- padding: 0;
- height: calc(100vh - var(--header-height));
- height: calc(100dvh - var(--header-height));
- display: flex;
- flex-direction: column;
- overflow: hidden;
-}
-
-/* ── 移动端 Header ── */
-
-/* Dropdown 过渡 */
-
-/* ── 移动端主区域 ── */
-
-/* 变体 tab 在移动端：贴顶横滑 */
-.snippet-tabs--mobile {
- flex-shrink: 0;
- padding: 8px 12px;
- margin-bottom: 0;
- overflow-x: auto;
- scrollbar-width: none;
- background: rgb(var(--color-bg-elevated-rgb));
- border-bottom: 1px solid rgb(var(--color-border-rgb));
- -webkit-overflow-scrolling: touch;
-}
-
-.snippet-tabs--mobile::-webkit-scrollbar {
- display: none;
-}
-
-/* ── 底部 Tab 栏 ── */
-
 </style>

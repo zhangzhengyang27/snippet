@@ -1,13 +1,10 @@
 import { fileURLToPath, URL } from 'node:url'
-import { createRequire } from 'node:module'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
 // 开发期代理到已有 NestJS 后端（默认 http://localhost:3000）
 const API_TARGET = process.env.API_TARGET || 'http://localhost:3000'
-
-const require = createRequire(import.meta.url)
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
@@ -45,23 +42,16 @@ export default defineConfig({
               priority: 20,
             },
             {
-              // xiaoye-ui 为全量打包（未提供 tree-shaking 友好的按需导出），
-              // 独立成组以获得稳定缓存；体积大属预期，见下方 chunkSizeWarningLimit 说明
-              name: 'vendor-ui',
-              test: /node_modules[\\/]xiaoye-ui[\\/]/,
-              priority: 15,
-            },
-            {
               name: 'vendor-libs',
-              test: /node_modules[\\/](?:axios|dompurify|diff|vuedraggable|material-symbols)[\\/]/,
+              test: /node_modules[\\/](?:axios|dompurify|diff|vuedraggable)[\\/]/,
               priority: 10,
             },
           ],
         },
       },
     },
-    // Monaco / Shiki / SFC 浏览器端编译器等功能性大块已按需拆分并按组打包，
-    // xiaoye-ui 全量包（vendor-ui ≈2.5MB）为库特性，单块体积属预期，上调阈值避免噪声。
-    chunkSizeWarningLimit: 3200,
+    // 当前最大 chunk 为 ExampleDetailPage（约 949KB，含 SFC 编译器与 Prettier）。
+    // 阈值取 1000 以便真实暴露后续体积回归，而非掩盖它。
+    chunkSizeWarningLimit: 1000,
   },
 })

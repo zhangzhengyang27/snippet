@@ -473,9 +473,6 @@
     color: rgb(var(--color-text-secondary-rgb));
   }
 
-  /* Responsive page chrome */
-  
-  
   /* Glassmorphism Base */
   .glass {
     background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
@@ -587,106 +584,6 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ---------------------------------------------------------------- */
-/*  xiaoye-ui component variant styles (unstyled + PT)               */
-/*  The p-success/p-info/etc. prefixes in PT strings are raw         */
-/*  class names that Tailwind can't resolve as utilities.            */
-/*  Variant-specific styling is done via CSS selectors here.         */
-/* ---------------------------------------------------------------- */
-
-/* Toast / Message / InlineMessage severity variants */
-.p-toast-message-success,
-.p-message-success,
-.p-inlinemessage-success {
-  background: rgb(var(--color-success-rgb) / 0.1);
-  border-color: rgb(var(--color-success-rgb) / 0.2);
-  color: rgb(var(--color-success-rgb));
-}
-
-.p-toast-message-info,
-.p-message-info,
-.p-inlinemessage-info {
-  background: rgb(var(--color-accent-sky-rgb) / 0.1);
-  border-color: rgb(var(--color-accent-sky-rgb) / 0.2);
-  color: rgb(var(--color-accent-sky-rgb));
-}
-
-.p-toast-message-warn,
-.p-message-warn,
-.p-inlinemessage-warn {
-  background: rgb(var(--color-accent-amber-rgb) / 0.1);
-  border-color: rgb(var(--color-accent-amber-rgb) / 0.2);
-  color: rgb(var(--color-accent-amber-rgb));
-}
-
-.p-toast-message-error,
-.p-message-error,
-.p-inlinemessage-error {
-  background: rgb(var(--color-error-rgb) / 0.1);
-  border-color: rgb(var(--color-error-rgb) / 0.2);
-  color: rgb(var(--color-error-rgb));
-}
-
-.p-toast-message-secondary,
-.p-message-secondary,
-.p-inlinemessage-secondary {
-  background: rgb(var(--color-surface-variant-rgb));
-  border-color: rgb(var(--color-border-glass-rgb));
-  color: rgb(var(--color-text-secondary-rgb));
-}
-
-/* Badge severity variants */
-.p-badge-success {
-  background: rgb(var(--color-success-rgb));
-  color: #fff;
-}
-
-.p-badge-info {
-  background: rgb(var(--color-accent-sky-rgb));
-  color: #fff;
-}
-
-.p-badge-warn {
-  background: rgb(var(--color-accent-amber-rgb));
-  color: #fff;
-}
-
-.p-badge-danger {
-  background: rgb(var(--color-error-rgb));
-  color: #fff;
-}
-
-.p-badge-secondary {
-  background: rgb(var(--color-surface-variant-rgb));
-  color: rgb(var(--color-text-secondary-rgb));
-}
-
-/* Tag severity variants */
-.p-tag-success {
-  background: rgb(var(--color-success-rgb) / 0.12);
-  color: rgb(var(--color-success-rgb));
-}
-
-.p-tag-info {
-  background: rgb(var(--color-accent-sky-rgb) / 0.12);
-  color: rgb(var(--color-accent-sky-rgb));
-}
-
-.p-tag-warn {
-  background: rgb(var(--color-accent-amber-rgb) / 0.12);
-  color: rgb(var(--color-accent-amber-rgb));
-}
-
-.p-tag-danger {
-  background: rgb(var(--color-error-rgb) / 0.12);
-  color: rgb(var(--color-error-rgb));
-}
-
-.p-tag-secondary {
-  background: rgb(var(--color-surface-variant-rgb));
-  color: rgb(var(--color-text-secondary-rgb));
 }
 
 /* ─── Element Plus 全局对齐（须在 EP 样式之后加载以生效） ─── */

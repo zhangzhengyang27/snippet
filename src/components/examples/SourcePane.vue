@@ -105,8 +105,7 @@ const allTabs: TabDef[] = [
 ]
 
 // ── Prettier formatting (standalone + plugins) ────────────────────────────────
-// prettier 插件动态加载，类型以 any 兼容多版本
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// prettier 插件动态加载，类型以 any 兼容多版本（no-explicit-any 已在 eslint 全局关闭）
 const parserPlugins: Record<string, { parser: string; plugins: any[] }> = {
   html: { parser: 'html', plugins: [parserHtml] },
   css: { parser: 'css', plugins: [parserPostcss] },
