@@ -81,7 +81,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
     <AppSelect
       v-if="props.showFilters"
       :value="props.selectedTag"
-      class="w-28 shrink-0"
+      class="toolbar-select shrink-0"
       :options="tagOptions"
       @update:value="emit('update:selectedTag', String($event ?? ''))"
     />
@@ -89,7 +89,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
     <AppSelect
       v-if="props.showFilters"
       :value="props.selectedLanguage"
-      class="w-28 shrink-0"
+      class="toolbar-select shrink-0"
       :options="languageOptions"
       @update:value="emit('update:selectedLanguage', String($event ?? ''))"
     />
@@ -97,7 +97,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
     <AppSelect
       v-if="!props.compact"
       :value="props.sort"
-      class="w-32 shrink-0"
+      class="toolbar-select shrink-0"
       :options="props.sortOptions"
       @update:value="emit('update:sort', $event as SnippetSortOption)"
     />
@@ -118,34 +118,11 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       />
     </div>
 
-    <AppButton
-      v-if="!props.compact"
-      variant="glass"
-      class="h-8"
-      :class="{ 'is-active': props.favoritesOnly }"
-      title="仅显示收藏"
-      @click="emit('update:favoritesOnly', !props.favoritesOnly)"
-    >
-      <AppIcon icon="material-symbols:favorite" :size="14" />
-      收藏
-    </AppButton>
-
     <AppButton variant="glass" class="h-8" @click="handleCreateClick">
       <AppIcon icon="material-symbols:add" :size="14" />
       新建片段
     </AppButton>
 
-    <AppButton
-      v-if="!props.compact"
-      variant="glass"
-      class="h-8"
-      :loading="props.loading"
-      title="刷新数据"
-      @click="emit('refresh')"
-    >
-      <AppIcon icon="material-symbols:refresh" :size="14" :class="props.loading ? 'animate-spin' : ''" />
-      刷新
-    </AppButton>
   </div>
 </template>
 
@@ -153,5 +130,10 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
 :deep(.app-btn.is-active) {
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+
+/* 筛选下拉统一宽度：scoped 未分层规则可确定性压过 EP 的 .el-select{width:128px} */
+.toolbar-select {
+  width: 148px;
 }
 </style>
