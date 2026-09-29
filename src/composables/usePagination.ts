@@ -30,7 +30,7 @@ export interface UsePaginationReturn {
  * 分页状态管理 composable
  *
  * 项目统一分页方案：
- * - UI 组件使用 `src/components/layout/Pagination.vue`（内部基于 xiaoye-ui Pagination，
+ * - UI 组件使用 `src/components/layout/Pagination.vue`（内部基于 Element Plus el-pagination，
  *   样式已覆盖为项目设计 token）
  * - 状态管理使用本 composable
  *

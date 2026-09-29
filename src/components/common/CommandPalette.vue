@@ -44,7 +44,7 @@ const actionItems = computed<CommandItem[]>(() => [
     type: 'action',
     label: '新建代码片段',
     icon: 'ms:add_circle',
-    run: () => router.push('/snippets?create=1'),
+    run: () => router.push('/snippets?new=1'),
   },
   {
     type: 'action',

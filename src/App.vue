@@ -7,27 +7,14 @@ import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/composables/useTheme'
 import { useIsMobile } from '@/composables/useIsMobile'
 import { isTypingTarget } from '@/utils/keyboard'
-import { ConfigProvider, App as XyApp, theme as xyTheme } from 'xiaoye-ui'
-import AppBridge from '@/components/common/AppBridge.vue'
+import { ElConfigProvider } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
-const { theme: appTheme, reapplyTheme } = useTheme()
+const { reapplyTheme } = useTheme()
 const { isCompact } = useIsMobile()
 
-// xiaoye-ui 主题：随项目 .dark/.light 联动切换 dark/default 算法，
-// token 对齐设计系统（品牌色青蓝 #0EA5E9，语义色按暗/浅主题取各自值）
-const xyThemeConfig = computed(() => {
-  const isDark = appTheme.value === 'dark'
-  return {
-    algorithm: isDark ? xyTheme.darkAlgorithm : xyTheme.defaultAlgorithm,
-    token: {
-      colorPrimary: '#0EA5E9',
-      colorInfo: '#0EA5E9',
-      ...(isDark
-        ? { colorSuccess: '#34C77B', colorWarning: '#F59E0B', colorError: '#F87171' }
-        : { colorSuccess: '#16A34A', colorWarning: '#D97706', colorError: '#DC2626' }),
-    },
-  }
-})
+// 主题：useTheme 在 html 上切换 .dark/.light；Element Plus 暗色由 dark/css-vars.css 联动
+
 const router = useRouter()
 const route = useRoute()
 
@@ -96,9 +83,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ConfigProvider :theme="xyThemeConfig">
-    <XyApp>
-      <AppBridge />
+  <ElConfigProvider :locale="zhCn">
+    <div class="xy-app">
       <div class="app-root">
         <!-- 登录页：沉浸式，不渲染 App Shell -->
         <div v-if="isAuthPage" class="app-auth">
@@ -119,8 +105,8 @@ onBeforeUnmount(() => {
 
         <CommandPalette ref="commandPalette" />
       </div>
-    </XyApp>
-  </ConfigProvider>
+    </div>
+  </ElConfigProvider>
 </template>
 
 <style scoped>

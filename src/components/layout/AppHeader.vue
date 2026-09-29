@@ -8,10 +8,6 @@ import { getExamples } from '@/api'
 import { isTypingTarget } from '@/utils/keyboard'
 import { useClipboard } from '@vueuse/core'
 import AppIcon from '@/components/common/AppIcon.vue'
-import Button from 'xiaoye-ui/button'
-import Avatar from 'xiaoye-ui/avatar'
-import Divider from 'xiaoye-ui/divider'
-import Tooltip from 'xiaoye-ui/tooltip'
 import type { CodeExample } from '@/types'
 
 type SearchResult = Omit<CodeExample, 'html' | 'css' | 'js'>
@@ -339,21 +335,19 @@ function handleScroll() {
         </nav>
 
         <div class="app-header__actions">
-          <Tooltip value="搜索 (⌘K)">
-            <Button
-              severity="secondary" outlined
+          <el-tooltip content="搜索 (⌘K)" placement="bottom">
+            <el-button
               size="small"
               class="app-header__icon-btn"
               aria-label="搜索"
               @click="openSearch"
             >
               <AppIcon icon="lucide:search" :size="18" />
-            </Button>
-          </Tooltip>
+            </el-button>
+          </el-tooltip>
 
-          <Tooltip value="切换主题">
-            <Button
-              severity="secondary" outlined
+          <el-tooltip content="切换主题" placement="bottom">
+            <el-button
               size="small"
               class="app-header__icon-btn"
               aria-label="切换主题"
@@ -361,8 +355,8 @@ function handleScroll() {
             >
               <AppIcon v-if="theme === 'dark'" icon="lucide:sun" :size="18" />
               <AppIcon v-else icon="lucide:moon" :size="18" />
-            </Button>
-          </Tooltip>
+            </el-button>
+          </el-tooltip>
 
           <template v-if="isLoggedIn && currentUser">
             <!-- 用户菜单：原生实现 -->
@@ -376,11 +370,7 @@ function handleScroll() {
                 aria-label="用户菜单"
                 @click="userMenuOpen = !userMenuOpen"
               >
-                <Avatar class="app-header__user-avatar">
-                  <template #default>
-                    <span>{{ userInitials }}</span>
-                  </template>
-                </Avatar>
+                <span class="app-header__user-avatar">{{ userInitials }}</span>
                 <span class="app-header__user-name">{{ currentUser.username }}</span>
                 <AppIcon
                   icon="lucide:chevron-down"
@@ -394,11 +384,7 @@ function handleScroll() {
                   <div class="user-panel__hero">
                     <div class="user-panel__hero-glow" aria-hidden="true" />
                     <div class="user-panel__avatar-wrap">
-                      <Avatar class="user-panel__avatar">
-                        <template #default>
-                          <span>{{ userInitials }}</span>
-                        </template>
-                      </Avatar>
+                      <span class="user-panel__avatar">{{ userInitials }}</span>
                       <span class="user-panel__status" aria-hidden="true" />
                     </div>
                     <div class="user-panel__identity">
@@ -458,7 +444,7 @@ function handleScroll() {
                     </button>
                   </div>
 
-                  <Divider />
+                  <hr class="app-header__divider" />
 
                   <button
                     type="button"
@@ -472,12 +458,12 @@ function handleScroll() {
               </div>
             </div>
           </template>
-          <Button v-else severity="secondary" text size="small" @click="goToLogin"> 登录 </Button>
+          <el-button v-else text size="small" @click="goToLogin"> 登录 </el-button>
 
 
           <!-- 移动端：汉堡菜单 + 全屏导航面板 -->
-          <Button
-            severity="secondary" text
+          <el-button
+            text
             size="small"
             class="app-header__hamburger"
             :aria-expanded="mobileMenuOpen"
@@ -487,7 +473,7 @@ function handleScroll() {
             <span class="app-header__hamburger-line" :class="{ 'app-header__hamburger-line--open': mobileMenuOpen }" />
             <span class="app-header__hamburger-line" :class="{ 'app-header__hamburger-line--open': mobileMenuOpen }" />
             <span class="app-header__hamburger-line" :class="{ 'app-header__hamburger-line--open': mobileMenuOpen }" />
-          </Button>
+          </el-button>
 
           <div v-if="mobileMenuOpen" class="app-header__sheet-content">
             <div class="sr-only">导航菜单</div>
@@ -512,7 +498,7 @@ function handleScroll() {
                   class="app-header__drawer-children"
                 >
                   <template v-for="child in link.children" :key="child.label">
-                    <Divider v-if="child.isGroupTitle" class="app-header__drawer-group-separator" />
+                    <hr v-if="child.isGroupTitle" class="app-header__drawer-group-separator" />
                     <div v-if="child.isGroupTitle" class="app-header__drawer-group-title">
                       {{ child.label }}
                     </div>
@@ -542,34 +528,30 @@ function handleScroll() {
                 </router-link>
               </template>
             </nav>
-            <Divider />
+            <hr class="app-header__divider" />
             <div class="app-header__drawer-actions">
               <template v-if="isLoggedIn && currentUser">
                 <router-link to="/profile" class="app-header__drawer-user" @click="closeMobileMenu">
-                  <Avatar class="app-header__drawer-user-avatar">
-                    <template #default>
-                      <span>{{ userInitials }}</span>
-                    </template>
-                  </Avatar>
+                  <span class="app-header__drawer-user-avatar">{{ userInitials }}</span>
                   <div class="app-header__drawer-user-text">
                     <span class="app-header__drawer-user-name">{{ currentUser.username }}</span>
                     <span class="app-header__drawer-user-role">{{ userRoleLabel }}</span>
                   </div>
                 </router-link>
-                <Button severity="secondary" text size="small" as-child class="w-full">
+                <el-button severity="secondary" text size="small" as-child class="w-full">
                   <router-link to="/profile" @click="closeMobileMenu"> 个人中心 </router-link>
-                </Button>
-                <Button severity="secondary" text size="small" as-child class="w-full">
+                </el-button>
+                <el-button severity="secondary" text size="small" as-child class="w-full">
                   <router-link to="/favorites" @click="closeMobileMenu"> 我的收藏 </router-link>
-                </Button>
-                <Button severity="secondary" text size="small" as-child class="w-full">
+                </el-button>
+                <el-button severity="secondary" text size="small" as-child class="w-full">
                   <router-link to="/recent" @click="closeMobileMenu"> 最近浏览 </router-link>
-                </Button>
-                <Button severity="secondary" text size="small" class="w-full" @click="handleLogout">
+                </el-button>
+                <el-button severity="secondary" text size="small" class="w-full" @click="handleLogout">
                   退出登录
-                </Button>
+                </el-button>
               </template>
-              <Button v-else severity="secondary" text size="small" class="w-full" @click="goToLogin"> 登录 </Button>
+              <el-button v-else severity="secondary" text size="small" class="w-full" @click="goToLogin"> 登录 </el-button>
 
             </div>
           </div>
@@ -1248,6 +1230,29 @@ function handleScroll() {
 
 <style scoped>
 /* 窄屏：收敛顶栏内边距与动作区间距，避免 375px 溢出 */
+.app-header__drawer-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: rgb(var(--color-text-secondary-rgb));
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.app-header__drawer-btn:hover {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-rgb));
+}
+
+.app-header__divider {
+  border: none;
+  border-top: 1px solid rgb(var(--color-border-rgb) / 0.5);
+  margin: 8px 0;
+}
+
 @media (max-width: 480px) {
   .app-header {
     padding-inline: 14px;

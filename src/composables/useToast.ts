@@ -1,5 +1,6 @@
 import type { AppContext } from 'vue'
 import { getCurrentInstance } from 'vue'
+import { ElMessage } from 'element-plus'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -17,9 +18,7 @@ interface MessageApi {
 // 模块顶层缓存 appContext，解决 getCurrentInstance() 在事件回调/async/setTimeout 中返回 null 的问题
 let cachedAppContext: AppContext | null = null
 
-// xy-app 上下文中的 message api（由 AppBridge 注册）。
-// 它渲染在 ConfigProvider 子树内，会跟随暗黑/浅色主题；
-// 而静态 $message 的 holder 挂在 body 上、不感知主题，仅作回退。
+// Element Plus 的 message 挂载在 body 上，暗色由 html.dark 的 EP css-vars 驱动。
 let appMessageApi: MessageApi | null = null
 
 /**
@@ -57,13 +56,13 @@ function show(
   message: string,
   opts?: ToastOptions
 ) {
-  // 优先主题感知的 xy-app message，未注册时回退 $message
-  const api = appMessageApi ?? resolveFallbackApi()
-  if (!api) return
-
-  const method = severity === 'warn' ? 'warning' : severity
-  const duration = opts?.duration ?? 3
-  api[method](message, duration)
+  void appMessageApi
+  void resolveFallbackApi
+  ElMessage({
+    type: severity === 'warn' ? 'warning' : severity,
+    message,
+    duration: (opts?.duration ?? 3) * 1000,
+  })
 }
 
 export const toast = {

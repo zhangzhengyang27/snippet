@@ -1,7 +1,6 @@
-/** 通用分页组件（基于 xiaoye-ui Pagination，样式使用项目设计 token） */
+/** 通用分页组件（基于 Element Plus el-pagination，样式使用项目设计 token） */
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Pagination as XyPagination } from 'xiaoye-ui'
 
 export interface PaginationProps {
   page: number
@@ -38,14 +37,13 @@ const emit = defineEmits<{
 
 const totalRecords = computed(() => props.totalPages * props.pageSize)
 
-const totalText = computed(() => {
-  if (!props.showTotal) {
-    return undefined
-  }
-  if (props.total) {
-    return () => `共 ${props.total} 条 · 第 ${props.page} / ${props.totalPages} 页`
-  }
-  return () => `第 ${props.page} / ${props.totalPages} 页`
+/** EP 分页布局：按组件开关拼装（total/sizes/jumper 可选） */
+const paginationLayout = computed(() => {
+  const parts = ['prev', 'pager', 'next']
+  if (props.showTotal && props.total) parts.unshift('total')
+  if (props.showSizeChanger) parts.push('sizes')
+  if (props.showJumper && props.totalPages > 1) parts.push('jumper')
+  return parts.join(', ')
 })
 
 function handleChange(page: number) {
@@ -53,7 +51,7 @@ function handleChange(page: number) {
   emit('change', page)
 }
 
-function handleShowSizeChange(_current: number, size: number) {
+function handleSizeChange(size: number) {
   emit('update:pageSize', size)
   emit('pageSizeChange', size)
 }
@@ -88,19 +86,16 @@ function handleShowSizeChange(_current: number, size: number) {
 
   <!-- 完整模式 -->
   <div v-else-if="!hideOnSinglePage || totalPages > 1" class="pagination-bar">
-    <XyPagination
-      :current="page"
+    <el-pagination
+      :current-page="page"
       :total="totalRecords"
       :page-size="pageSize"
-      :show-total="totalText"
-      :show-quick-jumper="showJumper && totalPages > 1"
-      :show-size-changer="showSizeChanger"
-      :page-size-options="pageSizeOptions"
-      :hide-on-single-page="false"
+      :page-sizes="pageSizeOptions?.map(Number)"
+      :layout="paginationLayout"
       size="small"
-      @update:current="handleChange"
-      @change="handleChange"
-      @showSizeChange="handleShowSizeChange"
+      :hide-on-single-page="false"
+      @current-change="handleChange"
+      @size-change="handleSizeChange"
     />
   </div>
 </template>
@@ -113,148 +108,51 @@ function handleShowSizeChange(_current: number, size: number) {
   padding: 16px 0;
 }
 
-.pagination-bar :deep(.xy-pagination) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+.pagination-bar :deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-text-color: rgb(var(--color-text-secondary-rgb));
+  --el-pagination-button-color: rgb(var(--color-text-secondary-rgb));
+  --el-pagination-hover-color: rgb(var(--color-primary-rgb));
+  --el-pagination-button-height: 28px;
+  --el-pagination-button-width: 28px;
+  --el-pagination-font-size: var(--text-code-sm, 0.75rem);
   font-family: var(--font-mono);
-  font-size: var(--text-code-sm, 0.75rem);
+  gap: 6px;
 }
 
-.pagination-bar :deep(.xy-pagination-total-text) {
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  margin-inline-end: 8px;
-}
-
-.pagination-bar :deep(.xy-pagination-item),
-.pagination-bar :deep(.xy-pagination-prev),
-.pagination-bar :deep(.xy-pagination-next),
-.pagination-bar :deep(.xy-pagination-jump-prev),
-.pagination-bar :deep(.xy-pagination-jump-next) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.pagination-bar :deep(.el-pagination .el-pager li) {
   min-width: 28px;
   height: 28px;
-  padding: 0 6px;
-  border: 1px solid transparent;
   border-radius: var(--radius-sm, 4px);
   background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition:
-    background 150ms ease,
-    color 150ms ease,
-    border-color 150ms ease;
+  border: 1px solid transparent;
+  color: rgb(var(--color-text-secondary-rgb));
+  font-family: var(--font-mono);
 }
 
-/* xiaoye-ui 把文字色设在 <a> 上，必须同时覆盖 a 选择器（特异性需 ≥ 组件的 :where(...).xy-pagination .xy-pagination-item a） */
-.pagination-bar :deep(.xy-pagination-item a),
-.pagination-bar :deep(.xy-pagination-prev a),
-.pagination-bar :deep(.xy-pagination-next a),
-.pagination-bar :deep(.xy-pagination-jump-prev a),
-.pagination-bar :deep(.xy-pagination-jump-next a) {
-  color: inherit;
-}
-
-.pagination-bar :deep(.xy-pagination-item-ellipsis) {
-  color: var(--color-text-tertiary);
-}
-
-.pagination-bar :deep(.xy-pagination-item:not(.xy-pagination-item-active):hover),
-.pagination-bar :deep(.xy-pagination-prev:not(.xy-pagination-disabled):hover),
-.pagination-bar :deep(.xy-pagination-next:not(.xy-pagination-disabled):hover) {
-  background: var(--color-surface-variant);
-  color: var(--color-text);
-}
-
-.pagination-bar :deep(.xy-pagination-item-active) {
-  background: var(--color-surface-variant);
-  border-color: var(--color-border-glass);
-  color: var(--color-primary);
+.pagination-bar :deep(.el-pagination .el-pager li.is-active) {
+  background: rgb(var(--color-surface-variant-rgb));
+  border-color: rgb(var(--color-border-rgb) / 0.6);
+  color: rgb(var(--color-primary-rgb));
   font-weight: 600;
 }
 
-.pagination-bar :deep(.xy-pagination-item-active a) {
-  color: var(--color-primary);
+.pagination-bar :deep(.el-pagination .el-pager li:hover:not(.is-active)) {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-rgb));
 }
 
-.pagination-bar :deep(.xy-pagination-disabled) {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.pagination-bar :deep(.xy-pagination-disabled .xy-pagination-item-link) {
-  color: var(--color-text-secondary);
-}
-
-.pagination-bar :deep(.xy-pagination-options) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-inline-start: 8px;
-}
-
-.pagination-bar :deep(.xy-pagination-options-size-changer) {
-  min-width: 90px;
-}
-
-.pagination-bar :deep(.xy-pagination-options-size-changer .xy-select-selector) {
+.pagination-bar :deep(.el-pagination .el-select .el-input),
+.pagination-bar :deep(.el-pagination .el-input__wrapper) {
   height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--color-border-glass);
-  border-radius: var(--radius-sm, 4px);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.pagination-bar :deep(.xy-pagination-options-size-changer .xy-select-selection-item) {
-  line-height: 26px;
-}
-
-.pagination-bar :deep(.xy-pagination-options-size-changer .xy-select-arrow) {
-  color: var(--color-text-secondary);
-}
-
-.pagination-bar :deep(.xy-pagination-options-quick-jumper) {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-text-secondary);
-}
-
-.pagination-bar :deep(.xy-pagination-options-quick-jumper input) {
-  width: 44px;
-  height: 28px;
-  padding: 0 4px;
-  border: 1px solid var(--color-border-glass);
-  border-radius: var(--radius-sm, 4px);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: var(--text-code-sm, 0.75rem);
-  text-align: center;
-  outline: none;
-  transition: border-color 150ms ease;
-}
-
-.pagination-bar :deep(.xy-pagination-options-quick-jumper input:focus) {
-  border-color: var(--color-primary);
+  background: rgb(var(--color-surface-rgb));
+  box-shadow: 0 0 0 1px rgb(var(--color-border-rgb) / 0.5) inset;
 }
 
 @media (max-width: 640px) {
-  .pagination-bar :deep(.xy-pagination) {
+  .pagination-bar :deep(.el-pagination) {
     flex-wrap: wrap;
     justify-content: center;
-  }
-
-  .pagination-bar :deep(.xy-pagination-total-text) {
-    width: 100%;
-    text-align: center;
-    margin-inline-end: 0;
-    margin-bottom: 4px;
   }
 }
 
@@ -307,10 +205,8 @@ function handleShowSizeChange(_current: number, size: number) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pagination-bar :deep(.xy-pagination-item),
-  .pagination-bar :deep(.xy-pagination-prev),
-  .pagination-bar :deep(.xy-pagination-next),
-  .pagination-bar :deep(.xy-pagination-options-quick-jumper input) {
+  .pagination-bar :deep(.el-pagination .el-pager li),
+  .pagination-bar :deep(.el-input__wrapper) {
     transition: none;
   }
 }

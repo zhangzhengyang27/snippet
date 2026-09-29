@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * AppButton - 项目级按钮封装（基于 xy-button）
+ * AppButton - 项目级按钮封装（基于 Element Plus el-button）
  *
  * 内置 6.9 设计规范的三种视觉变体，页面无需重复写样式：
  *   - glass（默认）：玻璃拟态背景 + hover 主色光晕
  *   - primary：主色渐变 + 白色文字 + 阴影
  *   - text：极简文字按钮
  *
- * 透传 xy-button 的所有 props / events / slots（size, disabled, loading, danger, block 等）。
+ * 透传 el-button 的所有 props / events / slots（size, disabled, loading, danger 等）。
  *
  * 用法：
  *   <AppButton @click="save">保存</AppButton>
@@ -31,17 +31,21 @@ const variantClass = computed(() => `app-btn--${props.variant}`)
 </script>
 
 <template>
-  <xy-button v-bind="$attrs" class="app-btn" :class="variantClass">
+  <el-button v-bind="$attrs" class="app-btn" :class="variantClass" :text="variant === 'text'">
     <template v-for="(_, name) in $slots" #[name]="slotData">
       <slot :name="name" v-bind="slotData ?? {}" />
     </template>
-  </xy-button>
+  </el-button>
 </template>
 
 <style scoped>
 /* 基础重置 */
-.app-btn {
+.app-btn.el-button {
   display: inline-flex;
+  border: none;
+  background: none;
+  padding: 0;
+  height: auto;
   align-items: center;
   justify-content: center;
   gap: 6px;

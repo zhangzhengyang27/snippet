@@ -30,7 +30,7 @@ const stats = [
 ]
 
 const shortcuts = [
-  { key: 'new', label: '新建片段', icon: 'ms:add_circle', path: '/snippets?create=1' },
+  { key: 'new', label: '新建片段', icon: 'ms:add_circle', path: '/snippets?new=1' },
   { key: 'search', label: '搜索片段', icon: 'ms:search', path: '/snippets' },
   { key: 'recent', label: '最近使用', icon: 'ms:schedule', path: '/recent' },
   { key: 'about', label: '关于与帮助', icon: 'ms:info', path: '/about' },
@@ -80,7 +80,7 @@ onMounted(load)
   <div class="dashboard">
     <PageHeader title="概览" description="知识片段与在线示例的整体情况。">
       <template #actions>
-        <AppButton variant="glass" size="small" @click="go('/snippets?create=1')">
+        <AppButton variant="glass" size="small" @click="go('/snippets?new=1')">
           <AppIcon icon="ms:add_circle" :size="14" />
           新建片段
         </AppButton>

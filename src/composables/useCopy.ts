@@ -17,7 +17,7 @@ export interface UseCopyReturn {
  * 基于 @vueuse/core useClipboard：
  * - 优先使用 navigator.clipboard.writeText
  * - 不支持时 useClipboard 内部降级 document.execCommand('copy')（legacy: true）
- * - 成功/失败通过 xiaoye-ui useToast 反馈
+ * - 成功/失败通过 useToast 反馈
  * - copied 状态在 2s 后自动重置（useClipboard 的 copiedDuring）
  *
  * @example

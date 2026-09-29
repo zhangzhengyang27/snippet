@@ -6,7 +6,6 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import type { KnowledgeSnippet, SnippetFile } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
-import { Drawer } from 'xiaoye-ui'
 
 const props = defineProps<{
   open: boolean
@@ -65,16 +64,15 @@ const handleClose = () => {
 </script>
 
 <template>
-  <Drawer
-    :open="props.open"
-    placement="right"
-    :width="720"
+  <el-drawer
+    :model-value="props.open"
+    direction="rtl"
+    :size="720"
     :destroy-on-close="true"
-    :mask-closable="true"
-    :closable="false"
-    root-class-name="snippet-detail-drawer-root"
-    :body-style="{ padding: '0' }"
-    @update:open="handleClose"
+    :close-on-click-modal="true"
+    :show-close="false"
+    class="snippet-detail-drawer-root"
+    @update:model-value="handleClose"
   >
     <div v-if="props.snippet" class="snippet-detail-drawer">
       <!-- 头部信息区 -->
@@ -194,7 +192,7 @@ const handleClose = () => {
         </span>
       </div>
     </div>
-  </Drawer>
+  </el-drawer>
 </template>
 
 <style scoped>
@@ -445,7 +443,7 @@ const handleClose = () => {
 </style>
 
 <style>
-/* xiaoye-ui Drawer 全局样式覆盖（Drawer 通过 Portal 挂载到 body，scoped 无法穿透） */
+/* el-drawer 全局样式覆盖（Drawer 挂载到 body，scoped 无法穿透） */
 .snippet-detail-drawer-root .xy-drawer-content-wrapper {
   box-shadow: -8px 0 32px var(--color-shadow);
 }

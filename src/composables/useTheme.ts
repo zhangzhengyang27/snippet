@@ -19,7 +19,7 @@ function applyTheme(value: Theme) {
   if (typeof document === 'undefined') return
   const root = document.documentElement
   // 同步切换 .dark/.light class（驱动项目自有 --color-*-rgb 变量）
-  // 与 data-theme 属性（xiaoye-ui useDarkMode 初始化读取的标记）
+  // data-theme 属性供调试与未来主题集成使用
   if (value === 'dark') {
     root.classList.add('dark')
     root.classList.remove('light')

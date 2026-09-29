@@ -21,7 +21,6 @@ import { useToast } from '@/composables/useToast'
 import { createKnowledgeSnippet } from '@/api/knowledge-snippets'
 import { useIsMobile } from '@/composables/useIsMobile'
 import { isTypingTarget } from '@/utils/keyboard'
-import Breadcrumb, { BreadcrumbItem } from 'xiaoye-ui/breadcrumb'
 
 const route = useRoute()
 const router = useRouter()
@@ -257,13 +256,15 @@ useEventListener(window, 'keydown', handleKeyDown)
    <div v-else class="detail-page" :class="{ 'is-mobile': isCompact }">
      <!-- ============ 桌面 Header ============ -->
      <header v-if="!isCompact" class="detail-header">
-       <Breadcrumb class="detail-breadcrumb">
-         <BreadcrumbItem href="/" @click.prevent="goBack">
+       <nav class="detail-breadcrumb" aria-label="面包屑">
+         <router-link to="/" class="detail-breadcrumb__link" aria-label="概览" @click.prevent="goBack">
            <AppIcon icon="ms:home" :size="14" />
-         </BreadcrumbItem>
-         <BreadcrumbItem href="/examples" @click.prevent="goExamples"> 代码示例 </BreadcrumbItem>
-         <BreadcrumbItem>{{ example.title }}</BreadcrumbItem>
-       </Breadcrumb>
+         </router-link>
+         <span class="detail-breadcrumb__sep">/</span>
+         <router-link to="/example" class="detail-breadcrumb__link" @click.prevent="goExamples">示例库</router-link>
+         <span class="detail-breadcrumb__sep">/</span>
+         <span class="detail-breadcrumb__current">{{ example.title }}</span>
+       </nav>
        <div class="detail-actions">
          <FavoriteButton :example="example" />
          <ShareButton :example="example" />
@@ -501,6 +502,35 @@ useEventListener(window, 'keydown', handleKeyDown)
 .detail-breadcrumb {
  margin-bottom: 0;
  flex: 1;
+ display: inline-flex;
+ align-items: center;
+ gap: 8px;
+ font-size: 0.8125rem;
+ min-width: 0;
+}
+
+.detail-breadcrumb__link {
+ display: inline-flex;
+ align-items: center;
+ color: rgb(var(--color-text-secondary-rgb));
+ text-decoration: none;
+ border-radius: 6px;
+ transition: color 150ms ease;
+}
+
+.detail-breadcrumb__link:hover {
+ color: rgb(var(--color-primary-rgb));
+}
+
+.detail-breadcrumb__sep {
+ color: rgb(var(--color-text-secondary-rgb) / 0.5);
+}
+
+.detail-breadcrumb__current {
+ overflow: hidden;
+ white-space: nowrap;
+ text-overflow: ellipsis;
+ color: rgb(var(--color-text-rgb));
 }
 
 .detail-actions {
