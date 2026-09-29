@@ -15,7 +15,6 @@ import SnippetDetailPane from '@/components/snippets/SnippetDetailPane.vue'
 import SnippetsToolbar from '@/components/snippets/SnippetsToolbar.vue'
 import StatusToast from '@/components/snippets/StatusToast.vue'
 import { useToast } from '@/composables/useToast'
-import { useIsMobile } from '@/composables/useIsMobile'
 import { snippetSortOptions } from '@/composables/useSnippetListState'
 import { useKnowledgeSnippetsPage } from '@/composables/useKnowledgeSnippetsPage'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
@@ -110,13 +109,9 @@ const hasActiveFilters = computed(
     favoritesOnly.value
 )
 
-const { isCompact } = useIsMobile()
 
 /** 移动端：侧边栏抽屉开合 */
-const sidebarOpen = ref(false)
 
-/** 移动端：详情 Bottom Sheet 开合 */
-const detailOpen = ref(false)
 
 /** 详情展示模式：page（独立详情页） | split（主从三栏分屏），持久化到本地 */
 type DetailLayout = 'page' | 'split'
@@ -128,33 +123,27 @@ const setDetailLayout = (next: DetailLayout) => {
   localStorage.setItem('snippet-detail-layout', next)
 }
 
-/** split 模式下详情面板是否处于激活（已选择片段）；移动端 Bottom Sheet 打开时激活 */
+/** split 模式下详情面板是否处于激活（已选择片段） */
 const detailPaneActive = computed(
   () =>
-    (isCompact.value && detailOpen.value && !!selectedSnippetId.value) ||
-    (!isCompact.value && detailLayout.value === 'split' && !!selectedSnippetId.value)
+    detailLayout.value === 'split' && !!selectedSnippetId.value
 )
 
 /** 当前详情展示的片段（关闭后保留引用以避免 UI 闪烁） */
 const detailSnippet = computed(() => selectedSnippet.value)
 
-/** 列表项点击：page 模式跳转独立详情页，split 模式常驻右侧面板，移动端弹出 Bottom Sheet */
+/** 列表项点击：page 模式跳转独立详情页，split 模式常驻右侧面板 */
 const handleSelectSnippet = (id: string) => {
   selectedSnippetId.value = id
   pushRecent(id)
-  if (isCompact.value) {
-    detailOpen.value = true
-    return
-  }
   if (detailLayout.value === 'page') {
     router.push(`/snippets/${encodeURIComponent(id)}`)
   }
 }
 
-/** 分屏模式：关闭右侧详情面板；移动端关闭 Bottom Sheet */
+/** 分屏模式：关闭右侧详情面板 */
 const handleCloseDetailPane = () => {
   selectedSnippetId.value = ''
-  detailOpen.value = false
 }
 
 /** 从详情面板发起编辑 */
@@ -516,13 +505,7 @@ async function handleBatchDelete() {
 
 <template>
   <div class="snippet-page">
-    <SnippetWorkspace
-      :show-detail="detailLayout === 'split'"
-      :sidebar-open="sidebarOpen"
-      :detail-open="detailOpen"
-      @update:sidebar-open="sidebarOpen = $event"
-      @update:detail-open="detailOpen = $event"
-    >
+    <SnippetWorkspace :show-detail="detailLayout === 'split'">
       <template #sidebar>
         <SnippetSidebar
           :snippet-count="total"
@@ -552,18 +535,6 @@ async function handleBatchDelete() {
 
       <template #list>
         <div class="flex min-h-0 flex-1 flex-col p-4">
-          <!-- 移动端筛选入口：打开侧边栏抽屉 -->
-          <button
-            v-if="isCompact"
-            type="button"
-            class="mobile-filter-btn"
-            @click="sidebarOpen = true"
-          >
-            <AppIcon icon="material-symbols:filter-list" :size="16" />
-            筛选
-            <span v-if="hasActiveFilters" class="mobile-filter-btn__dot" aria-hidden="true" />
-          </button>
-
           <!-- 工具栏：独立一行，不与列表共用面板 -->
           <SnippetsToolbar
             :keyword="keyword"
@@ -578,8 +549,8 @@ async function handleBatchDelete() {
             :selected-language="selectedLanguage"
             :favorites-only="favoritesOnly"
             :has-active-filters="hasActiveFilters"
-            :show-filters="!isCompact && detailLayout === 'page'"
-            :compact="isCompact || detailLayout === 'split'"
+            :show-filters="detailLayout === 'page'"
+            :compact="detailLayout === 'split'"
             @update:keyword="keyword = $event"
             @update:sort="sort = $event"
             @update:selected-tag="selectedTag = $event"
@@ -664,8 +635,8 @@ async function handleBatchDelete() {
             :loading="loadingSnippets"
             :error="snippetError"
             :selected-snippet-id="selectedSnippetId"
-            :view-mode="isCompact ? 'grid' : detailLayout === 'split' ? 'list' : 'grid'"
-            :compact="isCompact ? false : detailLayout === 'split'"
+            :view-mode="detailLayout === 'split' ? 'list' : 'grid'"
+            :compact="detailLayout === 'split'"
             :can-create="isLoggedIn"
             :has-active-filters="hasActiveFilters"
             :selectable="batchMode"
@@ -825,39 +796,4 @@ async function handleBatchDelete() {
   border-color: var(--color-primary);
 }
 
-/* 移动端筛选入口按钮 */
-.mobile-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  height: 36px;
-  padding: 0 12px;
-  margin-bottom: 8px;
-  border: 1px solid var(--color-border-glass);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  position: relative;
-  transition:
-    background 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease;
-}
-
-.mobile-filter-btn:hover {
-  background: var(--color-surface-variant);
-  color: var(--color-text);
-}
-
-.mobile-filter-btn__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  flex-shrink: 0;
-}
 </style>
