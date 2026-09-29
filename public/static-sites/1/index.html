@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Annie - 洛杉矶网页开发者 (Tailwind 版)</title>
+  <meta name="title" content="Annie - 洛杉矶网页开发者">
+  <meta name="description" content="Annie - 洛杉矶专业前端开发者个人作品集（本示例已重写为 Tailwind CSS 实现），展示网页设计、开发与 SEO 营销服务案例。">
+  <link rel="shortcut icon" href="./favicon.svg" type="image/svg+xml">
+
+  <!-- Tailwind Play CDN：零构建即可在静态 HTML 使用 Tailwind 工具类 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'orange-red': 'hsl(19 100% 55% / <alpha-value>)',
+            'max-yellow': 'hsl(41 99% 64% / <alpha-value>)',
+            'jet': 'hsl(0 0% 22% / <alpha-value>)',
+            'davys': 'hsl(0 0% 33% / <alpha-value>)',
+            'eerie': 'hsl(210 11% 15% / <alpha-value>)',
+          },
+          fontFamily: {
+            sans: ['Jost', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans SC', 'sans-serif'],
+          },
+          maxWidth: { site: '1240px' },
+          borderRadius: { '50': '50px', pill: '100px' },
+        },
+      },
+    }
+  </script>
+
+  <!-- 仅兜底：JS 切换的状态类、伪元素、@keyframes 动画（Play CDN 无法纯工具类表达） -->
+  <style>
+    /* 首屏锁定，加载完成由 script.js 解开 */
+    body { overflow: hidden; }
+    body.loaded { overflow: visible; }
+
+    /* 预加载遮罩 */
+    .preloader.loaded { display: none; }
+
+    /* HEADER / NAVBAR（状态切换 + 响应式，依赖 script.js 的 .active） */
+    .header.active { background-color: #fff; box-shadow: 0 2px 2px hsla(0, 0%, 22%, 0.08); }
+    .header .btn { display: none; }
+
+    .navbar {
+      position: absolute; top: 100%; left: 0; width: 100%;
+      background: #fff; border-top: 2px solid hsl(0 0% 22%); border-bottom: 2px solid hsl(0 0% 22%);
+      transform: scaleY(0); transform-origin: top; visibility: hidden;
+      transition: 0.25s cubic-bezier(0.05, 0.83, 0.52, 0.97);
+    }
+    .navbar.active { transform: scaleY(1); visibility: visible; transition-duration: 0.5s; }
+    .navbar > * { opacity: 0; transition: 0.25s ease; }
+    .navbar.active > * { opacity: 1; transition-delay: 0.4s; }
+    .navbar-item:not(:last-child) { border-bottom: 1px solid hsla(0, 0%, 22%, 0.1); }
+    .navbar-link {
+      display: block; text-transform: uppercase; letter-spacing: 3px;
+      padding: 16px 15px; color: hsl(0 0% 22%); transition: 0.25s ease;
+    }
+    .navbar-link:hover, .navbar-link:focus-visible, .navbar-link.active { color: hsl(19 100% 55%); }
+
+    .nav-toggle-btn { color: hsl(0 0% 22%); font-size: 3.8rem; line-height: 1; }
+
+    @media (min-width: 992px) {
+      .nav-toggle-btn { display: none; }
+      .navbar, .navbar.active, .navbar > * { all: unset; display: block; }
+      .navbar-list { display: flex; }
+      .navbar-item:not(:last-child) { border-bottom: none; }
+      .navbar-link { position: relative; padding: 8px 15px; }
+      .navbar-link::after {
+        content: ""; position: absolute; bottom: 2px; left: 50%;
+        transform: translateX(-50%) scaleX(0); transform-origin: right;
+        width: 80%; height: 2px; background: hsl(19 100% 55%); transition: transform 0.25s ease;
+      }
+      .navbar-link:hover::after, .navbar-link:focus-visible::after, .navbar-link.active::after {
+        transform: translateX(-50%) scaleX(1); transform-origin: left;
+      }
+      .header .btn { display: block; }
+    }
+
+    /* 区块滚动进场（依赖 script.js 的 .visible） */
+    .section { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .section.visible { opacity: 1; transform: none; }
+
+    /* HERO 背景斜块 + 副标题 + 渐变标题 */
+    .hero::after {
+      content: ""; position: absolute; top: 0; left: 10%; bottom: 70%; right: -75%;
+      background-color: hsl(41 99% 64% / 0.4); transform: rotate(-45deg);
+      border-radius: 50px; z-index: -1; animation: hero-float 8s ease-in-out infinite;
+    }
+    @keyframes hero-float {
+      0%, 100% { transform: rotate(-45deg) translateY(0); }
+      50% { transform: rotate(-45deg) translateY(-20px); }
+    }
+    .hero-subtitle {
+      color: hsl(19 100% 55%); text-transform: uppercase; font-weight: 600;
+      letter-spacing: 3px; margin-bottom: 20px; font-size: 1.4rem;
+    }
+    .headline-lg {
+      background: linear-gradient(135deg, hsl(0 0% 22%), hsl(19 100% 55%));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; color: transparent;
+    }
+    .hero-banner { animation: banner-float 6s ease-in-out infinite; }
+    @keyframes banner-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    @media (min-width: 768px) { .hero::after { top: -20%; bottom: 50%; left: 48%; right: -15%; } }
+
+    /* 作品集卡片悬浮效果 */
+    .card-banner { position: relative; border: 2px solid hsl(0 0% 22%); transition: 0.25s ease; overflow: hidden; }
+    .card-banner::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(135deg, hsl(19 100% 55%), hsl(41 99% 64%));
+      opacity: 0; transition: opacity 0.3s ease; z-index: 1;
+    }
+    .card-banner:hover::before { opacity: 0.2; }
+    .card-banner:hover { box-shadow: 8px 8px 0 hsl(0 0% 22%); transform: translate(-4px, -4px); }
+    .btn-icon {
+      position: absolute; top: 15px; left: 0; background: #fff; color: hsl(0 0% 22%);
+      font-size: 2rem; padding: 8px; border: 2px solid hsl(0 0% 22%);
+      opacity: 0; transition: 0.25s ease; z-index: 2;
+    }
+    .card-banner:hover .btn-icon { transform: translateX(15px); opacity: 1; }
+
+    /* 评价引号 */
+    .testi .card::after {
+      content: url("../images/quote-left.svg"); position: absolute; bottom: 15px; right: 25px;
+    }
+
+    /* 页脚顶部渐变条 */
+    .footer::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, hsl(19 100% 55%), hsl(41 99% 64%), hsl(19 100% 55%));
+    }
+  </style>
+
+  <link rel="preload" as="image" href="./assets/images/hero-banner.png">
+</head>
+
+<body class="font-sans text-davys bg-white text-[1.6rem] leading-normal antialiased">
+
+  <!-- #PRELOADER -->
+  <div class="preloader fixed inset-0 z-[60] grid place-items-center bg-orange-red" data-preloader>
+    <div class="w-[60px] h-[60px] rounded-full border-8 border-transparent border-t-white border-b-white animate-spin"></div>
+  </div>
+
+  <!-- #HEADER -->
+  <header class="header fixed top-0 left-0 z-40 w-full bg-transparent transition" data-header>
+    <div class="mx-auto max-w-site px-4 w-full flex items-center justify-between py-4">
+
+      <a href="#" class="logo">
+        <img src="./assets/images/logo.svg" width="151" height="28" alt="Annie 首页">
+      </a>
+
+      <nav class="navbar" data-navbar>
+        <ul class="navbar-list">
+          <li class="navbar-item">
+            <a href="#home" class="label-lg navbar-link has-after active">首页</a>
+          </li>
+          <li class="navbar-item">
+            <a href="#service" class="label-lg navbar-link has-after">服务</a>
+          </li>
+          <li class="navbar-item">
+            <a href="#portfolio" class="label-lg navbar-link has-after">作品集</a>
+          </li>
+          <li class="navbar-item">
+            <a href="#contact" class="label-lg navbar-link has-after">联系我们</a>
+          </li>
+        </ul>
+      </nav>
+
+      <a href="#contact" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">立即联系</a>
+
+      <button class="nav-toggle-btn bg-none border-0 cursor-pointer" aria-label="菜单" data-nav-toggler>
+        <ion-icon name="menu-outline" aria-hidden="true"></ion-icon>
+      </button>
+
+    </div>
+  </header>
+
+  <main>
+    <article>
+
+      <!-- #HERO -->
+      <section class="section hero relative overflow-hidden bg-max-yellow/10 pt-[140px] pb-[100px] text-center" id="home" aria-label="home">
+        <div class="mx-auto max-w-site px-4 grid gap-[70px] items-center">
+
+          <div class="hero-content">
+            <p class="hero-subtitle">👋，我叫 Annie</p>
+            <h1 class="headline-lg text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">我是一名网页开发者</h1>
+            <p class="hero-text body-md text-lg my-6">位于加利福尼亚州洛杉矶。</p>
+            <a href="#service" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition mx-auto">开始吧</a>
+          </div>
+
+          <figure class="hero-banner max-w-max mx-auto">
+            <img src="./assets/images/hero-banner.png" width="680" height="645" alt="Annie, 金发，穿着绿色连帽衫，面带微笑" class="w-full h-auto">
+          </figure>
+
+        </div>
+      </section>
+
+      <!-- #CLIENT -->
+      <section class="client bg-jet py-8" aria-label="Trusted client">
+        <div class="mx-auto max-w-site px-4">
+          <ul class="flex gap-6 overflow-x-auto items-center justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <li class="shrink-0"><img src="./assets/images/client-1.svg" width="130" height="40" alt="科技创新公司" class="w-[130px]"></li>
+            <li class="shrink-0"><img src="./assets/images/client-2.svg" width="130" height="40" alt="数字未来科技" class="w-[130px]"></li>
+            <li class="shrink-0"><img src="./assets/images/client-3.svg" width="130" height="40" alt="智慧云端" class="w-[130px]"></li>
+            <li class="shrink-0"><img src="./assets/images/client-4.svg" width="130" height="40" alt="互联天地" class="w-[130px]"></li>
+            <li class="shrink-0"><img src="./assets/images/client-5.svg" width="130" height="40" alt="云启未来" class="w-[130px]"></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- #ABOUT -->
+      <section class="section about py-[60px] md:py-[100px]" aria-label="about me">
+        <div class="mx-auto max-w-site px-4 grid gap-[50px] md:grid-cols-2 md:items-center">
+
+          <figure class="about-banner max-w-max mx-auto">
+            <img src="./assets/images/about-banner.png" width="580" height="554" loading="lazy" alt="Annie, 金发，穿着黑色上衣，面带微笑" class="w-full h-auto">
+          </figure>
+
+          <div class="about-content">
+            <h2 class="title-lg text-3xl md:text-4xl font-bold text-jet leading-tight">专注于创造卓越的数字体验。</h2>
+            <p class="body-md section-text text-lg my-[25px]">
+              我是一名拥有 3 年以上经验的前端自由开发者，来自加利福尼亚州洛杉矶。我热衷于为全球客户构建高质量的网页和应用，追求卓越的设计与性能。
+            </p>
+
+            <ul class="about-list flex items-center gap-[25px] flex-wrap">
+              <li>
+                <p class="list-text text-jet font-medium">
+                  <strong class="strong block text-2xl md:text-3xl text-orange-red">285+</strong> 项目已完成
+                </p>
+              </li>
+              <li>
+                <p class="list-text text-jet font-medium">
+                  <strong class="strong block text-2xl md:text-3xl text-orange-red">190+</strong> 满意客户
+                </p>
+              </li>
+            </ul>
+
+            <div class="wrapper mt-[25px] flex flex-wrap items-center gap-4">
+              <a href="#contact" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">联系我</a>
+              <a href="#portfolio" class="btn btn-secondary inline-flex items-center justify-center rounded-pill border-2 border-jet text-jet px-7 py-3 font-semibold uppercase tracking-wider hover:bg-jet hover:text-white transition">作品集</a>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- #SKILL -->
+      <section class="section skill py-[60px] md:py-[100px]" aria-labelledby="skill-label">
+        <div class="mx-auto max-w-site px-4 grid gap-[50px] md:grid-cols-2 md:items-start">
+
+          <div class="skill-content">
+            <h2 class="section-title headline-md text-4xl md:text-5xl font-bold uppercase tracking-[3px] text-jet mb-[30px]" id="skill-label">我的技能</h2>
+
+            <ul class="skill-list grid gap-4 grid-cols-2 sm:grid-cols-3">
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(177, 39%, 72%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-html5"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">HTML</h2>
+                </div>
+              </li>
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(41, 99%, 64%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-css3"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">CSS</h2>
+                </div>
+              </li>
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(19, 97%, 85%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-react"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">React JS</h2>
+                </div>
+              </li>
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(221, 100%, 79%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-angular"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">Angular</h2>
+                </div>
+              </li>
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(76, 39%, 72%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-apple"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">iOs App</h2>
+                </div>
+              </li>
+              <li>
+                <div class="card card-sm rounded-2xl p-5 text-center shadow-sm" style="background-color: hsl(245, 100%, 90%)">
+                  <div class="card-media text-5xl mb-2"><ion-icon name="logo-android"></ion-icon></div>
+                  <h2 class="card-title text-xl font-semibold text-jet">App Dev</h2>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <figure class="skill-banner max-w-max mx-auto">
+            <img src="./assets/images/skill-banner.png" width="581" height="657" loading="lazy" alt="Annie, 金发，穿着绿色连帽衫，面带微笑" class="w-full h-auto">
+          </figure>
+
+        </div>
+      </section>
+
+      <!-- #CTA -->
+      <section class="cta bg-jet text-center py-12" >
+        <div class="mx-auto max-w-site px-4 flex flex-wrap justify-center items-center gap-3">
+          <h2 class="title-lg text-3xl font-medium text-white">有兴趣与我合作吗？</h2>
+          <a href="#contact" class="btn btn-tertiary inline-flex items-center justify-center rounded-pill bg-max-yellow text-jet px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">立即联系</a>
+        </div>
+      </section>
+
+      <!-- #TESTIMONIALS -->
+      <section class="section testi py-[60px] md:py-[100px]" aria-labelledby="testi-label">
+        <div class="mx-auto max-w-site px-4">
+          <h2 class="headline-md section-title text-center text-4xl md:text-5xl font-bold uppercase tracking-[3px] text-jet mb-[30px]" id="testi-label">客户评价</h2>
+
+          <ul class="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+            <li class="card-container">
+              <div class="card card-lg relative rounded-2xl bg-white p-6 shadow-md">
+                <figure class="card-media w-[100px] h-[100px] rounded-full overflow-hidden mb-4">
+                  <img src="./assets/images/testi-1.jpg" width="100" height="100" loading="lazy" alt="张晓明" class="w-full h-full object-cover">
+                </figure>
+                <div class="card-content">
+                  <blockquote class="body-sm text-lg text-davys">Annie 的技术能力令人印象深刻，她总能快速理解需求并交付高质量的代码，强力推荐！</blockquote>
+                  <p class="client-name mt-4 font-semibold text-jet">张晓明</p>
+                  <p class="client-title text-sm">星辰科技 CTO</p>
+                </div>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-lg relative rounded-2xl bg-white p-6 shadow-md">
+                <figure class="card-media w-[100px] h-[100px] rounded-full overflow-hidden mb-4">
+                  <img src="./assets/images/testi-2.jpg" width="100" height="100" loading="lazy" alt="王思琪" class="w-full h-full object-cover">
+                </figure>
+                <div class="card-content">
+                  <blockquote class="body-sm text-lg text-davys">设计风格非常独特，她为我打造的独立网站让我的在线业绩提升了 300%，专业的服务让人非常放心。</blockquote>
+                  <p class="client-name mt-4 font-semibold text-jet">王思琪</p>
+                  <p class="client-title text-sm">时尚博主</p>
+                </div>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-lg relative rounded-2xl bg-white p-6 shadow-md">
+                <figure class="card-media w-[100px] h-[100px] rounded-full overflow-hidden mb-4">
+                  <img src="./assets/images/testi-3.jpg" width="100" height="100" loading="lazy" alt="李浩然" class="w-full h-full object-cover">
+                </figure>
+                <div class="card-content">
+                  <blockquote class="body-sm text-lg text-davys">响应速度极快，项目全程沟通顺畅，代码结构清晰易懂。交付后还提供了细致的维护文档，非常贴心。</blockquote>
+                  <p class="client-name mt-4 font-semibold text-jet">李浩然</p>
+                  <p class="client-title text-sm">云创科技 创始人</p>
+                </div>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-lg relative rounded-2xl bg-white p-6 shadow-md">
+                <figure class="card-media w-[100px] h-[100px] rounded-full overflow-hidden mb-4">
+                  <img src="./assets/images/testi-4.jpg" width="100" height="100" loading="lazy" alt="陈雅琳" class="w-full h-full object-cover">
+                </figure>
+                <div class="card-content">
+                  <blockquote class="body-sm text-lg text-davys">不仅前端技术扎实，对 UI/UX 设计也有独到见解。最终的作品在美观度和性能上都远超我们的预期！</blockquote>
+                  <p class="client-name mt-4 font-semibold text-jet">陈雅琳</p>
+                  <p class="client-title text-sm">优品电商 设计总监</p>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- #SERVICE -->
+      <section class="section service relative bg-cover bg-center bg-max-yellow/10 py-[120px] md:py-[160px]" id="service" aria-labelledby="service-label" style="background-image: url('./assets/images/service-bg.png')">
+        <div class="mx-auto max-w-site px-4 relative z-[1]">
+          <h2 class="section-title headline-md text-center text-4xl md:text-5xl font-bold uppercase tracking-[3px] text-jet mb-[30px]" id="service-label">我的服务</h2>
+
+          <ul class="service-list grid gap-6 mt-[50px] sm:grid-cols-2 lg:grid-cols-3">
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(177, 39%, 72%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="phone-portrait-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">移动端设计</h3>
+                <p class="body-sm text-jet">专注移动端体验，提供从原型设计到适配落地的全流程解决方案，确保在各尺寸设备上呈现完美效果。</p>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(41, 99%, 64%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="laptop-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">前端开发</h3>
+                <p class="body-sm text-jet">使用 React、Vue 等现代框架构建高性能 Web 应用，注重代码质量、可维护性与用户体验。</p>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(19, 97%, 85%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="stats-chart-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">SEO 优化</h3>
+                <p class="body-sm text-jet">从技术 SEO 到内容策略，帮助网站在搜索引擎中获得更高排名，提升自然流量与品牌曝光。</p>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(221, 100%, 79%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="shapes-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">UI/UX 设计</h3>
+                <p class="body-sm text-jet">结合用户研究与交互设计，创建直观、美观且易用的界面，提升产品转化率与用户满意度。</p>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(76, 39%, 72%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="code-slash-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">全栈开发</h3>
+                <p class="body-sm text-jet">掌握前后端技术栈，能独立完成从数据库设计到 API 开发再到前端界面的完整项目。</p>
+              </div>
+            </li>
+            <li class="card-container">
+              <div class="card card-md h-full rounded-2xl p-6 shadow-sm cursor-default transition hover:-translate-y-1" style="background-color: hsl(245, 100%, 90%)">
+                <div class="card-media text-5xl mb-3 transition-transform duration-300 hover:scale-110"><ion-icon name="globe-outline" aria-hidden="true"></ion-icon></div>
+                <h3 class="card-title title-sm text-xl font-semibold text-jet mb-[10px]">品牌网站</h3>
+                <p class="body-sm text-jet">为企业量身定制品牌形象网站，突出品牌调性，助力数字化转型与业务增长。</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- #PORTFOLIO -->
+      <section class="section portfolio bg-white py-[120px] md:py-[160px]" id="portfolio" aria-labelledby="portfolio-label">
+        <div class="mx-auto max-w-site px-4">
+          <h2 class="section-title headline-md text-center text-4xl md:text-5xl font-bold uppercase tracking-[3px] text-jet mb-[30px]" id="portfolio-label">最新项目</h2>
+
+          <ul class="portfolio-list grid gap-[50px]">
+            <li>
+              <div class="portfolio-card grid gap-6 md:grid-cols-2 md:items-center">
+                <div class="card-banner img-holder relative aspect-[800/540] overflow-hidden rounded-xl">
+                  <img src="./assets/images/portfolio-1.jpg" width="800" height="540" loading="lazy" alt="企业官网设计项目截图" class="w-full h-full object-cover">
+                  <a href="#" class="btn-icon rounded-md" aria-label="查看企业官网设计项目详情"><ion-icon name="arrow-forward-sharp" aria-hidden="true"></ion-icon></a>
+                </div>
+                <div class="card-content md:w-[80%] md:mx-auto">
+                  <span class="chip inline-block bg-orange-red/20 text-jet font-medium uppercase tracking-[3px] px-5 py-1.5 rounded-pill mb-[18px]">网页设计</span>
+                  <h3 class="title-md text-2xl font-bold text-jet">科技公司企业官网</h3>
+                  <p class="card-text my-[10px] mb-[25px] text-davys">为一家 AI 初创公司打造的全新品牌形象网站，突出技术实力与创新精神。</p>
+                  <a href="#" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">查看项目</a>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="portfolio-card grid gap-6 md:grid-cols-2 md:items-center">
+                <div class="card-banner img-holder relative aspect-[800/540] overflow-hidden rounded-xl md:order-1">
+                  <img src="./assets/images/portfolio-2.jpg" width="800" height="540" loading="lazy" alt="电商平台项目截图" class="w-full h-full object-cover">
+                  <a href="#" class="btn-icon rounded-md" aria-label="查看电商平台项目详情"><ion-icon name="arrow-forward-sharp" aria-hidden="true"></ion-icon></a>
+                </div>
+                <div class="card-content md:w-[80%] md:mx-auto">
+                  <span class="chip inline-block bg-orange-red/20 text-jet font-medium uppercase tracking-[3px] px-5 py-1.5 rounded-pill mb-[18px]">电商平台</span>
+                  <h3 class="title-md text-2xl font-bold text-jet">时尚电商平台</h3>
+                  <p class="card-text my-[10px] mb-[25px] text-davys">基于 Vue 开发的响应式电商平台，支持多端访问，集成了购物车与支付功能。</p>
+                  <a href="#" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">查看项目</a>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="portfolio-card grid gap-6 md:grid-cols-2 md:items-center">
+                <div class="card-banner img-holder relative aspect-[800/540] overflow-hidden rounded-xl">
+                  <img src="./assets/images/portfolio-3.jpg" width="800" height="540" loading="lazy" alt="数据可视化大屏项目截图" class="w-full h-full object-cover">
+                  <a href="#" class="btn-icon rounded-md" aria-label="查看数据可视化项目详情"><ion-icon name="arrow-forward-sharp" aria-hidden="true"></ion-icon></a>
+                </div>
+                <div class="card-content md:w-[80%] md:mx-auto">
+                  <span class="chip inline-block bg-orange-red/20 text-jet font-medium uppercase tracking-[3px] px-5 py-1.5 rounded-pill mb-[18px]">数据可视化</span>
+                  <h3 class="title-md text-2xl font-bold text-jet">数据监控大屏</h3>
+                  <p class="card-text my-[10px] mb-[25px] text-davys">为企业定制的实时数据监控大屏，支持交互式筛选与下钻分析。</p>
+                  <a href="#" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">查看项目</a>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="portfolio-card grid gap-6 md:grid-cols-2 md:items-center">
+                <div class="card-banner img-holder relative aspect-[800/540] overflow-hidden rounded-xl md:order-1">
+                  <img src="./assets/images/portfolio-4.jpg" width="800" height="540" loading="lazy" alt="移动端 App 设计项目截图" class="w-full h-full object-cover">
+                  <a href="#" class="btn-icon rounded-md" aria-label="查看移动端 App 设计项目详情"><ion-icon name="arrow-forward-sharp" aria-hidden="true"></ion-icon></a>
+                </div>
+                <div class="card-content md:w-[80%] md:mx-auto">
+                  <span class="chip inline-block bg-orange-red/20 text-jet font-medium uppercase tracking-[3px] px-5 py-1.5 rounded-pill mb-[18px]">移动端设计</span>
+                  <h3 class="title-md text-2xl font-bold text-jet">健身 App UI 设计</h3>
+                  <p class="card-text my-[10px] mb-[25px] text-davys">为一款健身类 App 提供的完整 UI 设计，包含运动记录、社交与商城模块。</p>
+                  <a href="#" class="btn btn-primary inline-flex items-center justify-center rounded-pill bg-orange-red text-white px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition">查看项目</a>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- #CONTACT -->
+      <section class="section contact relative bg-cover bg-center bg-jet py-[120px] md:py-[160px]" id="contact" aria-labelledby="contact-label" style="background-image: url('./assets/images/contact-bg.png')">
+        <div class="mx-auto max-w-site px-4 relative z-[1]">
+          <div class="grid gap-12 md:grid-cols-2 md:items-center">
+
+            <form action="" class="contact-form bg-white p-6 md:p-9 rounded-[50px] shadow-[0_10px_40px_rgba(0,0,0,0.3)]">
+              <h2 class="headline-sm text-3xl font-bold text-jet" id="contact-label">联系我</h2>
+              <p class="contact-text text-lg my-[5px] mb-[30px] text-davys">期待收到您的来信，我会尽快回复。</p>
+
+              <div class="wrapper grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label for="name" class="label block mb-2 text-jet font-medium">姓名</label>
+                  <input type="text" name="name" id="name" placeholder="请输入姓名 *" required class="input-field w-full p-[10px] border border-jet rounded-lg outline-none focus:ring-2 focus:ring-orange-red">
+                </div>
+                <div>
+                  <label for="email" class="label block mb-2 text-jet font-medium">邮箱</label>
+                  <input type="email" name="email" id="email" placeholder="请输入邮箱 *" required class="input-field w-full p-[10px] border border-jet rounded-lg outline-none focus:ring-2 focus:ring-orange-red">
+                </div>
+              </div>
+
+              <label for="subject" class="label block mb-2 mt-4 text-jet font-medium">主题</label>
+              <input type="text" name="subject" id="subject" placeholder="请输入主题 *" class="input-field w-full p-[10px] border border-jet rounded-lg outline-none focus:ring-2 focus:ring-orange-red mb-4">
+
+              <label for="message" class="label block mb-2 text-jet font-medium">留言内容</label>
+              <textarea name="message" id="message" placeholder="请输入留言内容 *" required class="input-field w-full p-[10px] border border-jet rounded-lg outline-none focus:ring-2 focus:ring-orange-red resize-y min-h-[100px] max-h-[150px]"></textarea>
+
+              <a href="#" class="btn btn-tertiary inline-flex items-center justify-center rounded-pill bg-max-yellow text-jet px-7 py-3 font-semibold uppercase tracking-wider hover:opacity-90 transition mt-2">发送消息</a>
+            </form>
+
+            <div class="contact-content md:w-[70%] md:mx-auto">
+              <ul class="contact-list space-y-9">
+                <li class="contact-item flex items-start gap-4">
+                  <div class="item-icon w-[55px] h-[55px] grid place-items-center rounded-full shrink-0 text-jet" style="background-color: hsl(177, 39%, 72%)">
+                    <ion-icon name="call" aria-hidden="true" class="text-3xl"></ion-icon>
+                  </div>
+                  <div>
+                    <p class="label-lg uppercase tracking-[2px] text-white/80 font-normal mb-1">电话</p>
+                    <a href="tel:+12134567890" class="body-lg text-white break-all">+1 (213) 456-7890</a>
+                  </div>
+                </li>
+                <li class="contact-item flex items-start gap-4">
+                  <div class="item-icon w-[55px] h-[55px] grid place-items-center rounded-full shrink-0 text-jet" style="background-color: hsl(41, 99%, 64%)">
+                    <ion-icon name="mail" aria-hidden="true" class="text-3xl"></ion-icon>
+                  </div>
+                  <div>
+                    <p class="label-lg uppercase tracking-[2px] text-white/80 font-normal mb-1">邮箱</p>
+                    <a href="mailto:hello@annie.dev" class="body-lg text-white break-all">hello@annie.dev</a>
+                  </div>
+                </li>
+                <li class="contact-item flex items-start gap-4">
+                  <div class="item-icon w-[55px] h-[55px] grid place-items-center rounded-full shrink-0 text-jet" style="background-color: hsl(19, 97%, 85%)">
+                    <ion-icon name="location" aria-hidden="true" class="text-3xl"></ion-icon>
+                  </div>
+                  <div>
+                    <p class="label-lg uppercase tracking-[2px] text-white/80 font-normal mb-1">地址</p>
+                    <address class="body-lg text-white not-italic">Los Angeles, CA<br>United States</address>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </article>
+  </main>
+
+  <!-- #FOOTER -->
+  <footer class="footer relative bg-jet text-white/75 border-t border-white/10 py-[18px]">
+    <div class="mx-auto max-w-site px-4">
+      <ul class="social-list flex justify-center gap-[18px] mb-4">
+        <li><a href="https://github.com/annie-dev" target="_blank" rel="noopener noreferrer" class="social-link text-2xl inline-block transition hover:text-orange-red hover:-translate-y-[3px]" aria-label="GitHub"><ion-icon name="logo-github"></ion-icon></a></li>
+        <li><a href="https://linkedin.com/in/annie-dev" target="_blank" rel="noopener noreferrer" class="social-link text-2xl inline-block transition hover:text-orange-red hover:-translate-y-[3px]" aria-label="LinkedIn"><ion-icon name="logo-linkedin"></ion-icon></a></li>
+        <li><a href="https://dribbble.com/annie-dev" target="_blank" rel="noopener noreferrer" class="social-link text-2xl inline-block transition hover:text-orange-red hover:-translate-y-[3px]" aria-label="Dribbble"><ion-icon name="logo-dribbble"></ion-icon></a></li>
+        <li><a href="https://instagram.com/annie.dev" target="_blank" rel="noopener noreferrer" class="social-link text-2xl inline-block transition hover:text-orange-red hover:-translate-y-[3px]" aria-label="Instagram"><ion-icon name="logo-instagram"></ion-icon></a></li>
+        <li><a href="https://twitter.com/annie_dev_la" target="_blank" rel="noopener noreferrer" class="social-link text-2xl inline-block transition hover:text-orange-red hover:-translate-y-[3px]" aria-label="Twitter"><ion-icon name="logo-twitter"></ion-icon></a></li>
+      </ul>
+      <p class="text-center">&copy; 2026 版权所有</p>
+    </div>
+  </footer>
+
+  <!-- custom js (交互逻辑保持不变) -->
+  <script src="./assets/js/script.js" defer></script>
+
+  <!-- ionicon -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+</body>
+
+</html>

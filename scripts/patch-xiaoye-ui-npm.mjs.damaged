@@ -1,0 +1,50 @@
+import { writeFileSync, existsSync, mkdirSync } from 'fs'
+import { resolve, dirname } from 'path'
+
+const root = resolve(import.meta.dirname, '..')
+const uiDir = resolve(root, 'node_modules/xiaoye-ui')
+
+function ensureDir(filePath) {
+  mkdirSync(dirname(filePath), { recursive: true })
+}
+
+function write(filePath, content) {
+  if (!existsSync(filePath)) {
+    ensureDir(filePath)
+    writeFileSync(filePath, content)
+  }
+}
+
+// 1. tooltip/index.mjs (has Tooltip.mjs but no index.mjs)
+write(
+  resolve(uiDir, 'tooltip/index.mjs'),
+  "export { default } from './Tooltip.mjs'\n",
+)
+
+// 2. tooltip/style/index.mjs
+write(
+  resolve(uiDir, 'tooltip/style/index.mjs'),
+  "export default {}\n",
+)
+
+// 3. All style/index.mjs that are missing (127+ components)
+const { readdirSync } = await import('fs')
+const componentDirs = readdirSync(uiDir, { withFileTypes: true })
+for (const entry of componentDirs) {
+  if (!entry.isDirectory()) continue
+  const styleDir = resolve(uiDir, entry.name, 'style')
+  if (!existsSync(styleDir)) continue
+  const indexPath = resolve(styleDir, 'index.mjs')
+  if (!existsSync(indexPath)) {
+    const styleFiles = readdirSync(styleDir).filter((f) => f.endsWith('Style.mjs'))
+    if (styleFiles.length > 0) {
+      writeFileSync(indexPath, `export { default } from './${styleFiles[0]}'\n`)
+    } else {
+      writeFileSync(indexPath, 'export default {}\n')
+    }
+  }
+}
+
+// 4. Service/eventbus modules missing index.mjs
+const serviceModules = [
+  'badgedirective',

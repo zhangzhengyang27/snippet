@@ -1,0 +1,79 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.trae/
+.worktrees/
+_downloads/
+.workbuddy/
+.workb
+
+# Debug / screenshot files
+*.png
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.webp
+!public/**/*.svg
+
+# Debug scripts at project root
+check_*.py
+diagnose_*.py
+test_*.py
+analyze_*.py
+
+# Debug HTML at project root (keep index.html)
+page_content.html
+
+备份/
+
+# IDE 配置文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# 缓存文件
+.cache/
+.temp/
+.tmp/
+*.tmp
+
+# 操作系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 构建输出
+build/
+out/
+target/
+
+# Vite 配置临时编译产物（启动时生成，非源码）
+vite.config.ts.timestamp-*.mjs
+
+# snippets 备份目录（真实数据文件 snippets-*.json / snippets-*-advanced.json / snippets-*-[0-9].json 均需跟踪，仅忽略备份目录）
+snippets-backup-*/
+
+# 代码块数据源（snippets-*.json 已迁移进数据库，不再纳入版本控制）
+data/
+
+# 依赖锁定文件（可选，根据项目需求）
+# package-lock.json
+# yarn.lock

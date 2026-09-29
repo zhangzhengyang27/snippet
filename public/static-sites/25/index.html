@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exhibit — Photography 画廊</title>
+  <meta name="description" content="A minimalist photography portfolio gallery template." />
+
+  <!--
+Tooplate 2160 Exhibit Studio
+https://www.tooplate.com/view/2160-exhibit-studio
+Free HTML CSS 模板
+-->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind Play CDN：零构建即可在静态 HTML 使用 Tailwind 工具类 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'page':  '#f9f8f6',
+            'surface': '#ffffff',
+            'ink':   '#111111',
+            'muted': '#888888',
+            'faint': '#bbbbbb',
+            'line':  '#e8e6e1',
+            'lbui':  'rgba(255,255,255,0.85)',
+            'lbmeta':'rgba(255,255,255,0.50)',
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- 仅兜底：JS 切换的状态类（is-open / is-active / is-loading）、属性状态选择器（aria-expanded）、hover:none 下的 caption 展示。
+       其余布局/颜色/排版/响应式均已用工具类表达在元素上。 -->
+  <style>
+    /* Hamburger 线条 + 展开态（属性状态，无法用工具类表达） */
+    .nav__hamburger-line {
+      display: block; width: 22px; height: 1.5px;
+      background: #111111; border-radius: 2px; transform-origin: center;
+      transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+    }
+    .nav__hamburger[aria-expanded="true"] .nav__hamburger-line:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .nav__hamburger[aria-expanded="true"] .nav__hamburger-line:nth-child(2) { opacity: 0; width: 0; }
+    .nav__hamburger[aria-expanded="true"] .nav__hamburger-line:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    /* 移动端折叠菜单（JS 切换 .is-open） */
+    .nav__mobile-menu {
+      overflow: hidden; max-height: 0; opacity: 0;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.25s ease, padding 0.35s ease;
+    }
+    .nav__mobile-menu.is-open { max-height: 20rem; opacity: 1; padding-top: 1.25rem; }
+    .nav__mobile-menu li { list-style: none; border-bottom: 1px solid #e8e6e1; }
+    .nav__mobile-menu li:last-child { border-bottom: none; }
+    .nav__mobile-menu a {
+      display: block; padding: 0.9rem 0; font-size: 0.8125rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase; color: #888888; transition: color 0.2s ease;
+    }
+    .nav__mobile-menu a:hover,
+    .nav__mobile-menu .nav__link--active { color: #111111; }
+
+    /* 过滤按钮激活态（JS 切换 .is-active） */
+    .filter__btn.is-active { color: #ffffff; background: #111111; border-color: #111111; }
+
+    /* Lightbox 打开态（JS 切换 .is-open） */

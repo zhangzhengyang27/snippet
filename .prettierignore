@@ -1,0 +1,22 @@
+# 依赖与产物
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+
+# 包管理器
+pnpm-lock.yaml
+
+# 文档（格式化无意义且会打乱表格排版）
+*.md
+
+# 静态站点快照与抓取资源（第三方产物，不应被格式化改写）
+public
+
+# 日志与编辑器
+logs
+*.log
+.DS_Store
+.idea
+.vscode

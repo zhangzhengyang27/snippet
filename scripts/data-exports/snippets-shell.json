@@ -1,0 +1,50 @@
+{
+  "category": "shell",
+  "description": "常见 Shell/Bash 脚本代码片段库，覆盖文件操作、文本处理、进程管理、系统监控、自动化运维、网络工具等场景。",
+  "fields": [
+    "name",
+    "language",
+    "code",
+    "description"
+  ],
+  "count": 80,
+  "snippets": [
+    {
+      "name": "shebang-严格模式模板",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 严格模式：遇到错误立即退出，未定义变量报错，管道中任一命令失败则整体失败\nset -euo pipefail\nIFS=$'\\n\\t'\n",
+      "description": "Bash 脚本严格模式模板，set -euo pipefail 可尽早暴露错误，配合 IFS 设置防止空格分词问题。",
+      "subcategory": "流程控制"
+    },
+    {
+      "name": "变量默认值",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 变量未设置或为空时使用默认值\nNAME=\"${1:-world}\"\necho \"Hello, $NAME!\"\n# 同时赋值默认值（若变量未设置）\n: \"${PORT:=8080}\"\necho \"Port: $PORT\"\n# 变量未设置时报错退出\n: \"${REQUIRED_VAR:?REQUIRED_VAR is not set}\"\n",
+      "description": "${var:-default} 空值默认、${var:=default} 赋值默认、${var:?msg} 未定义报错，三种参数展开常见用法。",
+      "subcategory": "基础语法"
+    },
+    {
+      "name": "间接变量引用",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 通过变量名间接引用另一个变量的值\ncolor_red=\"#FF0000\"\ncolor_green=\"#00FF00\"\ncolor_blue=\"#0000FF\"\nNAME=\"red\"\n# Bash 4.3+ 的 nameref\ndeclare -n ref=\"color_$NAME\"\necho \"${NAME} = $ref\"\n# 兼容旧写法\nindirect=\"color_$NAME\"\necho \"${NAME} = ${!indirect}\"\n",
+      "description": "declare -n 创建 nameref（Bash 4.3+）或 ${!var} 间接展开实现动态变量名访问。",
+      "subcategory": "基础语法"
+    },
+    {
+      "name": "关联数组操作",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 关联数组（字典）的增删改查与遍历\ndeclare -A config\nconfig[host]=\"localhost\"\nconfig[port]=\"5432\"\nconfig[db]=\"mydb\"\n# 遍历所有键\nfor key in \"${!config[@]}\"; do\n    echo \"$key = ${config[$key]}\"\ndone\n# 检查键是否存在\nif [[ -n ${config[host]+set} ]]; then\n    echo \"host 已配置\"\nfi\n# 删除键\nunset 'config[db]'\n",
+      "description": "declare -A 声明关联数组，${!arr[@]} 遍历键，[[ -v arr[key] ]] 检查键存在，unset 安全删除。",
+      "subcategory": "数组与字典"
+    },
+    {
+      "name": "数组去重",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 利用关联数组对普通数组去重\nitems=(\"apple\" \"banana\" \"apple\" \"cherry\" \"banana\" \"date\")\ndeclare -A seen\nunique=()\nfor item in \"${items[@]}\"; do\n    if [[ -z ${seen[$item]:-} ]]; then\n        unique+=(\"$item\")\n        seen[$item]=1\n    fi\ndone\necho \"去重结果: ${unique[*]}\"\n",
+      "description": "用关联数组做标记实现数组去重，seen[$item] 作为哈希集合，只保留首次出现的元素。",
+      "subcategory": "数组与字典"
+    },
+    {
+      "name": "字符串截取",
+      "language": "bash",
+      "code": "#!/usr/bin/env bash\n# 多种字符串截取与切片方式\nstr=\"hello-world-bash\"\n# 从左侧删除最短匹配 ## 最长匹配\necho \"${str#*-}\"       # world-bash\necho \"${str##*-}\"      # bash\n# 从右侧删除最短匹配 %% 最长匹配\necho \"${str%-*}\"       # hello-world\necho \"${str%%-*}\"      # hello\n# 按位置和长度截取\necho \"${str:0:5}\"      # hello\necho \"${str:6}\"        # world-bash\n",

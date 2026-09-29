@@ -1,0 +1,730 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useEventListener } from '@vueuse/core'
+import { getExampleById } from '@/api/examples'
+import { ApiError } from '@/api/client'
+import type { CodeExample, CodeTab, ExampleSnippet } from '@/types'
+import type { Snippet } from '@/utils/sandbox'
+import PreviewPane from '@/components/examples/PreviewPane.vue'
+import SourcePane from '@/components/examples/SourcePane.vue'
+import ShareButton from '@/components/common/ShareButton.vue'
+import FavoriteButton from '@/components/common/FavoriteButton.vue'
+import DownloadButton from '@/components/common/DownloadButton.vue'
+import EmptyState from '@/components/layout/EmptyState.vue'
+import AppIcon from '@/components/common/AppIcon.vue'
+import AppButton from '@/components/common/AppButton.vue'
+import AppModal from '@/components/common/AppModal.vue'
+import { useResourceFetch } from '@/composables/useResourceFetch'
+import { useRecentExamples } from '@/composables/useRecentExamples'
+import { useToast } from '@/composables/useToast'
+import { createKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { useIsMobile } from '@/composables/useIsMobile'
+import { isTypingTarget } from '@/utils/keyboard'
+import Breadcrumb, { BreadcrumbItem } from 'xiaoye-ui/breadcrumb'
+
+const route = useRoute()
+const router = useRouter()
+const { addRecentExample } = useRecentExamples()
+const { isCompact } = useIsMobile()
+
+/** 移动端 Tab 切换：preview / source */
+const mobileTab = ref<'preview' | 'source'>('preview')
+
+/** 顶部更多操作菜单开合 */
+const moreMenuOpen = ref(false)
+
+function toggleMoreMenu() {
+ moreMenuOpen.value = !moreMenuOpen.value
+}
+
+function closeMoreMenu() {
+ moreMenuOpen.value = false
+}
+
+function importFromMoreMenu() {
+ openImport()
+ closeMoreMenu()
+}
+
+/** 切换 Tab 时关闭菜单、滚动回到顶部 */
+function switchMobileTab(tab: 'preview' | 'source') {
+ mobileTab.value = tab
+ closeMoreMenu()
+}
+
+// 点击外部关闭菜单
+const moreMenuRef = ref<HTMLElement | null>(null)
+function onDocumentClick(e: MouseEvent) {
+ if (!moreMenuOpen.value) return
+ const target = e.target as Node | null
+ if (moreMenuRef.value && target && !moreMenuRef.value.contains(target)) {
+   closeMoreMenu()
+ }
+}
+
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onBeforeUnmount(() => document.removeEventListener('click', onDocumentClick))
+
+const previewPaneRef = ref<InstanceType<typeof PreviewPane> | null>(null)
+
+const liveExample = ref<CodeExample | null>(null)
+
+const exampleId = computed(() => route.params.id as string)
+
+// useResourceFetch 内置 AbortController + requestId 竞态保护，替代手写 loadRequestId
+const {
+ data: example,
+ loading,
+ error,
+ refresh,
+} = useResourceFetch<CodeExample | null>(
+ async () => {
+   try {
+     return await getExampleById(exampleId.value)
+   } catch (e) {
+     // 404 视为 not-found（data=null），其他错误向上抛出由 error 接收
+     if (e instanceof ApiError && e.status === 404) return null
+     throw e
+   }
+ },
+ {
+   onSuccess: (data) => {
+     liveExample.value = data ? { ...data } : null
+     if (data) addRecentExample(exampleId.value)
+   },
+   watch: () => exampleId.value,
+ }
+)
+
+/** 是否有可视化预览内容（html 为空或仅空白则无预览价值） */
+const hasVisualPreview = computed(() => {
+ const html = example.value?.html?.trim()
+ return !!html
+})
+
+// 数据首次加载后，若无可视化预览则默认切到源码 Tab
+watch(
+ () => example.value,
+ (ex) => {
+   if (ex && !ex.html?.trim()) mobileTab.value = 'source'
+ },
+ { immediate: true }
+)
+
+// 合并变体：通过片段选择器切换查看同一示例的不同变体（snippets）
+const activeSnippetIndex = ref(0)
+const snippets = computed<ExampleSnippet[]>(() => example.value?.snippets ?? [])
+const activeSnippet = computed<Snippet | undefined>(() =>
+ snippets.value.length ? snippets.value[activeSnippetIndex.value] : undefined
+)
+
+function selectSnippet(index: number) {
+ activeSnippetIndex.value = index
+}
+
+function handleCodeChange(tab: CodeTab, code: string) {
+ if (!liveExample.value) return
+ // unified 模式下编辑的是合并后的完整文档，需清空独立的 css/js 避免预览重复渲染
+ if (tab === 'html' && (liveExample.value.css || liveExample.value.js)) {
+   liveExample.value = {
+     ...liveExample.value,
+     html: code,
+     css: undefined,
+     js: undefined,
+   }
+   return
+ }
+ liveExample.value = {
+   ...liveExample.value,
+   [tab]: code,
+ }
+}
+
+function handleSave(updated: CodeExample) {
+ example.value = updated
+ liveExample.value = { ...updated }
+}
+
+function goBack() {
+ if (window.history.length > 1) {
+   router.back()
+ } else {
+   const ex = example.value
+   if (ex?.sourceGroup) {
+     router.push({ name: 'ExamplesHub', query: { group: ex.sourceGroup } })
+   } else {
+     router.push({ name: 'TopicHub' })
+   }
+ }
+}
+
+function goExamples() {
+ const ex = example.value
+ if (ex?.sourceGroup) {
+   router.push({ name: 'ExamplesHub', query: { group: ex.sourceGroup } })
+ } else {
+   router.push({ name: 'ExamplesHub' })
+ }
+}
+
+// 将当前示例导入为代码片段：优先取 js，否则 html，再否则 css
+const importDialogOpen = ref(false)
+const importName = ref('')
+const importing = ref(false)
+const { toast } = useToast()
+
+const importableCode = computed(() => {
+ const ex = liveExample.value
+ if (!ex) return ''
+ return ex.js?.trim() || ex.html?.trim() || ex.css?.trim() || ''
+})
+const importLanguage = computed(() => {
+ const ex = liveExample.value
+ if (!ex) return 'javascript'
+ if (ex.js?.trim()) return 'javascript'
+ if (ex.html?.trim()) return 'html'
+ if (ex.css?.trim()) return 'css'
+ return 'javascript'
+})
+
+function openImport() {
+ if (!example.value) return
+ importName.value = example.value.title
+ importDialogOpen.value = true
+}
+
+async function confirmImport() {
+ const code = importableCode.value
+ if (!importName.value.trim() || !code) return
+ importing.value = true
+ try {
+   const created = await createKnowledgeSnippet({
+     name: importName.value.trim(),
+     description: example.value?.description || '',
+     language: importLanguage.value,
+     content: code,
+     collectionId: null,
+   })
+   importDialogOpen.value = false
+   toast.success(`已导入为片段「${created.name}」`)
+   // 跳转到代码块页并聚焦新建片段
+   router.push(`/snippets?focus=${encodeURIComponent(created.id)}`)
+ } catch (err) {
+   toast.error(err instanceof Error ? err.message : '导入失败')
+ } finally {
+   importing.value = false
+ }
+}
+
+function handleKeyDown(e: KeyboardEvent) {
+ if (isTypingTarget(e)) return
+
+ if (e.key === 'f' || e.key === 'F') {
+   e.preventDefault()
+   previewPaneRef.value?.toggleFullscreen()
+ }
+}
+
+useEventListener(window, 'keydown', handleKeyDown)
+</script>
+
+<template>
+ <div>
+   <!-- ============================== Loading State ============================== -->
+   <EmptyState v-if="loading && !example" type="loading" compact />
+
+   <!-- ============================== Error State ============================== -->
+   <EmptyState v-else-if="error" type="error" compact show-retry @retry="refresh" />
+
+   <!-- ============================== 404 Not Found State ============================== -->
+   <EmptyState
+     v-else-if="!example"
+     type="not-found"
+     compact
+     title="未找到示例"
+     :description-html="`示例 <code>${exampleId}</code> 不存在或已被移除。`"
+   >
+     <template #action>
+       <AppButton @click="goBack">
+         <AppIcon icon="ms:arrow_back" :size="16" />
+         返回列表
+       </AppButton>
+     </template>
+   </EmptyState>
+
+   <!-- ============================== Detail Page ============================== -->
+   <div v-else class="detail-page" :class="{ 'is-mobile': isCompact }">
+     <!-- ============ 桌面 Header ============ -->
+     <header v-if="!isCompact" class="detail-header">
+       <Breadcrumb class="detail-breadcrumb">
+         <BreadcrumbItem href="/" @click.prevent="goBack">
+           <AppIcon icon="ms:home" :size="14" />
+         </BreadcrumbItem>
+         <BreadcrumbItem href="/examples" @click.prevent="goExamples"> 代码示例 </BreadcrumbItem>
+         <BreadcrumbItem>{{ example.title }}</BreadcrumbItem>
+       </Breadcrumb>
+       <div class="detail-actions">
+         <FavoriteButton :example="example" />
+         <ShareButton :example="example" />
+         <DownloadButton :example="example" />
+         <AppButton variant="glass" size="small" @click="openImport">
+           <AppIcon icon="ms:note_add" :size="16" />
+           导入为片段
+         </AppButton>
+       </div>
+     </header>
+
+     <!-- ============ 移动端 Header ============ -->
+     <header v-else class="mobile-header">
+       <AppButton
+         class="mobile-header__back"
+         variant="text"
+         size="small"
+         aria-label="返回"
+         @click="goBack"
+       >
+         <AppIcon icon="ms:arrow_back" :size="20" />
+       </AppButton>
+       <div class="mobile-header__title">
+         <span class="mobile-header__title-text">{{ example.title }}</span>
+         <span
+           v-if="snippets.length && snippets[activeSnippetIndex]?.label"
+           class="mobile-header__subtitle"
+         >
+           {{ snippets[activeSnippetIndex].label }}
+         </span>
+       </div>
+       <div ref="moreMenuRef" class="mobile-header__menu">
+         <AppButton
+           variant="text"
+           size="small"
+           aria-label="更多操作"
+           :aria-expanded="moreMenuOpen"
+           @click.stop="toggleMoreMenu"
+         >
+           <AppIcon icon="ms:more_horiz" :size="22" />
+         </AppButton>
+         <Transition name="mobile-menu">
+           <div v-if="moreMenuOpen" class="mobile-header__dropdown" @click.stop>
+             <div class="mobile-header__dropdown-item">
+               <FavoriteButton :example="example" />
+             </div>
+             <div class="mobile-header__dropdown-item">
+               <ShareButton :example="example" />
+             </div>
+             <div class="mobile-header__dropdown-item">
+               <DownloadButton :example="example" />
+             </div>
+             <button class="mobile-header__dropdown-btn" @click="importFromMoreMenu">
+               <AppIcon icon="ms:note_add" :size="18" />
+               <span>导入为片段</span>
+             </button>
+           </div>
+         </Transition>
+       </div>
+     </header>
+
+     <!-- ============ 桌面 Main Split ============ -->
+     <section v-if="!isCompact" class="main-split">
+       <div class="split-preview">
+         <!-- 合并变体片段选择器：同一示例的多版本切换 -->
+         <div v-if="snippets.length" class="snippet-tabs">
+           <span class="snippet-tabs__label">变体</span>
+           <button
+             v-for="(snip, i) in snippets"
+             :key="i"
+             class="snippet-tabs__tab"
+             :class="{ 'is-active': activeSnippetIndex === i }"
+             @click="selectSnippet(i)"
+           >
+             {{ snip.label || '变体 ' + (i + 1) }}
+           </button>
+         </div>
+         <PreviewPane
+           ref="previewPaneRef"
+           :example="liveExample ?? example"
+           :active-snippet="activeSnippet"
+         />
+       </div>
+       <div class="split-source">
+         <SourcePane
+           :example="example"
+           :active-snippet="activeSnippet"
+           unified
+           @code-change="handleCodeChange"
+           @save="handleSave"
+         />
+       </div>
+     </section>
+
+     <!-- ============ 移动端 Main ============ -->
+     <section v-else class="mobile-main">
+       <!-- 预览 Tab（无可视化内容时隐藏） -->
+       <div v-show="mobileTab === 'preview'" class="mobile-main__panel">
+         <div v-if="snippets.length" class="snippet-tabs snippet-tabs--mobile">
+           <span class="snippet-tabs__label">变体</span>
+           <button
+             v-for="(snip, i) in snippets"
+             :key="i"
+             class="snippet-tabs__tab"
+             :class="{ 'is-active': activeSnippetIndex === i }"
+             @click="selectSnippet(i)"
+           >
+             {{ snip.label || '变体 ' + (i + 1) }}
+           </button>
+         </div>
+         <PreviewPane
+           ref="previewPaneRef"
+           :example="liveExample ?? example"
+           :active-snippet="activeSnippet"
+           compact
+         />
+       </div>
+
+       <!-- 源码 Tab -->
+       <div v-show="mobileTab === 'source'" class="mobile-main__panel">
+         <SourcePane
+           :example="example"
+           :active-snippet="activeSnippet"
+           unified
+           @code-change="handleCodeChange"
+           @save="handleSave"
+         />
+       </div>
+
+       <!-- 底部 Tab 栏（无可视化预览时仅显示源码） -->
+       <nav v-if="hasVisualPreview" class="mobile-tabbar" aria-label="主区域切换">
+         <button
+           class="mobile-tabbar__btn"
+           :class="{ 'is-active': mobileTab === 'preview' }"
+           @click="switchMobileTab('preview')"
+         >
+           <AppIcon icon="ms:play_circle" :size="22" />
+           <span>预览</span>
+         </button>
+         <button
+           class="mobile-tabbar__btn"
+           :class="{ 'is-active': mobileTab === 'source' }"
+           @click="switchMobileTab('source')"
+         >
+           <AppIcon icon="ms:code" :size="22" />
+           <span>源码</span>
+         </button>
+       </nav>
+     </section>
+   </div>
+ </div>
+
+ <!-- 导入为片段确认弹窗 -->
+ <AppModal v-model:open="importDialogOpen" title="导入为片段">
+   <div class="import-form">
+     <label class="import-form__field">
+       <span class="import-form__label">名称</span>
+       <input v-model="importName" class="import-form__input" type="text" />
+     </label>
+     <div class="import-form__field">
+       <span class="import-form__label">语言</span>
+       <span class="import-form__static">{{ importLanguage }}</span>
+     </div>
+     <div class="import-form__field">
+       <span class="import-form__label">代码预览</span>
+       <pre class="import-form__code">{{ importableCode }}</pre>
+     </div>
+   </div>
+   <template #footer>
+     <AppButton variant="text" @click="importDialogOpen = false">取消</AppButton>
+     <AppButton variant="primary" :loading="importing" @click="confirmImport">导入</AppButton>
+   </template>
+ </AppModal>
+</template>
+
+<style scoped>
+.snippet-tabs {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ margin-bottom: var(--space-3);
+ flex-wrap: wrap;
+}
+
+.snippet-tabs__label {
+ font-family: var(--font-mono);
+ font-size: 0.6875rem;
+ font-weight: 600;
+ letter-spacing: 0.04em;
+ color: rgb(var(--color-text-secondary-rgb) / 0.6);
+}
+
+.snippet-tabs__tab {
+ font-family: var(--font-heading);
+ font-size: 0.78125rem;
+ font-weight: 500;
+ color: rgb(var(--color-text-secondary-rgb));
+ background: rgb(var(--color-surface-dim-rgb));
+ border: 1px solid rgb(var(--color-border-rgb) / 0.6);
+ border-radius: 100px;
+ padding: 4px 12px;
+ cursor: pointer;
+ transition: all 0.18s ease;
+}
+
+.snippet-tabs__tab:hover {
+ border-color: rgb(var(--color-primary-rgb) / 0.5);
+ color: rgb(var(--color-text-rgb));
+}
+
+.snippet-tabs__tab.is-active {
+ background: rgb(var(--color-primary-rgb) / 0.14);
+ border-color: rgb(var(--color-primary-rgb) / 0.6);
+ color: rgb(var(--color-primary-rgb));
+}
+
+.detail-page {
+ padding: var(--space-6) var(--page-padding-x) var(--space-12);
+ display: flex;
+ flex-direction: column;
+ height: calc(100vh - var(--header-height));
+ box-sizing: border-box;
+}
+
+.detail-header {
+ display: flex;
+ flex-direction: row;
+ align-items: flex-start;
+ justify-content: space-between;
+ margin-bottom: var(--space-6);
+ flex-shrink: 0;
+ gap: var(--space-4);
+}
+
+.detail-breadcrumb {
+ margin-bottom: 0;
+ flex: 1;
+}
+
+.detail-actions {
+ display: flex;
+ align-items: center;
+ gap: var(--space-2);
+ flex-shrink: 0;
+}
+
+.main-split {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ grid-template-rows: 1fr;
+ gap: var(--space-5);
+ flex: 1;
+ min-height: 0;
+}
+
+.split-preview,
+.split-source {
+ min-width: 0;
+ min-height: 0;
+}
+
+/* ============================================================ */
+/* 移动端布局重构                                              */
+/* ============================================================ */
+
+/* ── 移动端外壳 ── */
+.detail-page.is-mobile {
+ padding: 0;
+ height: calc(100vh - var(--header-height));
+ height: calc(100dvh - var(--header-height));
+ display: flex;
+ flex-direction: column;
+ overflow: hidden;
+}
+
+/* ── 移动端 Header ── */
+.mobile-header {
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ height: 52px;
+ padding: 0 4px 0 4px;
+ background: rgb(var(--color-bg-elevated-rgb));
+ border-bottom: 1px solid rgb(var(--color-border-rgb));
+ flex-shrink: 0;
+}
+
+.mobile-header__back {
+ width: 44px;
+ height: 44px;
+ border-radius: var(--radius-md);
+ flex-shrink: 0;
+}
+
+.mobile-header__title {
+ flex: 1;
+ min-width: 0;
+ display: flex;
+ flex-direction: column;
+ gap: 2px;
+}
+
+.mobile-header__title-text {
+ font-family: var(--font-heading);
+ font-size: 15px;
+ font-weight: 600;
+ color: rgb(var(--color-text-rgb));
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.mobile-header__subtitle {
+ font-family: var(--font-mono);
+ font-size: 11px;
+ color: rgb(var(--color-text-tertiary-rgb));
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+.mobile-header__menu {
+ position: relative;
+ flex-shrink: 0;
+}
+
+.mobile-header__menu > button {
+ width: 44px;
+ height: 44px;
+ border-radius: var(--radius-md);
+}
+
+.mobile-header__dropdown {
+ position: absolute;
+ top: calc(100% + 6px);
+ right: 0;
+ min-width: 180px;
+ background: rgb(var(--color-bg-elevated-rgb));
+ border: 1px solid rgb(var(--color-border-rgb));
+ border-radius: var(--radius-md);
+ box-shadow: 0 8px 32px rgb(var(--color-shadow-rgb) / 0.4);
+ padding: 6px;
+ display: flex;
+ flex-direction: column;
+ gap: 2px;
+ z-index: 50;
+}
+
+.mobile-header__dropdown-item {
+ display: flex;
+ align-items: center;
+ min-height: 44px;
+ padding: 0 8px;
+ border-radius: var(--radius-sm);
+}
+
+.mobile-header__dropdown-item > * {
+ width: 100%;
+}
+
+.mobile-header__dropdown-btn {
+ display: flex;
+ align-items: center;
+ gap: 12px;
+ min-height: 44px;
+ padding: 0 12px;
+ border: none;
+ border-radius: var(--radius-sm);
+ background: transparent;
+ color: rgb(var(--color-text-rgb));
+ font-family: var(--font-body);
+ font-size: 14px;
+ cursor: pointer;
+ text-align: left;
+}
+
+.mobile-header__dropdown-btn:hover,
+.mobile-header__dropdown-btn:active {
+ background: rgb(var(--color-surface-variant-rgb));
+}
+
+/* Dropdown 过渡 */
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+ transition:
+   opacity 0.18s ease,
+   transform 0.18s ease;
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+ opacity: 0;
+ transform: translateY(-6px) scale(0.98);
+}
+
+/* ── 移动端主区域 ── */
+.mobile-main {
+ flex: 1;
+ min-height: 0;
+ display: flex;
+ flex-direction: column;
+ position: relative;
+}
+
+.mobile-main__panel {
+ flex: 1;
+ min-height: 0;
+ display: flex;
+ flex-direction: column;
+ overflow: hidden;
+}
+
+/* 变体 tab 在移动端：贴顶横滑 */
+.snippet-tabs--mobile {
+ flex-shrink: 0;
+ padding: 8px 12px;
+ margin-bottom: 0;
+ overflow-x: auto;
+ scrollbar-width: none;
+ background: rgb(var(--color-bg-elevated-rgb));
+ border-bottom: 1px solid rgb(var(--color-border-rgb));
+ -webkit-overflow-scrolling: touch;
+}
+
+.snippet-tabs--mobile::-webkit-scrollbar {
+ display: none;
+}
+
+/* ── 底部 Tab 栏 ── */
+.mobile-tabbar {
+ flex-shrink: 0;
+ display: flex;
+ background: rgb(var(--color-bg-elevated-rgb));
+ border-top: 1px solid rgb(var(--color-border-rgb));
+ padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-tabbar__btn {
+ flex: 1;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: 2px;
+ min-height: 52px;
+ padding: 8px 0;
+ border: none;
+ background: transparent;
+ color: rgb(var(--color-text-tertiary-rgb));
+ font-family: var(--font-body);
+ font-size: 11px;
+ cursor: pointer;
+ -webkit-tap-highlight-color: transparent;
+ transition: color 0.18s ease;
+}
+
+.mobile-tabbar__btn.is-active {
+ color: rgb(var(--color-brand-rgb));
+}
+
+.mobile-tabbar__btn:active {
+ background: rgb(var(--color-surface-variant-rgb));
+}
+</style>

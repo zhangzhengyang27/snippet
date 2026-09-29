@@ -1,0 +1,80 @@
+{
+  "category": "frontend",
+  "description": "常见前端开发代码片段库，覆盖 CSS 布局、响应式、动画、DOM 与事件、表单校验、异步请求、Vue3/React 组件、Canvas/SVG、Web API、性能与可访问性等场景，含常见用法与边界情况。",
+  "fields": [
+    "name",
+    "language",
+    "code",
+    "description"
+  ],
+  "count": 110,
+  "snippets": [
+    {
+      "name": "响应式卡片网格布局",
+      "language": "css",
+      "code": "<style>\n  .grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));\n    gap: 16px;\n    padding: 16px;\n  }\n  .card {\n    background: #fff;\n    border-radius: 12px;\n    box-shadow: 0 2px 8px rgba(0,0,0,.08);\n    padding: 16px;\n  }\n</style>\n\n<div class=\"grid\">\n  <div class=\"card\">卡片 1</div>\n  <div class=\"card\">卡片 2</div>\n  <div class=\"card\">卡片 3</div>\n</div>",
+      "description": "使用 CSS Grid 的 auto-fill + minmax 实现自适应列数的响应式卡片布局，无需媒体查询即可在窄屏自动换行。"
+    },
+    {
+      "name": "可复用模态对话框",
+      "language": "vue",
+      "code": "<script setup>\nimport { ref } from 'vue'\nconst visible = ref(false)\nconst open = () => (visible.value = true)\nconst close = () => (visible.value = false)\n</script>\n\n<template>\n  <button @click=\"open\">打开弹窗</button>\n  <div v-if=\"visible\" class=\"mask\" @click.self=\"close\">\n    <div class=\"dialog\">\n      <h3>标题</h3>\n      <p>弹窗内容</p>\n      <button @click=\"close\">关闭</button>\n    </div>\n  </div>\n</template>\n\n<style scoped>\n.mask { position: fixed; inset: 0; background: rgba(0,0,0,.45);\n  display: flex; align-items: center; justify-content: center; }\n.dialog { background: #fff; padding: 24px; border-radius: 10px; min-width: 320px; }\n</style>",
+      "description": "基于 Vue 3 <script setup> 的轻量模态框，利用 @click.self 实现点击遮罩关闭，状态由 ref 控制显隐。"
+    },
+    {
+      "name": "搜索输入防抖",
+      "language": "javascript",
+      "code": "function debounce(fn, delay = 300) {\n  let timer = null\n  return (...args) => {\n    clearTimeout(timer)\n    timer = setTimeout(() => fn.apply(this, args), delay)\n  }\n}\n\nconst searchInput = document.querySelector('#search')\nsearchInput.addEventListener('input', debounce((e) => {\n  console.log('查询关键词：', e.target.value)\n  // 调用后端搜索接口\n}, 400))",
+      "description": "通过闭包 + setTimeout 实现防抖函数，避免用户连续输入时频繁触发请求，仅等待停止输入 delay 毫秒后执行。"
+    },
+    {
+      "name": "表单校验与提交",
+      "language": "javascript",
+      "code": "function validate(form) {\n  const errors = {}\n  if (!form.email) errors.email = '邮箱必填'\n  else if (!/^[^@]+@[^@]+\\.[^@]+$/.test(form.email)) errors.email = '邮箱格式错误'\n  if (!form.password || form.password.length < 6) errors.password = '密码至少 6 位'\n  return errors\n}\n\nfunction submit(form) {\n  const errors = validate(form)\n  if (Object.keys(errors).length) {\n    console.warn('校验失败', errors)\n    return\n  }\n  fetch('/api/login', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(form)\n  })\n}",
+      "description": "纯 JS 实现邮箱/密码必填与格式校验，校验失败返回错误字典，通过后再发起登录请求。"
+    },
+    {
+      "name": "标签页切换",
+      "language": "vue",
+      "code": "<script setup>\nimport { ref } from 'vue'\nconst tabs = ['概览', '详情', '设置']\nconst active = ref(0)\n</script>\n\n<template>\n  <div class=\"tabs\">\n    <button v-for=\"(t, i) in tabs\" :key=\"i\"\n      :class=\"{ on: i === active }\" @click=\"active = i\">{{ t }}</button>\n  </div>\n  <div class=\"panel\">当前：{{ tabs[active] }}</div>\n</template>",
+      "description": "用单个 active 索引控制当前标签页，配合动态 class 实现高亮，是前端最常见的交互之一。"
+    },
+    {
+      "name": "滚动到底加载更多",
+      "language": "javascript",
+      "code": "let page = 1\nlet loading = false\n\nwindow.addEventListener('scroll', async () => {\n  const nearBottom =\n    window.innerHeight + window.scrollY >= document.body.offsetHeight - 200\n  if (nearBottom && !loading) {\n    loading = true\n    const res = await fetch(`/api/list?page=${page++}`)\n    const data = await res.json()\n    render(data)\n    loading = false\n  }\n})",
+      "description": "监听 scroll 事件，接近底部且未在加载时拉取下一页数据，实现无限滚动列表。"
+    },
+    {
+      "name": "明暗主题切换",
+      "language": "javascript",
+      "code": "function toggleTheme() {\n  const root = document.documentElement\n  const isDark = root.getAttribute('data-theme') === 'dark'\n  root.setAttribute('data-theme', isDark ? 'light' : 'dark')\n  localStorage.setItem('theme', isDark ? 'light' : 'dark')\n}\n\n// 初始化：读取用户上次选择\nconst saved = localStorage.getItem('theme')\nif (saved) document.documentElement.setAttribute('data-theme', saved)",
+      "description": "通过切换根元素 data-theme 属性并结合 CSS 变量与 localStorage 持久化，实现明暗主题切换与记忆。"
+    },
+    {
+      "name": "Flex 垂直水平居中",
+      "language": "css",
+      "code": "/* 父容器使用 flex 实现子元素双向居中 */\n.container {\n  display: flex;\n  align-items: center;     /* 交叉轴居中 */\n  justify-content: center; /* 主轴居中 */\n  height: 100vh;\n}\n",
+      "description": "最通用的居中方案，适合已知父容器尺寸的场景，IE10+ 支持。"
+    },
+    {
+      "name": "Grid 两栏自适应布局",
+      "language": "css",
+      "code": ".layout {\n  display: grid;\n  grid-template-columns: 240px 1fr; /* 侧边固定 240px，主区自适应 */\n  gap: 16px;\n}\n",
+      "description": "经典后台两栏布局，侧边栏定宽、内容区弹性填充，无需浮动与清除。"
+    },
+    {
+      "name": "Sticky 吸顶导航",
+      "language": "css",
+      "code": ".nav {\n  position: sticky;\n  top: 0;            /* 距视口顶部 0 时吸顶 */\n  z-index: 100;\n  background: #fff;\n}\n",
+      "description": "滚动到顶部时元素吸附，常用于导航栏/表头；父容器不能有 overflow:hidden。"
+    },
+    {
+      "name": "绝对定位 + transform 居中",
+      "language": "css",
+      "code": ".box {\n  position: absolute;\n  top: 50%;\n  left: 50%;\n  transform: translate(-50%, -50%); /* 反向偏移自身一半 */\n}\n",
+      "description": "不依赖 flex 的居中方式，适合浮层/弹窗，IE9+ 可用。"
+    },
+    {
+      "name": "Grid 等高卡片列",
+      "language": "css",

@@ -1,0 +1,628 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-primary: rgb(var(--color-primary-rgb) / <alpha-value>);
+  --color-primary-container: rgb(var(--color-primary-container-rgb) / <alpha-value>);
+  --color-secondary: rgb(var(--color-secondary-rgb) / <alpha-value>);
+  --color-secondary-container: rgb(var(--color-secondary-container-rgb) / <alpha-value>);
+  --color-tertiary: rgb(var(--color-tertiary-rgb) / <alpha-value>);
+  --color-tertiary-container: rgb(var(--color-tertiary-container-rgb) / <alpha-value>);
+  --color-surface: rgb(var(--color-surface-rgb) / <alpha-value>);
+  --color-surface-dim: rgb(var(--color-surface-dim-rgb) / <alpha-value>);
+  --color-surface-bright: rgb(var(--color-surface-bright-rgb) / <alpha-value>);
+  --color-surface-bright-2: rgb(var(--color-surface-bright-2-rgb) / <alpha-value>);
+  --color-surface-variant: rgb(var(--color-surface-variant-rgb) / <alpha-value>);
+  --color-surface-variant-high: rgb(var(--color-surface-variant-high-rgb) / <alpha-value>);
+  --color-background: rgb(var(--color-background-rgb) / <alpha-value>);
+  --color-surface-glass: rgb(var(--color-surface-glass-rgb) / <alpha-value>);
+  --color-border-glass: rgb(var(--color-border-glass-rgb) / <alpha-value>);
+  --color-text: rgb(var(--color-text-rgb) / <alpha-value>);
+  --color-text-secondary: rgb(var(--color-text-secondary-rgb) / <alpha-value>);
+  --color-success: rgb(var(--color-success-rgb) / <alpha-value>);
+  --color-error: rgb(var(--color-error-rgb) / <alpha-value>);
+  --color-accent-pink: rgb(var(--color-accent-pink-rgb) / <alpha-value>);
+  --color-accent-rose: rgb(var(--color-accent-rose-rgb) / <alpha-value>);
+  --color-accent-sky: rgb(var(--color-accent-sky-rgb) / <alpha-value>);
+  --color-accent-cyan: rgb(var(--color-accent-cyan-rgb) / <alpha-value>);
+  --color-accent-amber: rgb(var(--color-accent-amber-rgb) / <alpha-value>);
+  --color-accent-orange: rgb(var(--color-accent-orange-rgb) / <alpha-value>);
+  --color-shadow: rgb(var(--color-shadow-rgb) / <alpha-value>);
+
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Geist', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* ---------------------------------------------------------------- */
+/*  xiaoye-ui component variant styles (unstyled + PT)               */
+/*  The p-success/p-info/etc. prefixes in PT strings are raw         */
+/*  class names that Tailwind can't resolve as utilities.            */
+/*  Variant-specific styling is done via CSS selectors here.         */
+/* ---------------------------------------------------------------- */
+
+/* Toast / Message / InlineMessage severity variants */
+.p-toast-message-success,
+.p-message-success,
+.p-inlinemessage-success {
+  background: rgb(var(--color-success-rgb) / 0.1);
+  border-color: rgb(var(--color-success-rgb) / 0.2);
+  color: rgb(var(--color-success-rgb));
+}
+
+.p-toast-message-info,
+.p-message-info,
+.p-inlinemessage-info {
+  background: rgb(var(--color-accent-sky-rgb) / 0.1);
+  border-color: rgb(var(--color-accent-sky-rgb) / 0.2);
+  color: rgb(var(--color-accent-sky-rgb));
+}
+
+.p-toast-message-warn,
+.p-message-warn,
+.p-inlinemessage-warn {
+  background: rgb(var(--color-accent-amber-rgb) / 0.1);
+  border-color: rgb(var(--color-accent-amber-rgb) / 0.2);
+  color: rgb(var(--color-accent-amber-rgb));
+}
+
+.p-toast-message-error,
+.p-message-error,
+.p-inlinemessage-error {
+  background: rgb(var(--color-error-rgb) / 0.1);
+  border-color: rgb(var(--color-error-rgb) / 0.2);
+  color: rgb(var(--color-error-rgb));
+}
+
+.p-toast-message-secondary,
+.p-message-secondary,
+.p-inlinemessage-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  border-color: rgb(var(--color-border-glass-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+/* Badge severity variants */
+.p-badge-success {
+  background: rgb(var(--color-success-rgb));
+  color: #fff;
+}
+
+.p-badge-info {
+  background: rgb(var(--color-accent-sky-rgb));
+  color: #fff;
+}
+
+.p-badge-warn {
+  background: rgb(var(--color-accent-amber-rgb));
+  color: #fff;
+}
+
+.p-badge-danger {
+  background: rgb(var(--color-error-rgb));
+  color: #fff;
+}
+
+.p-badge-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+/* Tag severity variants */
+.p-tag-success {
+  background: rgb(var(--color-success-rgb) / 0.12);
+  color: rgb(var(--color-success-rgb));
+}
+
+.p-tag-info {
+  background: rgb(var(--color-accent-sky-rgb) / 0.12);
+  color: rgb(var(--color-accent-sky-rgb));
+}
+
+.p-tag-warn {
+  background: rgb(var(--color-accent-amber-rgb) / 0.12);
+  color: rgb(var(--color-accent-amber-rgb));
+}
+
+.p-tag-danger {
+  background: rgb(var(--color-error-rgb) / 0.12);
+  color: rgb(var(--color-error-rgb));
+}
+
+.p-tag-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+@layer base {
+  :root {
+    --color-primary-rgb: 99 102 241;
+    --color-primary-container-rgb: 79 70 229;
+    --color-secondary-rgb: 168 85 247;
+    --color-secondary-container-rgb: 147 51 234;
+    --color-tertiary-rgb: 249 115 22;
+    --color-tertiary-container-rgb: 234 88 12;
+    --color-surface-rgb: 255 255 255;
+    --color-surface-dim-rgb: 255 255 255;
+    --color-surface-bright-rgb: 255 255 255;
+    --color-surface-bright-2-rgb: 255 255 255;
+    --color-surface-variant-rgb: 255 255 255;
+    --color-surface-variant-high-rgb: 248 250 252;
+    --color-background-rgb: 255 255 255;
+    --color-surface-glass-rgb: 255 255 255;
+    --color-surface-glass-alpha: 1;
+    --color-border-glass-rgb: 226 232 240;
+    --color-border-glass-alpha: 1;
+    --color-text-rgb: 15 23 42;
+    --color-text-secondary-rgb: 71 85 105;
+    --color-success-rgb: 34 197 94;
+    --color-error-rgb: 239 68 68;
+    --color-accent-pink-rgb: 244 114 182;
+    --color-accent-rose-rgb: 219 39 119;
+    --color-accent-sky-rgb: 56 189 248;
+    --color-accent-cyan-rgb: 2 132 199;
+    --color-accent-amber-rgb: 251 191 36;
+    --color-accent-orange-rgb: 245 158 11;
+    --color-shadow-rgb: 0 0 0;
+  }
+
+  .dark {
+    /* Dark Theme */
+    --color-primary-rgb: 192 193 255;
+    --color-primary-container-rgb: 128 131 255;
+    --color-secondary-rgb: 208 188 255;
+    --color-secondary-container-rgb: 87 27 193;
+    --color-tertiary-rgb: 255 183 131;
+    --color-tertiary-container-rgb: 217 119 33;
+    --color-surface-rgb: 19 19 24;
+    --color-surface-dim-rgb: 14 14 19;
+    --color-surface-bright-rgb: 27 27 32;
+    --color-surface-bright-2-rgb: 31 31 37;
+    --color-surface-variant-rgb: 42 41 47;
+    --color-surface-variant-high-rgb: 53 52 58;
+    --color-background-rgb: 10 10 15;
+    --color-surface-glass-rgb: 255 255 255;
+    --color-border-glass-rgb: 255 255 255;
+    --color-text-rgb: 224 224 230;
+    --color-text-secondary-rgb: 180 180 190;
+    --color-success-rgb: 34 197 94;
+    --color-error-rgb: 239 68 68;
+    --color-accent-pink-rgb: 244 114 182;
+    --color-accent-rose-rgb: 219 39 119;
+    --color-accent-sky-rgb: 56 189 248;
+    --color-accent-cyan-rgb: 2 132 199;
+    --color-accent-amber-rgb: 251 191 36;
+    --color-accent-orange-rgb: 245 158 11;
+    --color-shadow-rgb: 0 0 0;
+    --color-surface-glass-alpha: 0.03;
+    --color-border-glass-alpha: 0.1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: rgb(var(--color-background-rgb));
+    color: rgb(var(--color-text-rgb));
+    font-family: 'Geist', system-ui, sans-serif;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-primary-container-rgb) / 0.3);
+    color: rgb(var(--color-text-rgb));
+  }
+
+  /* Focus visibility for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-primary-rgb));
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-border-glass-rgb) / 0.2);
+  }
+}
+
+@layer components {
+  /* Hero / Actions / Stats — shared page chrome */
+  .hero-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 1;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-primary-rgb)) 0%,
+      rgb(var(--color-secondary-rgb)) 100%
+    );
+    color: rgb(var(--color-background-rgb));
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition:
+      opacity 0.2s,
+      transform 0.2s,
+      box-shadow 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 16px rgb(var(--color-primary-rgb) / 0.35);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
+    color: rgb(var(--color-text-secondary-rgb));
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
+    border-radius: 12px;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    background: rgb(var(--color-primary-rgb) / 0.08);
+    color: rgb(var(--color-text-rgb));
+  }
+
+  .stats-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-primary-rgb)),
+      rgb(var(--color-primary-container-rgb))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 0.8125rem;
+    color: rgb(var(--color-text-secondary-rgb));
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(var(--color-text-rgb));
+  }
+
+  .result-count {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.875rem;
+    color: rgb(var(--color-text-secondary-rgb));
+  }
+
+  /* Responsive page chrome */
+  @media (max-width: 768px) {
+    .stats-section {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-actions {
+      flex-direction: column;
+    }
+
+    .section-header {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .stats-section {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-card {
+      padding: 20px 12px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* Glassmorphism Base */
+  .glass {
+    background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
+    border-radius: 1rem;
+  }
+
+  .glass-strong {
+    background: rgb(var(--color-surface-glass-rgb) / 0.06);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgb(var(--color-border-glass-rgb) / 0.12);
+    border-radius: 1rem;
+  }
+
+  .glass-subtle {
+    background: rgb(var(--color-surface-glass-rgb) / 0.015);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgb(var(--color-border-glass-rgb) / 0.06);
+    border-radius: 1rem;
+  }
+
+  /* Glow Effects */
+  .glow-primary {
+    box-shadow:
+      0 0 20px rgb(var(--color-primary-container-rgb) / 0.15),
+      0 0 60px rgb(var(--color-primary-container-rgb) / 0.05);
+  }
+
+  .glow-secondary {
+    box-shadow:
+      0 0 20px rgb(var(--color-secondary-container-rgb) / 0.2),
+      0 0 60px rgb(var(--color-secondary-container-rgb) / 0.08);
+  }
+
+  .glow-tertiary {
+    box-shadow:
+      0 0 20px rgb(var(--color-tertiary-container-rgb) / 0.15),
+      0 0 60px rgb(var(--color-tertiary-container-rgb) / 0.05);
+  }
+
+  /* Code Block Styling */
+  .code-block {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    background: rgb(var(--color-surface-dim-rgb));
+    border: 1px solid rgb(var(--color-border-glass-rgb) / 0.06);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .code-block pre {
+    margin: 0;
+    padding: 1.25rem;
+    overflow-x: auto;
+  }
+
+  .code-block code {
+    font-family: inherit;
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-primary-rgb)),
+      rgb(var(--color-primary-container-rgb))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-secondary {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-secondary-rgb)),
+      rgb(var(--color-secondary-container-rgb))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-tertiary {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-tertiary-rgb)),
+      rgb(var(--color-tertiary-container-rgb))
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/*  xiaoye-ui component variant styles (unstyled + PT)               */
+/*  The p-success/p-info/etc. prefixes in PT strings are raw         */
+/*  class names that Tailwind can't resolve as utilities.            */
+/*  Variant-specific styling is done via CSS selectors here.         */
+/* ---------------------------------------------------------------- */
+
+/* Toast / Message / InlineMessage severity variants */
+.p-toast-message-success,
+.p-message-success,
+.p-inlinemessage-success {
+  background: rgb(var(--color-success-rgb) / 0.1);
+  border-color: rgb(var(--color-success-rgb) / 0.2);
+  color: rgb(var(--color-success-rgb));
+}
+
+.p-toast-message-info,
+.p-message-info,
+.p-inlinemessage-info {
+  background: rgb(var(--color-accent-sky-rgb) / 0.1);
+  border-color: rgb(var(--color-accent-sky-rgb) / 0.2);
+  color: rgb(var(--color-accent-sky-rgb));
+}
+
+.p-toast-message-warn,
+.p-message-warn,
+.p-inlinemessage-warn {
+  background: rgb(var(--color-accent-amber-rgb) / 0.1);
+  border-color: rgb(var(--color-accent-amber-rgb) / 0.2);
+  color: rgb(var(--color-accent-amber-rgb));
+}
+
+.p-toast-message-error,
+.p-message-error,
+.p-inlinemessage-error {
+  background: rgb(var(--color-error-rgb) / 0.1);
+  border-color: rgb(var(--color-error-rgb) / 0.2);
+  color: rgb(var(--color-error-rgb));
+}
+
+.p-toast-message-secondary,
+.p-message-secondary,
+.p-inlinemessage-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  border-color: rgb(var(--color-border-glass-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+/* Badge severity variants */
+.p-badge-success {
+  background: rgb(var(--color-success-rgb));
+  color: #fff;
+}
+
+.p-badge-info {
+  background: rgb(var(--color-accent-sky-rgb));
+  color: #fff;
+}
+
+.p-badge-warn {
+  background: rgb(var(--color-accent-amber-rgb));
+  color: #fff;
+}
+
+.p-badge-danger {
+  background: rgb(var(--color-error-rgb));
+  color: #fff;
+}
+
+.p-badge-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+/* Tag severity variants */
+.p-tag-success {
+  background: rgb(var(--color-success-rgb) / 0.12);
+  color: rgb(var(--color-success-rgb));
+}
+
+.p-tag-info {
+  background: rgb(var(--color-accent-sky-rgb) / 0.12);
+  color: rgb(var(--color-accent-sky-rgb));
+}
+
+.p-tag-warn {
+  background: rgb(var(--color-accent-amber-rgb) / 0.12);
+  color: rgb(var(--color-accent-amber-rgb));
+}
+
+.p-tag-danger {
+  background: rgb(var(--color-error-rgb) / 0.12);
+  color: rgb(var(--color-error-rgb));
+}
+
+.p-tag-secondary {
+  background: rgb(var(--color-surface-variant-rgb));
+  color: rgb(var(--color-text-secondary-rgb));
+}

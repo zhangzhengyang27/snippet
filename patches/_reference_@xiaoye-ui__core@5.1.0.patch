@@ -1,0 +1,86 @@
+diff --git a/composables/usePT.mjs b/composables/usePT.mjs
+index 0054c84a2d5c2ae86a6232832347288533ffe95d..011f319c79476867deeed17af11ae121e34bc8a1 100644
+--- a/composables/usePT.mjs
++++ b/composables/usePT.mjs
+@@ -21,6 +21,12 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+     return $.type?.name || instance.proxy.$options?.name || "";
+   });
+   const $styleResolved = $style || instance.proxy.$style || {};
++  const resolvedPT = computed(() => {
++    return props.pt !== void 0 ? props.pt : instance.attrs?.pt;
++  });
++  const resolvedUnstyled = computed(() => {
++    return props.unstyled !== void 0 ? props.unstyled : instance.attrs?.unstyled !== void 0;
++  });
+   const _getPT = (pt, key = "", callback) => {
+     if (pt == null) {
+       return void 0;
+@@ -29,7 +35,7 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+       const computedValue = callback ? callback(value) : value;
+       const _key = toFlatCase(key);
+       const _cKey = toFlatCase($name.value);
+-      return checkSameKey ? _key !== _cKey ? computedValue?.[_key] : void 0 : computedValue?.[_key] ?? computedValue;
++      return checkSameKey ? _key !== _cKey ? computedValue?.[_key] : computedValue?.[_key] ?? computedValue : computedValue?.[_key] ?? computedValue;
+     };
+     return Object.prototype.hasOwnProperty.call(pt, "_usept") ? {
+       _usept: pt["_usept"],
+@@ -54,17 +60,19 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+     return fn(pt);
+   };
+   const _useGlobalPT = (callback, key, params2) => {
+-    return _usePT(xiaoyeUIConfig.value.pt, callback, key, params2);
++    const componentPT = _getPT(xiaoyeUIConfig.value.pt, $name.value);
++    return _usePT(componentPT, callback, key, params2);
+   };
+   const _useDefaultPT = (callback, key, params2) => {
+-    return _usePT(xiaoyeUIConfig.value.pt, callback, key, params2);
++    const componentPT = _getPT(xiaoyeUIConfig.value.pt, $name.value);
++    return _usePT(componentPT, callback, key, params2);
+   };
+   const _getPTDatasets = (key = "") => {
+     const datasetPrefix = "data-pc-";
+-    const isExtended = key === "root" && !!props.pt?.["data-pc-section"];
++    const isExtended = key === "root" && !!resolvedPT.value?.["data-pc-section"];
+     return key !== "transition" ? {
+       ...key === "root" && {
+-        [`${datasetPrefix}name`]: toFlatCase(isExtended ? props.pt?.["data-pc-section"] : instance.proxy.$.type?.name),
++        [`${datasetPrefix}name`]: toFlatCase(isExtended ? resolvedPT.value?.["data-pc-section"] : instance.proxy.$.type?.name),
+         ...isExtended && { [`${datasetPrefix}extend`]: toFlatCase(instance.proxy.$.type?.name) },
+         [attrSelector]: ""
+       },
+@@ -73,7 +81,7 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+   };
+   const _getPTValue = (obj = {}, key = "", params2 = {}, searchInDefaultPT = true) => {
+     const searchOut = /./g.test(key) && !!params2[key.split(".")[0]];
+-    const ptOptions = props.ptOptions || xiaoyeUIConfig.value.ptOptions || {};
++    const ptOptions = props.ptOptions || instance.attrs?.ptOptions || xiaoyeUIConfig.value.ptOptions || {};
+     const { mergeSections = true, mergeProps: useMergeProps = false } = ptOptions;
+     const global = searchInDefaultPT ? searchOut ? _useGlobalPT((value) => _getPTClassValue(value, key, params2, _getOptionValue), key, params2) : _useDefaultPT((value) => _getPTClassValue(value, key, params2, _getOptionValue), key, params2) : void 0;
+     const self = searchOut ? void 0 : _getPTSelf(obj, key, { ...params2, global: global || {} });
+@@ -126,7 +134,7 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+   const $id = computed(() => instance.attrs?.id || _pvId.value);
+   const _pvId = useId();
+   const ptm = (key = "", params2 = {}) => {
+-    return _getPTValue(props.pt, key, params2);
++    return _getPTValue(resolvedPT.value, key, params2);
+   };
+   const ptmi = (key = "", params2 = {}) => {
+     const attrs = mergeProps($attrsWithoutPT.value, ptm(key, params2));
+@@ -139,7 +147,7 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+     return _getPTValue(obj, key, { instance: instance.proxy, ...params2 }, false);
+   };
+   const cx = (key = "", params2 = {}) => {
+-    const isUnstyled = props.unstyled !== void 0 ? props.unstyled : xiaoyeUIConfig.value.unstyled;
++    const isUnstyled = resolvedUnstyled.value !== void 0 ? resolvedUnstyled.value : xiaoyeUIConfig.value.unstyled;
+     if (isUnstyled) return void 0;
+     const cxParams = params2 && typeof params2 === "object" && "value" in params2 ? params2.value : params2;
+     const cxBaseParams = params2 && typeof params2 === "object" && "value" in params2 ? params2.value : void 0;
+@@ -154,7 +162,7 @@ function usePT(props, instance, attrSelector, $style, stateOverride) {
+   };
+   const sx = (key = "", when = true, params2 = {}) => {
+     if (!when) return void 0;
+-    const isUnstyled = props.unstyled !== void 0 ? props.unstyled : xiaoyeUIConfig.value.unstyled;
++    const isUnstyled = resolvedUnstyled.value !== void 0 ? resolvedUnstyled.value : xiaoyeUIConfig.value.unstyled;
+     if (isUnstyled) return void 0;
+     const sxParams = params2 && typeof params2 === "object" && "value" in params2 ? params2.value : params2;
+     const sxBaseParams = params2 && typeof params2 === "object" && "value" in params2 ? params2.value : void 0;

@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""Batch 3: templates 21-35"""
+import re, os
+WEGIC = "/Users/xiaoye/Desktop/html5-examples/public/static-sites/wegic"
+def safe_replace(html, en_sub, zh_full):
+    pattern = rf'>([^<]*{re.escape(en_sub)}[^<]*)<'
+    m = re.search(pattern, html)
+    if m:
+        return html.replace(m.group(0), f'>{zh_full}<')
+    return html
+
+ALL={
+21:{'Sage &amp; Petal | Handcrafted Everyday Bouquets':'Sage &amp; Petal | 手工日常花束',
+'Fresh Flowers, Without the Fuss.':'鲜花之美，无需繁琐。',
+'Handcrafted, fresh seasonal bouquets made with quiet attention to detail, available for pickup or local delivery.':'精心手工制作的新鲜时令花束，专注于细节之美，支持自取或本地配送。',
+'Shop Everyday Bouquets':'选购日常花束',
+'View Seasonal':'查看时令鲜花',
+'The Boutique':'精品花店',
+'At Sage &amp; Petal, we handcraft fresh, everyday bouquets with the kind of quiet attention to detail that makes an ordinary Tuesday feel special.':'在 Sage &amp; Petal，我们以细腻的专注手工制作新鲜日常花束，让普通的星期二也变得特别。',
+'Owner &amp; Lead Florist':'花店主理人',
+'Sunny Vale':'Sunny Vale',
+'每一个 bouquet is a small story told in flowers. I started Sage &amp; Petal in a tiny garden shed, driven by the belief that beauty should be accessible, daily, and deeply personal.':'每一束花都是用鲜花讲述的小故事。我在一个小花园棚屋里创立了 Sage &amp; Petal，深信美应该是触手可及的、日常的、极具个人化的。',
+'Handcrafted Daily':'每日手工',
+'Every morning, we source the freshest seasonal blooms and handcraft each bouquet with intention, not mass production.':'每天早晨，我们采购最新鲜的时令花卉，以用心而非量产的方式手工制作每一束花。',
+'Local &amp; Sustainable':'本地与可持续',
+'We partner with local growers within 50 miles, reducing our carbon footprint while supporting community agriculture.':'我们与方圆50英里的本地种植者合作，减少碳足迹的同时支持社区农业。',
+'Quiet Beauty Delivered':'静美送达',
+'Whether you need a Tuesday pick-me-up or a spontaneous gesture of love, our bouquets arrive fresh, artfully wrapped, and full of life.':'无论您是需要周二的提神之物，还是自发的爱的表达，我们的花束都新鲜送达，艺术包装，充满生命力。',
+'Seasonal Highlights':'时令精选',
+'Early Summer Meadow':'初夏草甸',
+'Soft pinks, wild daisies, and textured greenery hand-tied with velvet ribbon.':'柔粉、野雏菊与质感绿叶，天鹅绒丝带手工束扎。',
+'Golden Hour':'金色时光',
+'Warm yellow roses, chamomile sprigs, and delicate baby\'s breath.':'暖黄玫瑰、洋甘菊枝与精致的满天星。',
+'Morning Dew':'晨露',
+'Crisp white ranunculus, eucalyptus sprigs, and fresh sage gathered with intention.':'清爽白色毛茛、桉树枝与用心采集的新鲜鼠尾草。',
+'Kind 好评如潮':'好评如潮',
+'"Sage &amp; Petal is my absolute happy place. The bouquets look like they were gathered during an early morning walk through a wild garden."':'"Sage &amp; Petal 是我绝对的快乐之地。这些花束看起来就像在清晨穿过野花园时采撷的一样。"',
+'"Her owner\'s note says everything. Sourced locally, put together with love. The fragrance of the seasonal blooms fills the entire room."':'"她的店主留言说明了一切。本地采购，用心搭配。时令鲜花的芬芳充满了整个房间。"',
+'"Their attention to detail is unmatched. Every bouquet feels like a work of art. Highly recommend the seasonal subscription for offices and events."':'"他们对细节的关注无与伦比。每一束花都像一件艺术品。强烈推荐为办公室和活动订阅时令鲜花。"',
+'Seattle Florist':'西雅图花店',
+},
+22:{'STRUCTORA':'STRUCTORA',
+'A design studio shaping brands and digital experiences through motion, clarity, and timeless craft.':'以动态、清晰与永恒匠心塑造品牌与数字体验的设计工作室。',
+'Brand Campaign':'品牌广告',
+'Packaging 设计':'包装设计',
+'hello@structora.com':'hello@structora.com',
+'Instagram':'Instagram',
+'LinkedIn':'LinkedIn',
+'[BERLIN]':'[柏林]',
+'[MELBOURNE]':'[墨尔本]',
+'[NEW YORK]':'[纽约]',
+'38914 Gow St, Ultimo, Pyrmont':'38914 Gow St, Ultimo, Pyrmont',
+'2009 Jerry Street':'2009 Jerry Street',
+'Captower':'Captower',
+'Casehouse':'Casehouse',
+'Gioserne':'Gioserne',
+'"与 Structora 的合作是一段非凡的体验。他们对细节的关注和创新的设计将我们的愿景变为现实。团队的专业能力将我们的空间完美融合了美学与功能性。"':'"与 Structora 的合作是一段非凡的体验。他们对细节的关注和创新的设计将我们的愿景变为现实。团队的专业能力将我们的空间完美融合了美学与功能性。"',
+'Michael Reynolds':'Michael Reynolds',
+'城市空间开发 CEO':'城市空间开发 CEO',
+},
+23:{'MAISON ELARA | Timeless Fashion':'MAISON ELARA | 永恒时装',
+'Spring Summer \'26':'2026春夏',
+'发现 the Collection':'探索系列',
+'Shop Women':'女士',
+'Shop Men':'男士',
+'Heritage':'品牌传承',
+'Our vision is rooted in the belief that clothing should empower, not constrain — pieces that move with you, breathe with you, and become a second skin.':'我们的愿景植根于服装应赋予力量而非束缚的信念——随你而动、与你共呼吸、成为第二层肌肤的服装。',
+'Elara Hayes':'Elara Hayes',
+'Founder &amp; Creative Director':'创始人兼创意总监',
+'A letter from our founder on the philosophy behind MAISON ELARA.':'来自创始人的一封信，讲述 MAISON ELARA 的品牌哲学。',
+'Women\'s':'女装',
+'Men\'s':'男装',
+'精选':'精选',
+'Layering Tanks':'叠穿背心',
+'Cropped','短款',
+'Rib Knits':'螺纹针织',
+'Cable Knit Pullover':'绞花针织套头衫',
+'Relaxed Silhouette':'宽松廓形',
+'Cotton Basics':'棉质基础款',
+'Boxy Fit Tee':'宽松版T恤',
+'Premium Weight Cotton':'高级重量棉',
+'Linen Trousers':'亚麻长裤',
+'High Waist Relaxed Fit':'高腰宽松版型',
+'Japanese Selvedge Denim':'日本赤耳丹宁',
+'Straight Leg Heritage Fit':'直筒经典版型',
+'Footwear':'鞋履',
+'About Our Movement':'关于我们的运动',
+'MAISON ELARA is a fashion brand for those who move through the world with intention. Minimalist design, contemporary silhouettes, built for the generation that defines culture.':'MAISON ELARA 是为那些有意识地穿行于世界的人而生的时尚品牌。极简设计、当代廓形，为定义文化的世代而造。',
+'Become a Stockist':'成为经销伙伴',
+},
+24:{'Burivers | Classic 1950s Burger Delivery':'Burivers | 经典1950年代汉堡外送',
+'Order Now!':'立即下单！',
+'DOUBLE CLUB':'双层俱乐部',
+'MONSTER BBQ':'怪兽烧烤',
+'SOLO BURGER':'单人汉堡',
+'THE 50s WAY':'50年代风格',
+'We smash it fresh, serve it fast, and wrap it retro.':'我们新鲜压制、快速送达、复古包装。',
+'Our Menu':'菜单',
+'Highlights':'精选',
+'TRIPLE SMASH':'三重压制',
+'DOUBLE BURGER':'双层汉堡',
+'BACON STACK':'培根叠层',
+'COMBO BUNDLES':'套餐组合',
+'Burger + Fries + Drink':'汉堡+薯条+饮品',
+'Party Box':'派对盒',
+'Family Pack':'家庭装',
+'CUSTOMER LOVES':'顾客最爱',
+'"Hands down the juiciest burger in town! The delivery was super fast and the fries were still crispy."':'“毫无疑问是城里最多汁的汉堡！配送超快，薯条送到时还是脆的。”',
+'"The kids love the classic cheeseburgers and the crinkle fries are perfectly seasoned. Consistent quality, always hot on arrival."':'“孩子们爱吃经典芝士汉堡，波纹薯条调味恰到好处。品质稳定，送达时总是热腾腾的。”',
+'"Our go-to lunch spot for the office. The Monster Bacon Triple is an absolute unit. Love that they include retro-themed napkins and packaging."':'“办公室午餐首选。怪兽培根三重汉堡绝对是王者。喜欢他们附赠的复古主题餐巾和包装。”',
+'Sarah Jenkins':'Sarah Jenkins',
+'James W.':'James W.',
+'Marcus T.':'Marcus T.',
+},
+25:{'Sunny Steps 托育园 | 阳光趣味学习':'Sunny Steps 托育园 | 阳光趣味学习',
+'Sunny Steps Daycare is a warm, colorful, and safe environment for infants, toddlers, and preschoolers. Schedule a tour to see our classrooms!':'Sunny Steps 托育园为婴儿、幼儿和学龄前儿童提供温暖、多彩、安全的环境。预约参观，看看我们的教室！',
+'下载 the Enrollment 包':'下载报名材料',
+'Schedule a 参观':'预约参观',
+},
+26:{'Warm Orange 托育园 | 温馨关爱儿童保育':'Warm Orange 托育园 | 温馨关爱儿童保育',
+'Warm Orange 日间托育 is a warm, friendly, and nurturing childcare center for infants, toddlers, and preschoolers. 关于 我们 to see our classrooms and meet our teachers!':'Warm Orange 日间托育是一家温暖、友好、充满关爱的托育中心，为婴儿、幼儿和学龄前儿童提供服务。了解我们，参观教室，认识我们的老师！',
+'Book a 参观':'预约参观',
+},
+27:{'Ignite Events | 大胆活力派对策划':'Ignite Events | 大胆活力派对策划',
+'We create unforgettable, high-energy experiences. From corporate galas to wild birthday bashes, we bring the heat to every event.':'我们创造令人难忘的高能量体验。从企业盛典到狂欢生日派对，我们为每一场活动注入热力。',
+'Our 服务':'我们的服务',
+},
+28:{'Lumina Events | 明亮紫色创意派对策划':'Lumina Events | 明亮紫色创意派对策划',
+'Lumina Events is a creative party planning agency specializing in weddings, corporate events, and private parties. We design unforgettable experiences.':'Lumina Events 是一家创意派对策划机构，专注于婚礼、企业活动和私人派对。我们设计令人难忘的体验。',
+'我们的服务':'我们的服务',
+'Vibrant, cohesive themes and immersive decorations that bring your vision to life.':'活力四射、统一的主题和沉浸式装饰，将您的愿景变为现实。',
+'End-to-end planning including venue selection, vendor coordination, and on-the-day management.':'全流程策划，包括场地选择、供应商协调及当日管理。',
+'Sound, lighting, and special effects that turn ordinary moments into extraordinary memories.':'音响、灯光和特效，将平凡时刻转化为非凡记忆。',
+'Let\'s Create':'一起创造',
+},
+29:{'Verdant | Fresh Green Minimal Florist':'Verdant | 清新绿色极简花艺',
+'Curated 花艺 arrangements and plants for the modern, minimalist home.':'为现代极简家居甄选的花艺与绿植。',
+'Fresh 花束s':'新鲜花束',
+'Potted Plants':'盆栽植物',
+'Bespoke Arrangements':'定制花艺',
+'Plant 订阅ion':'绿植订阅',
+'Bringing nature indoors with thoughtfully designed botanical arrangements. Verdant is a minimalist botanical studio specializing in curating fresh bouquets and potted plants for the modern home.':'以用心设计的植物花艺将自然带入室内。Verdant 是一家极简植物工作室，专注于为现代家居甄选新鲜花束和盆栽绿植。',
+'Plants For The People':'为人而生的植物',
+'We believe every space deserves a touch of green.':'我们相信每个空间都值得一抹绿色。',
+'Join the Verdant Community':'加入 Verdant 社区',
+'Receive plant care tips, first access to new botanical drops, and 10% off your first order.':'获取植物护理技巧、抢先选购新上植物，以及首单九折优惠。',
+},
+30:{'Grace Church | A Place to Belong':'Grace Church | 归属之地',
+'Weekend Worship':'周末敬拜',
+'Sunday 9:00 am &amp; 11:00 am':'周日 上午9:00 与 上午11:00',
+'Watch Live':'观看直播',
+'Previous Sermons':'往期讲道',
+'Our Ministries':'事工',
+},
+}
+
+def apply(tid, trans):
+    path = os.path.join(WEGIC, str(tid), 'index.html')
+    if not os.path.exists(path): return 0
+    with open(path, encoding='utf-8') as f: html = f.read()
+    count = 0
+    for en, zh in sorted(trans.items(), key=lambda x: len(x[0]), reverse=True):
+        if en == zh: continue
+        if en in html:
+            new_html = safe_replace(html, en, zh)
+            if new_html != html:
+                html = new_html; count += 1
+    if count:
+        with open(path, 'w', encoding='utf-8') as f: f.write(html)
+    return count
+
+total = 0
+for tid in sorted(ALL):
+    c = apply(tid, ALL[tid])
+    if c: print(f'  [#{tid}] {c}'); total += c
+print(f'\nTotal: {total}')

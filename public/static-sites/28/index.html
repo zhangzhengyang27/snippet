@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Studio - 极简设计</title>
+
+<!--
+
+Tooplate 2156 Graphite Creative
+
+https://www.tooplate.com/view/2156-graphite-creative
+
+Free HTML CSS 模板
+
+-->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              ink:   '#1a1a1a',
+              panel: '#121212',
+              card:  '#222222',
+              line:  '#2a2a2a',
+              steel: '#555555',
+              chalk: '#d0d0d0',
+              muted: '#999999',
+              dim:   '#777777',
+            },
+            fontFamily: {
+              graphite: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+            },
+            maxWidth: { site: '1200px' },
+          },
+        },
+      }
+    </script>
+
+    <!-- 仅兜底：伪元素 / JS 切换的状态类 / 滚动条 / clip-path / 复杂 nth-child 边框 -->
+    <style>
+      /* SLIDER 幻灯片（JS 切换 .active + 伪元素 fallback 文案） */
+      .slide {
+        position: absolute; inset: 0; opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+        display: flex; align-items: center; justify-content: center;
+        background-color: #1a1a1a;
+      }
+      .slide.active { opacity: 1; z-index: 5; }
+      .slide img { width: 100%; height: 100%; object-fit: cover; display: block; position: relative; }
+      .slide::after {
+        content: attr(data-fallback); position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); color: #555; font-size: 18px;
+        text-align: center; opacity: 0; transition: opacity 0.3s;
+      }
+      .slide img:not([src]), .slide img[src=""] { opacity: 0; }
+      .slide:not(:has(img[src]))::after { opacity: 1; }
+
+      /* DOTS 轮播点（JS 切换 .active） */
+      .dot {
+        width: 12px; height: 12px; background-color: rgba(255,255,255,0.4);
+        border-radius: 50%; cursor: pointer; transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.6);
+      }
+      .dot.active { background-color: #fff; transform: scale(1.2); }
+
+      /* LOGO 矢量块斜切角（clip-path 无法用工具类表达） */
+      .logo-vector { clip-path: polygon(0 0, 100% 0, 80% 100%, 0 80%); }
+
+      /* NAV 链接：斜切角 + hover/active 填充条（::before 伪元素） */
+      nav a { clip-path: polygon(0 0, 85% 0, 100% 100%, 0 100%); }
+      nav a::before {
+        content: ''; position: absolute; bottom: 0; left: 0; width: 100%;
+        height: 0; background-color: #444; transition: height 0.3s ease; z-index: -1;
+      }
+      nav a:hover, nav a.active { color: #fff; }
+      nav a:hover::before, nav a.active::before { height: 20%; }
+
+      /* CTA / SUBMIT / MODAL-VISIT 按钮：斜切角 + hover 填充条 */
+      .cta-button, .submit-btn, .modal-visit-btn {
+        clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%);
+        position: relative; overflow: hidden;
+      }
+      .cta-button::before, .submit-btn::before, .modal-visit-btn::before {
+        content: ''; position: absolute; bottom: 0; left: 0; width: 100%;
+        height: 0; background-color: #444; transition: height 0.3s ease; z-index: -1;
+      }
+      .cta-button:hover, .submit-btn:hover, .modal-visit-btn:hover { color: #fff; }
+      .cta-button:hover::before, .submit-btn:hover::before, .modal-visit-btn:hover::before { height: 20%; }
+
+      /* SERVICE 卡片：左侧悬浮高亮条（::before）+ nth 边框逻辑 */
+      .service-card::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 0;
+        background: linear-gradient(180deg, #555 0%, #333 100%); transition: height 0.3s ease;
+      }
+      .service-card:hover::before { height: 100%; }
+      .service-card:nth-child(3n) { border-right: none; }
+      .service-card:nth-last-child(-n+3) { border-bottom: none; }
+      .service-number::after {
+        content: ''; position: absolute; bottom: -5px; left: 0; width: 100%; height: 1px;
+        background: #555; transform: scaleX(0); transition: transform 0.3s ease;
+      }
+
+      /* PORTFOLIO 卡片：悬浮暗化叠层（::before） */
+      .portfolio-item::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, #000 0%, transparent 100%);
+        opacity: 0; transition: opacity 0.3s ease; z-index: 1;
+      }
+      .portfolio-item:hover::before { opacity: 0.4; }
+
+      /* CONTACT 条目：左侧短横线（::before） */
+      .contact-item::before {
+        content: ''; position: absolute; left: 0; top: 10px;
+        width: 12px; height: 1px; background-color: #555;
+      }
+
+      /* MODAL 显隐（JS 切换 .active） */
+      .portfolio-modal { display: none; }
+      .portfolio-modal.active { display: flex; }
+      .modal-details li::before {
+        content: '•'; position: absolute; left: 0; color: #555;
+        font-size: 20px; font-weight: bold;
+      }
+
+      /* 滚动条（webkit，无法用工具类表达） */
+      .modal-content::-webkit-scrollbar { width: 6px; }
+      .modal-content::-webkit-scrollbar-track { background: #121212; }
+      .modal-content::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+      .modal-content::-webkit-scrollbar-thumb:hover { background: #444; }
+      nav::-webkit-scrollbar { width: 6px; }
+      nav::-webkit-scrollbar-track { background: #1a1a1a; }
+      nav::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+      /* 响应式：移动端导航 / 汉堡动画 / service 边框逻辑 */
+      @media (max-width: 1024px) {
+        .service-card:nth-child(2n) { border-right: none; }
+        .service-card:nth-child(3n) { border-right: 1px solid #2a2a2a; }
+      }
+      @media (max-width: 767px) {
+        nav.active { display: flex; }
+        .menu-toggle.active span:nth-child(1) { transform: rotate(45deg) translateY(9px); }
+        .menu-toggle.active span:nth-child(2) { opacity: 0; }
+        .menu-toggle.active span:nth-child(3) { transform: rotate(-45deg) translateY(-9px); }
+        .service-card { border-right: none; border-bottom: 1px solid #2a2a2a; }
+        .service-card:last-child { border-bottom: none; }
+      }
+    </style>
+</head>
+<body class="bg-ink text-chalk font-graphite leading-[1.6] antialiased">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-[100] h-[140px] bg-panel border-b border-line flex items-center justify-between px-[60px] max-[1024px]:px-[40px] max-[767px]:h-auto max-[767px]:px-[20px] max-[767px]:py-[15px]">
+        <div class="header-container max-w-site mx-auto w-full flex items-center justify-between">
+            <a href="#" class="logo-area flex items-center gap-[20px] cursor-pointer text-chalk no-underline transition hover:opacity-80" onclick="scrollToTop(); return false;">
+                <div class="logo-vector w-20 h-20 flex items-center justify-center font-bold text-white text-[24px] bg-[linear-gradient(135deg,#444_0%,#333_100%)]">CS</div>
+                <div class="logo-text">
+                    <h1 class="text-[28px] font-bold tracking-[-0.5px]">Creative Studio</h1>
+                    <p class="text-[12px] text-dim mt-1 tracking-[2px] uppercase">极简设计</p>
+                </div>
+            </a>
+            <nav class="hidden md:flex items-center gap-[16px] max-[1024px]:gap-[12px]">
+                <a href="#home" class="active relative flex h-[60px] items-center px-[32px] bg-card text-chalk no-underline text-[15px] font-semibold border-l-2 border-b-2 border-steel transition-all duration-300 cursor-pointer overflow-hidden max-[1024px]:px-[20px] max-[1024px]:text-[13px] max-[767px]:w-auto max-[767px]:h-[50px] max-[767px]:px-[24px] max-[767px]:min-w-[150px]">首页</a>
+                <a href="#services" class="relative flex h-[60px] items-center px-[32px] bg-card text-chalk no-underline text-[15px] font-semibold border-l-2 border-b-2 border-steel transition-all duration-300 cursor-pointer overflow-hidden max-[1024px]:px-[20px] max-[1024px]:text-[13px] max-[767px]:w-auto max-[767px]:h-[50px] max-[767px]:px-[24px] max-[767px]:min-w-[150px]">服务</a>
+                <a href="#portfolio" class="relative flex h-[60px] items-center px-[32px] bg-card text-chalk no-underline text-[15px] font-semibold border-l-2 border-b-2 border-steel transition-all duration-300 cursor-pointer overflow-hidden max-[1024px]:px-[20px] max-[1024px]:text-[13px] max-[767px]:w-auto max-[767px]:h-[50px] max-[767px]:px-[24px] max-[767px]:min-w-[150px]">作品集</a>
+                <a href="#about" class="relative flex h-[60px] items-center px-[32px] bg-card text-chalk no-underline text-[15px] font-semibold border-l-2 border-b-2 border-steel transition-all duration-300 cursor-pointer overflow-hidden max-[1024px]:px-[20px] max-[1024px]:text-[13px] max-[767px]:w-auto max-[767px]:h-[50px] max-[767px]:px-[24px] max-[767px]:min-w-[150px]">关于</a>
+                <a href="#contact" class="relative flex h-[60px] items-center px-[32px] bg-card text-chalk no-underline text-[15px] font-semibold border-l-2 border-b-2 border-steel transition-all duration-300 cursor-pointer overflow-hidden max-[1024px]:px-[20px] max-[1024px]:text-[13px] max-[767px]:w-auto max-[767px]:h-[50px] max-[767px]:px-[24px] max-[767px]:min-w-[150px]">联系</a>
+            </nav>
+            <button class="menu-toggle flex md:hidden flex-col gap-[6px] cursor-pointer bg-none border-0 p-0" aria-label="Toggle menu">
+                <span class="block w-[28px] h-[3px] bg-chalk transition-all duration-300"></span>
+                <span class="block w-[28px] h-[3px] bg-chalk transition-all duration-300"></span>
+                <span class="block w-[28px] h-[3px] bg-chalk transition-all duration-300"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="min-h-[calc(100vh-200px)]">
+        <!-- HERO SECTION -->
+        <section id="home" class="section-hero relative min-h-[480px] flex items-center px-[60px] bg-ink overflow-hidden max-[1024px]:px-[40px] max-[767px]:px-[20px] max-[767px]:py-[40px] max-[767px]:min-h-0">
+            <div class="hero-container max-w-site mx-auto w-full flex items-center gap-[60px] max-[1024px]:flex-col max-[1024px]:gap-[40px] max-[767px]:items-center">
+                <div class="hero-left flex-1 z-[2] max-[1024px]:w-full max-[1024px]:max-w-[600px] max-[767px]:w-full">
+                    <div class="hero-line w-[100px] h-[3px] bg-steel mb-[30px]"></div>
+                    <h2 class="text-[48px] font-semibold mb-[24px] tracking-[-0.5px] max-[1024px]:text-[40px] max-[767px]:text-[32px]">We Create Experiences</h2>
+                    <p class="text-[18px] text-muted mb-[40px] leading-[1.8] max-[767px]:text-[16px] max-[767px]:mb-[30px]">Minimalist design meets powerful functionality. Crafting digital solutions that inspire and engage your audience.</p>
+                    <a href="#contact" class="cta-button inline-block px-[50px] py-[18px] bg-[#333] text-white no-underline font-semibold text-[15px] border-l-2 border-b-2 border-steel transition-all duration-300 tracking-[0.5px] cursor-pointer max-[767px]:px-[40px] max-[767px]:py-[14px] max-[767px]:text-[14px]">Start a Project</a>
+                </div>
+                <div class="slider-container relative flex-1 h-[400px] overflow-hidden border border-line bg-[linear-gradient(135deg,#222_0%,#2a2a2a_100%)] max-[1024px]:h-[350px] max-[1024px]:w-full max-[1024px]:max-w-[600px] max-[1024px]:flex-none min-[769px]:max-[1024px]:h-[380px] min-[769px]:max-[1024px]:mx-auto max-[767px]:h-[300px] max-[767px]:min-h-[300px] max-[767px]:w-full max-[767px]:max-w-none max-[767px]:block">
+                    <div class="slide active" data-fallback="Design Workspace">
+                        <img src="/static-sites/28/images/tooplate-creative-01.jpg" alt="Design workspace">
+                    </div>
+                    <div class="slide" data-fallback="Creative Work">
+                        <img src="/static-sites/28/images/tooplate-creative-02.jpg" alt="Creative work">
+                    </div>
+                    <div class="slide" data-fallback="Web Design">
+                        <img src="/static-sites/28/images/tooplate-creative-03.jpg" alt="Web design">
+                    </div>
+                    <div class="slider-dots absolute bottom-[20px] left-1/2 -translate-x-1/2 flex gap-[12px] z-[10] max-[767px]:bottom-[10px]">
+                        <div class="dot active" onclick="currentSlide(0)"></div>
+                        <div class="dot" onclick="currentSlide(1)"></div>
+                        <div class="dot" onclick="currentSlide(2)"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SERVICES SECTION -->
+        <section id="services" class="section-services px-[60px] py-[120px] bg-panel border-t border-line max-[1024px]:px-[40px] max-[1024px]:py-[80px] max-[767px]:px-[20px] max-[767px]:py-[60px]">
+            <div class="services-container max-w-site mx-auto">
+                <h2 class="section-title text-[52px] font-extrabold mb-[80px] text-center tracking-[-0.5px] max-[1024px]:text-[36px] max-[1024px]:mb-[60px] max-[767px]:text-[28px] max-[767px]:mb-[40px]">Our 服务</h2>
+                <div class="services-grid grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-0 max-[1024px]:grid-cols-2 max-[767px]:grid-cols-1">
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.01</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">Web Design</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">Elegant and functional websites that capture your brand essence and convert visitors into clients with stunning visuals.</p>
+                    </div>
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.02</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">Development</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">Clean, scalable code that powers seamless user experiences and drives measurable results for your business.</p>
+                    </div>
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.03</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">Branding</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">Strategic visual identities that communicate your unique value and resonate with your target audience effectively.</p>
+                    </div>
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.04</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">移动端 Design</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">响应式 and intuitive mobile experiences optimized for all devices and screen sizes.</p>
+                    </div>
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.05</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">SEO &amp; Analytics</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">Data-driven strategies to improve visibility, increase traffic, and achieve your digital goals.</p>
+                    </div>
+                    <div class="service-card group relative p-[40px] bg-transparent border-r border-b border-line overflow-hidden transition-all duration-300">
+                        <div class="service-number relative inline-block text-[48px] font-light text-[#333] mb-[20px] font-[Courier_New,monospace] group-hover:text-steel">.06</div>
+                        <h3 class="text-[24px] font-bold mb-[16px]">Launch &amp; 支持</h3>
+                        <p class="text-muted text-[15px] leading-[1.8]">Complete project management from concept to launch, with ongoing support and optimization.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PORTFOLIO SECTION -->
+        <section id="portfolio" class="section-portfolio px-[60px] py-[120px] bg-ink border-t border-line max-[1024px]:px-[40px] max-[1024px]:py-[80px] max-[767px]:px-[20px] max-[767px]:py-[60px]">
+            <div class="portfolio-container max-w-site mx-auto">
+                <h2 class="section-title text-[52px] font-extrabold mb-[80px] text-center tracking-[-0.5px] max-[1024px]:text-[36px] max-[1024px]:mb-[60px] max-[767px]:text-[28px] max-[767px]:mb-[40px]">近期作品</h2>
+                <div class="portfolio-grid grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-[30px] max-[767px]:grid-cols-1">
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-21.jpg" alt="Project Alpha" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Alpha</h3>
+                            <p class="text-[13px] text-dim">Web Design &amp; Development</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">A cutting-edge web design and development project that combines modern aesthetics with powerful functionality. This project showcases our expertise in creating responsive, user-centric digital experiences.</p>
+                            <ul class="features">
+                                <li>Fully responsive design</li>
+                                <li>Modern web technologies</li>
+                                <li>Optimized performance</li>
+                                <li>SEO friendly</li>
+                            </ul>
+                            <a href="https://x.com/minthu" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-22.jpg" alt="Project Beta" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Beta</h3>
+                            <p class="text-[13px] text-dim">Branding &amp; Identity</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">Complete brand identity development including logo design, color systems, and brand guidelines. This project demonstrates our ability to create cohesive visual identities that resonate with target audiences.</p>
+                            <ul class="features">
+                                <li>Logo design</li>
+                                <li>Brand guidelines</li>
+                                <li>Color systems</li>
+                                <li>Visual identity</li>
+                            </ul>
+                            <a href="https://www.tooplate.com" rel="nofollow" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-23.jpg" alt="Project Gamma" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Gamma</h3>
+                            <p class="text-[13px] text-dim">Digital Experience</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">An immersive digital experience that leverages cutting-edge web technologies and interactive design principles. This project showcases our expertise in creating memorable user interactions.</p>
+                            <ul class="features">
+                                <li>Interactive elements</li>
+                                <li>Smooth animations</li>
+                                <li>Modern aesthetics</li>
+                                <li>User engagement</li>
+                            </ul>
+                            <a href="https://www.tooplate.com" rel="nofollow" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-24.jpg" alt="Project Delta" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Delta</h3>
+                            <p class="text-[13px] text-dim">Full Brand Development</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">Comprehensive brand development project covering strategy, design, and implementation. This project demonstrates our ability to handle complex projects from concept to execution.</p>
+                            <ul class="features">
+                                <li>Strategic planning</li>
+                                <li>Visual design</li>
+                                <li>Brand deployment</li>
+                                <li>Market positioning</li>
+                            </ul>
+                            <a href="https://www.tooplate.com" rel="nofollow" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-25.jpg" alt="Project Epsilon" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Epsilon</h3>
+                            <p class="text-[13px] text-dim">Web &amp; 移动端 Design</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">A sophisticated multi-platform design project spanning web and mobile applications. This project showcases our expertise in creating consistent experiences across different devices and screen sizes.</p>
+                            <ul class="features">
+                                <li>响应式 design</li>
+                                <li>Cross-platform compatibility</li>
+                                <li>Intuitive UI</li>
+                                <li>移动端 optimization</li>
+                            </ul>
+                            <a href="https://www.tooplate.com" rel="nofollow" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                    <div class="portfolio-item group relative aspect-[16/10] bg-card border border-line overflow-hidden cursor-pointer">
+                        <img src="/static-sites/28/images/tooplate-creative-26.jpg" alt="Project Zeta" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="portfolio-label absolute bottom-0 left-0 right-0 p-[24px] bg-[linear-gradient(180deg,transparent_0%,rgba(18,18,18,0.98)_100%)] translate-y-[20px] transition-transform duration-300 z-[2] group-hover:translate-y-0">
+                            <h3 class="text-[18px] font-bold mb-[6px]">Project Zeta</h3>
+                            <p class="text-[13px] text-dim">Concept &amp; Strategy</p>
+                        </div>
+                        <div class="portfolio-data" hidden>
+                            <p class="description">Strategic conceptualization and planning project that formed the foundation for successful client outcomes. This project demonstrates our deep understanding of business goals and market dynamics.</p>
+                            <ul class="features">
+                                <li>Market research</li>
+                                <li>Strategic planning</li>
+                                <li>Competitive analysis</li>
+                                <li>Growth roadmap</li>
+                            </ul>
+                            <a href="https://x.com/minthu" class="visit-url">Visit Site</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT SECTION -->
+        <section id="about" class="section-about px-[60px] py-[120px] bg-panel border-t border-line max-[1024px]:px-[40px] max-[1024px]:py-[80px] max-[767px]:px-[20px] max-[767px]:py-[60px]">
+            <h2 class="section-title text-[52px] font-extrabold mb-[80px] text-center tracking-[-0.5px] max-[1024px]:text-[36px] max-[1024px]:mb-[60px] max-[767px]:text-[28px] max-[767px]:mb-[40px]">关于 Us</h2>
+            <div class="about-container max-w-site mx-auto grid grid-cols-2 gap-[80px] items-center max-[1024px]:grid-cols-1 max-[1024px]:gap-[50px]">
+                <div class="about-content">
+                    <h3 class="text-[32px] font-extrabold mb-[30px] tracking-[-0.5px]">为什么选择我们</h3>
+                    <p class="text-muted mb-[24px] leading-[1.9] text-[15px]">We believe in the power of simplicity. Every project we undertake is approached with a commitment to excellence, minimalist design principles, and a deep understanding of digital strategy.</p>
+                    <p class="text-muted mb-[24px] leading-[1.9] text-[15px]">Our team brings together designers, developers, and strategists who share a passion for creating meaningful digital experiences.</p>
+                    <p class="text-muted mb-[24px] leading-[1.9] text-[15px]">This template is brought to you by <a href="about-tooplate.html" class="text-chalk underline transition-colors hover:text-white">Tooplate</a>, your destination for free HTML CSS website templates. All our templates are AI-ready, meaning you can easily customize them using AI tools like Claude or ChatGPT to match your brand and vision perfectly.</p>
+                </div>
+                <div class="about-blocks flex flex-col gap-[24px]">
+                    <div class="about-block p-[30px] bg-card border-l-4 border-steel border-t border-r border-b border-line">
+                        <h4 class="text-[16px] font-bold mb-[12px] text-chalk">Creative Excellence</h4>
+                        <p class="text-[13px] text-dim mb-0">Award-winning designs that stand out and deliver results beyond expectations.</p>
+                    </div>
+                    <div class="about-block p-[30px] bg-card border-l-4 border-steel border-t border-r border-b border-line">
+                        <h4 class="text-[16px] font-bold mb-[12px] text-chalk">Technical Expertise</h4>
+                        <p class="text-[13px] text-dim mb-0">Modern technology stack ensuring performance, security, and scalability.</p>
+                    </div>
+                    <div class="about-block p-[30px] bg-card border-l-4 border-steel border-t border-r border-b border-line">
+                        <h4 class="text-[16px] font-bold mb-[12px] text-chalk">Client Partnership</h4>
+                        <p class="text-[13px] text-dim mb-0">Collaborative approach with transparent communication throughout the project.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="section-contact px-[60px] py-[120px] bg-ink border-t border-line max-[1024px]:px-[40px] max-[1024px]:py-[80px] max-[767px]:px-[20px] max-[767px]:py-[60px]">
+            <div class="contact-container max-w-site mx-auto grid grid-cols-2 gap-[60px] max-[1024px]:grid-cols-1 max-[1024px]:gap-[50px]">
+                <div class="contact-info pr-[40px] max-[1024px]:pr-0">
+                    <h3 class="text-[36px] font-extrabold mb-[30px]">Get In Touch</h3>
+                    <p class="text-muted mb-[40px] text-[15px] leading-[1.8]">Ready to bring your vision to life? Reach out to us and let's discuss how we can help elevate your brand and create something extraordinary together.</p>
+                    <div class="contact-details flex flex-col gap-[30px]">
+                        <div class="contact-item relative flex flex-col gap-2 pl-[30px]">
+                            <label class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">Email</label>
+                            <a href="https://x.com/minthu" class="text-chalk no-underline text-[16px] transition-colors hover:text-white"><span class="__cf_email__" data-cfemail="bf979a939390bf9c8d9a9e8b96899a8c8b8a9b9690d19c9092">[email&#160;protected]</span></a>
+                        </div>
+                        <div class="contact-item relative flex flex-col gap-2 pl-[30px]">
+                            <label class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">电话</label>
+                            <a href="tel:+1234567890" class="text-chalk no-underline text-[16px] transition-colors hover:text-white">+1 (234) 567-890</a>
+                        </div>
+                        <div class="contact-item relative flex flex-col gap-2 pl-[30px]">
+                            <label class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">Location</label>
+                            <p class="text-chalk no-underline text-[16px] transition-colors hover:text-white">Creative Hub, Design District<br>New York, NY 10001</p>
+                        </div>
+                    </div>
+                </div>
+                <form class="contact-form flex flex-col gap-[20px]" onsubmit="handleSubmit(event)">
+                    <div class="form-row grid grid-cols-2 gap-[20px] max-[767px]:grid-cols-1">
+                        <div class="form-group flex flex-col gap-2">
+                            <label for="name" class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">全名</label>
+                            <input type="text" id="name" name="name" required class="p-[14px] px-[16px] bg-card border border-[#333] text-chalk text-[14px] transition-all duration-300 focus:outline-none focus:border-steel focus:bg-[#2a2a2a]">
+                        </div>
+                        <div class="form-group flex flex-col gap-2">
+                            <label for="email" class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">邮箱地址</label>
+                            <input type="email" id="email" name="email" required class="p-[14px] px-[16px] bg-card border border-[#333] text-chalk text-[14px] transition-all duration-300 focus:outline-none focus:border-steel focus:bg-[#2a2a2a]">
+                        </div>
+                    </div>
+                    <div class="form-group full-width flex flex-col gap-2">
+                        <label for="subject" class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">主题</label>
+                        <input type="text" id="subject" name="subject" required class="p-[14px] px-[16px] bg-card border border-[#333] text-chalk text-[14px] transition-all duration-300 focus:outline-none focus:border-steel focus:bg-[#2a2a2a]">
+                    </div>
+                    <div class="form-group full-width flex flex-col gap-2">
+                        <label for="message" class="text-[13px] text-dim uppercase tracking-[1px] font-semibold">留言</label>
+                        <textarea id="message" name="message" required class="p-[14px] px-[16px] bg-card border border-[#333] text-chalk text-[14px] transition-all duration-300 focus:outline-none focus:border-steel focus:bg-[#2a2a2a] min-h-[120px] resize-y"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn self-start mt-[10px] px-[40px] py-[16px] bg-[#333] text-white border-l-2 border-b-2 border-steel font-semibold text-[14px] uppercase tracking-[1px] cursor-pointer transition-all duration-300 max-[767px]:px-[32px] max-[767px]:py-[12px] max-[767px]:text-[13px]">发送消息</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- PORTFOLIO MODAL -->
+        <div id="portfolioModal" class="portfolio-modal fixed inset-0 bg-black/80 z-[2000] items-center justify-center backdrop-blur-sm">
+            <div class="modal-content relative bg-ink border border-line max-w-[900px] w-[90%] max-h-[90vh] overflow-y-auto flex gap-[40px] p-[40px] max-[767px]:flex-col max-[767px]:gap-[20px] max-[767px]:p-[50px_20px_30px] max-[767px]:max-h-[85vh]">
+                <button class="modal-close absolute top-[15px] right-[15px] w-[40px] h-[40px] bg-none border-0 text-chalk text-[28px] cursor-pointer transition-all duration-300 flex items-center justify-center z-[20] p-0 hover:text-white hover:rotate-90" onclick="closePortfolioModal()">&times;</button>
+                <img id="modalImage" src="" alt="" class="modal-image w-1/2 flex-shrink-0 aspect-[4/3] object-cover border border-line self-start max-[767px]:w-full max-[767px]:order-2">
+                <div class="modal-details w-1/2 flex flex-col max-[767px]:w-full max-[767px]:order-1">
+                    <h3 id="modalTitle" class="text-[28px] font-bold mb-2 text-chalk max-[767px]:text-[22px]"></h3>
+                    <p id="modalCategory" class="text-muted text-[14px] font-semibold tracking-[1px] mb-5 uppercase pb-5 border-b border-line max-[767px]:text-[13px] max-[767px]:mb-[15px] max-[767px]:pb-[15px]"></p>
+                    <p id="modalDescription" class="text-muted text-[15px] leading-[1.8] mb-5 max-[767px]:text-[14px] max-[767px]:mb-[15px]"></p>
+                    <ul id="modalFeatures" class="list-none mb-[30px] pl-0"></ul>
+                    <a href="#" id="modalVisitBtn" class="modal-visit-btn inline-block px-[40px] py-[14px] bg-[#333] text-white no-underline font-semibold text-[14px] border-l-2 border-b-2 border-steel tracking-[0.5px] cursor-pointer transition-all duration-300 z-[10] max-[767px]:px-[32px] max-[767px]:py-[12px] max-[767px]:text-[13px]" target="_blank">Visit the Site</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-panel border-t border-line px-[60px] py-[40px] text-center text-dim text-[13px] max-[767px]:px-[20px] max-[767px]:py-[30px] max-[767px]:text-[11px]">
+        <p>&copy; 2026 Creative Studio. All rights reserved. | Designed by <a href="https://www.tooplate.com/" target="_blank" rel="nofollow" class="text-[#999] no-underline transition-colors hover:text-chalk">Tooplate</a></p>
+    </footer>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+	<script src="tooplate-graphite-script.js"></script>
+
+<script>
+/* 极简 Bootstrap 交互 polyfill：复现 data-bs-toggle 的 collapse / dropdown 切换 */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-bs-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var kind = btn.getAttribute('data-bs-toggle');
+      var targetSel = btn.getAttribute('data-bs-target');
+      var target = targetSel ? document.querySelector(targetSel) : null;
+      if (kind === 'dropdown') {
+        var menu = btn.nextElementSibling;
+        if (menu && (menu.classList.contains('dropdown-menu') || menu.tagName === 'DIV')) menu.classList.toggle('show');
+      } else if (target) {
+        target.classList.toggle('show');
+      }
+    });
+  });
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function (m) {
+      if (!m.parentElement.contains(e.target)) m.classList.remove('show');
+    });
+  });
+});
+</script>
+</body>
+</html>

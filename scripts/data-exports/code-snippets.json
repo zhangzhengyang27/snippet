@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "description": "常见代码片段库：覆盖前端、后端、Java、Python 四个领域的典型开发场景。每条片段包含功能名称(name)、语言标识(language)、代码内容(code)、简要说明(description)。",
+  "frontend": [
+    {
+      "name": "响应式卡片网格布局",
+      "language": "html+css",
+      "code": "<style>\n  .grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));\n    gap: 16px;\n    padding: 16px;\n  }\n  .card {\n    background: #fff;\n    border-radius: 12px;\n    box-shadow: 0 2px 8px rgba(0,0,0,.08);\n    padding: 16px;\n  }\n</style>\n\n<div class=\"grid\">\n  <div class=\"card\">卡片 1</div>\n  <div class=\"card\">卡片 2</div>\n  <div class=\"card\">卡片 3</div>\n</div>",
+      "description": "使用 CSS Grid 的 auto-fill + minmax 实现自适应列数的响应式卡片布局，无需媒体查询即可在窄屏自动换行。"
+    },
+    {
+      "name": "可复用模态对话框",
+      "language": "vue",
+      "code": "<script setup>\nimport { ref } from 'vue'\nconst visible = ref(false)\nconst open = () => (visible.value = true)\nconst close = () => (visible.value = false)\n</script>\n\n<template>\n  <button @click=\"open\">打开弹窗</button>\n  <div v-if=\"visible\" class=\"mask\" @click.self=\"close\">\n    <div class=\"dialog\">\n      <h3>标题</h3>\n      <p>弹窗内容</p>\n      <button @click=\"close\">关闭</button>\n    </div>\n  </div>\n</template>\n\n<style scoped>\n.mask { position: fixed; inset: 0; background: rgba(0,0,0,.45);\n  display: flex; align-items: center; justify-content: center; }\n.dialog { background: #fff; padding: 24px; border-radius: 10px; min-width: 320px; }\n</style>",
+      "description": "基于 Vue 3 <script setup> 的轻量模态框，利用 @click.self 实现点击遮罩关闭，状态由 ref 控制显隐。"
+    },
+    {
+      "name": "搜索输入防抖",
+      "language": "javascript",
+      "code": "function debounce(fn, delay = 300) {\n  let timer = null\n  return (...args) => {\n    clearTimeout(timer)\n    timer = setTimeout(() => fn.apply(this, args), delay)\n  }\n}\n\nconst searchInput = document.querySelector('#search')\nsearchInput.addEventListener('input', debounce((e) => {\n  console.log('查询关键词：', e.target.value)\n  // 调用后端搜索接口\n}, 400))",
+      "description": "通过闭包 + setTimeout 实现防抖函数，避免用户连续输入时频繁触发请求，仅等待停止输入 delay 毫秒后执行。"
+    },
+    {
+      "name": "表单校验与提交",
+      "language": "javascript",
+      "code": "function validate(form) {\n  const errors = {}\n  if (!form.email) errors.email = '邮箱必填'\n  else if (!/^[^@]+@[^@]+\\.[^@]+$/.test(form.email)) errors.email = '邮箱格式错误'\n  if (!form.password || form.password.length < 6) errors.password = '密码至少 6 位'\n  return errors\n}\n\nfunction submit(form) {\n  const errors = validate(form)\n  if (Object.keys(errors).length) {\n    console.warn('校验失败', errors)\n    return\n  }\n  fetch('/api/login', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify(form)\n  })\n}",
+      "description": "纯 JS 实现邮箱/密码必填与格式校验，校验失败返回错误字典，通过后再发起登录请求。"
+    },
+    {
+      "name": "标签页切换",
+      "language": "vue",
+      "code": "<script setup>\nimport { ref } from 'vue'\nconst tabs = ['概览', '详情', '设置']\nconst active = ref(0)\n</script>\n\n<template>\n  <div class=\"tabs\">\n    <button v-for=\"(t, i) in tabs\" :key=\"i\"\n      :class=\"{ on: i === active }\" @click=\"active = i\">{{ t }}</button>\n  </div>\n  <div class=\"panel\">当前：{{ tabs[active] }}</div>\n</template>",
+      "description": "用单个 active 索引控制当前标签页，配合动态 class 实现高亮，是前端最常见的交互之一。"
+    },
+    {
+      "name": "滚动到底加载更多",
+      "language": "javascript",
+      "code": "let page = 1\nlet loading = false\n\nwindow.addEventListener('scroll', async () => {\n  const nearBottom =\n    window.innerHeight + window.scrollY >= document.body.offsetHeight - 200\n  if (nearBottom && !loading) {\n    loading = true\n    const res = await fetch(`/api/list?page=${page++}`)\n    const data = await res.json()\n    render(data)\n    loading = false\n  }\n})",
+      "description": "监听 scroll 事件，接近底部且未在加载时拉取下一页数据，实现无限滚动列表。"
+    },
+    {
+      "name": "明暗主题切换",
+      "language": "javascript",
+      "code": "function toggleTheme() {\n  const root = document.documentElement\n  const isDark = root.getAttribute('data-theme') === 'dark'\n  root.setAttribute('data-theme', isDark ? 'light' : 'dark')\n  localStorage.setItem('theme', isDark ? 'light' : 'dark')\n}\n\n// 初始化：读取用户上次选择\nconst saved = localStorage.getItem('theme')\nif (saved) document.documentElement.setAttribute('data-theme', saved)",
+      "description": "通过切换根元素 data-theme 属性并结合 CSS 变量与 localStorage 持久化，实现明暗主题切换与记忆。"
+    }
+  ],
+  "backend": [
+    {
+      "name": "用户注册接口",
+      "language": "typescript",
+      "code": "import { Body, Controller, Post } from '@nestjs/common'\n\nclass RegisterDto {\n  email: string\n  password: string\n}\n\n@Controller('api/auth')\nexport class AuthController {\n  @Post('register')\n  async register(@Body() dto: RegisterDto) {\n    // 1. 校验邮箱是否已存在\n    // 2. 使用 bcrypt 加密密码\n    // 3. 写入用户表\n    return { code: 0, message: '注册成功', data: { id: 1, email: dto.email } }\n  }\n}",
+      "description": "NestJS 风格的用户注册 POST 接口，使用 DTO 接收参数，返回统一结构 { code, message, data }。"
+    },
+    {
+      "name": "JWT 鉴权中间件",
+      "language": "javascript",
+      "code": "const jwt = require('jsonwebtoken')\n\nfunction authMiddleware(req, res, next) {\n  const token = req.headers.authorization?.replace('Bearer ', '')\n  if (!token) return res.status(401).json({ message: '未提供 token' })\n  try {\n    const payload = jwt.verify(token, process.env.JWT_SECRET)\n    req.user = payload\n    next()\n  } catch (err) {\n    return res.status(401).json({ message: 'token 无效或已过期' })\n  }\n}\n\nmodule.exports = authMiddleware",
+      "description": "Express 中间件：从 Authorization 头解析 Bearer Token，校验失败返回 401，成功后将用户信息挂到 req.user。"
+    },
+    {
+      "name": "分页查询接口",
+      "language": "typescript",
+      "code": "@Get('list')\nasync list(@Query('page') page = 1, @Query('size') size = 10) {\n  const skip = (page - 1) * size\n  const [rows, total] = await this.repo.findAndCount({\n    skip,\n    take: size,\n    order: { id: 'DESC' }\n  })\n  return {\n    code: 0,\n    data: rows,\n    pagination: { page, size, total, totalPages: Math.ceil(total / size) }\n  }\n}",
+      "description": "通用分页接口，接收 page/size 查询参数，返回数据列表与分页元信息（总数、总页数）。"
+    },
+    {
+      "name": "文件上传接口",
+      "language": "javascript",
+      "code": "const multer = require('multer')\nconst upload = multer({ dest: 'uploads/' })\n\napp.post('/api/upload', upload.single('file'), (req, res) => {\n  if (!req.file) return res.status(400).json({ message: '未收到文件' })\n  res.json({\n    code: 0,\n    data: { filename: req.file.filename, size: req.file.size }\n  })\n})",
+      "description": "使用 multer 处理单文件上传，保存至 uploads 目录并返回文件名与大小。"
+    },
+    {
+      "name": "全局异常处理过滤器",
+      "language": "typescript",
+      "code": "import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common'\n\n@Catch()\nexport class AllExceptionsFilter implements ExceptionFilter {\n  catch(exception: unknown, host: ArgumentsHost) {\n    const ctx = host.switchToHttp()\n    const res = ctx.getResponse()\n    const status = exception instanceof HttpException ? exception.getStatus() : 500\n    res.status(status).json({\n      code: status,\n      message: exception instanceof Error ? exception.message : '服务器错误'\n    })\n  }\n}",
+      "description": "NestJS 全局异常过滤器，统一将异常转换为 { code, message } 结构返回，避免敏感堆栈泄露。"
+    },
+    {
+      "name": "WebSocket 实时消息",
+      "language": "javascript",
+      "code": "const { WebSocketServer } = require('ws')\nconst wss = new WebSocketServer({ port: 8080 })\n\nwss.on('connection', (ws) => {\n  ws.on('message', (msg) => {\n    console.log('收到：', msg.toString())\n    // 广播给所有客户端\n    wss.clients.forEach((c) => c.send(`[广播] ${msg}`))\n  })\n})",
+      "description": "使用 ws 库建立 WebSocket 服务，接收客户端消息并广播给所有连接，适用于聊天、实时通知场景。"
+    }
+  ],
+  "java": [
+    {
+      "name": "类与继承",
+      "language": "java",
+      "code": "abstract class Animal {\n    protected String name;\n    public Animal(String name) { this.name = name; }\n    public abstract void sound();\n}\n\nclass Dog extends Animal {\n    public Dog(String name) { super(name); }\n    @Override\n    public void sound() { System.out.println(name + \" 汪汪叫\"); }\n}\n\n// 使用\nAnimal a = new Dog(\"阿黄\");\na.sound();",
+      "description": "演示 Java 面向对象：抽象基类 Animal 定义模板方法 sound()，子类 Dog 通过继承与 @Override 实现具体行为。"
+    },
+    {
+      "name": "接口与多态",
+      "language": "java",
+      "code": "interface Payment {\n    void pay(double amount);\n}\n\nclass Alipay implements Payment {\n    public void pay(double amount) { System.out.println(\"支付宝支付：\" + amount); }\n}\n\nclass WechatPay implements Payment {\n    public void pay(double amount) { System.out.println(\"微信支付：\" + amount); }\n}\n\n// 多态：同一接口，不同实现\nPayment p = new Alipay();\np.pay(99.0);",
+      "description": "通过接口定义契约，多个实现类提供不同支付方式，调用方依赖接口而非具体类，体现多态与解耦。"
+    },
+    {
+      "name": "自定义业务异常",
+      "language": "java",
+      "code": "class BusinessException extends RuntimeException {\n    private final int code;\n    public BusinessException(int code, String message) {\n        super(message);\n        this.code = code;\n    }\n    public int getCode() { return code; }\n}\n\n// 抛出\nif (balance < amount) {\n    throw new BusinessException(1001, \"余额不足\");\n}",
+      "description": "继承 RuntimeException 定义带错误码的业务异常，便于在全局异常处理器中区分业务错误与系统错误。"
+    },
+    {
+      "name": "try-with-resources 资源管理",
+      "language": "java",
+      "code": "import java.nio.file.*;\n\ntry (Path path = Paths.get(\"data.txt\");\n     BufferedReader br = Files.newBufferedReader(path)) {\n    String line;\n    while ((line = br.readLine()) != null) {\n        System.out.println(line);\n    }\n} catch (IOException e) {\n    e.printStackTrace();\n}\n// 流会在代码块结束时自动关闭，无需手动 finally",
+      "description": "Java 7+ 的 try-with-resources 语法，自动关闭实现 AutoCloseable 的资源，避免资源泄漏。"
+    },
+    {
+      "name": "泛型集合与流处理",
+      "language": "java",
+      "code": "import java.util.*;\n\nList<Integer> nums = Arrays.asList(3, 1, 4, 1, 5, 9, 2);\nint sum = nums.stream()\n    .filter(n -> n % 2 == 0)\n    .mapToInt(Integer::intValue)\n    .sum();\nSystem.out.println(\"偶数之和：\" + sum);",
+      "description": "使用泛型 List 与 Stream API 进行过滤、映射与聚合，是 Java 8 之后典型的数据处理写法。"
+    },
+    {
+      "name": "线程安全单例模式",
+      "language": "java",
+      "code": "public class Config {\n    private static volatile Config instance;\n    private Config() {}\n    public static Config getInstance() {\n        if (instance == null) {\n            synchronized (Config.class) {\n                if (instance == null) {\n                    instance = new Config();\n                }\n            }\n        }\n        return instance;\n    }\n}",
+      "description": "双重检查锁定(DCL) 实现的线程安全单例，volatile 防止指令重排序导致拿到未初始化对象。"
+    }
+  ],
+  "python": [
+    {
+      "name": "CSV 数据清洗与统计",
+      "language": "python",
+      "code": "import pandas as pd\n\ndf = pd.read_csv('sales.csv')\n# 去重 + 填充缺失值\ndf = df.drop_duplicates().fillna(0)\n# 按城市分组统计销售额\nsummary = df.groupby('city')['amount'].sum().sort_values(ascending=False)\nprint(summary.head(10))\nsummary.to_csv('sales_summary.csv', encoding='utf-8-sig')",
+      "description": "使用 pandas 读取 CSV，做去重、缺失值填充、分组聚合，并导出结果，典型数据分析流水线。"
+    },
+    {
+      "name": "批量重命名文件",
+      "language": "python",
+      "code": "import os\n\ndef batch_rename(folder, prefix):\n    for i, name in enumerate(os.listdir(folder), 1):\n        src = os.path.join(folder, name)\n        if os.path.isfile(src):\n            ext = os.path.splitext(name)[1]\n            dst = os.path.join(folder, f\"{prefix}_{i:03d}{ext}\")\n            os.rename(src, dst)\n            print(f\"{name} -> {os.path.basename(dst)}\")\n\nbatch_rename('./photos', 'vacation')",
+      "description": "遍历目录批量重命名文件，添加统一前缀与序号，常用于整理下载或导出的大量文件。"
+    },
+    {
+      "name": "带重试的网络请求",
+      "language": "python",
+      "code": "import requests, time\n\ndef fetch_with_retry(url, retries=3, delay=1):\n    for i in range(retries):\n        try:\n            resp = requests.get(url, timeout=5)\n            resp.raise_for_status()\n            return resp.json()\n        except requests.RequestException as e:\n            print(f\"第 {i+1} 次失败：{e}\")\n            if i < retries - 1:\n                time.sleep(delay * (i + 1))\n    raise RuntimeError(\"请求多次失败\")\n\ndata = fetch_with_retry('https://api.example.com/items')",
+      "description": "封装带指数退避重试的 HTTP 请求，应对网络抖动或临时 5xx 错误，提升脚本健壮性。"
+    },
+    {
+      "name": "网页简单爬虫",
+      "language": "python",
+      "code": "import requests\nfrom bs4 import BeautifulSoup\n\nurl = 'https://news.example.com'\nhtml = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text\nsoup = BeautifulSoup(html, 'html.parser')\n\nfor item in soup.select('.news-item')[:10]:\n    title = item.get_text(strip=True)\n    link = item.get('href')\n    print(title, link)",
+      "description": "使用 requests + BeautifulSoup 抓取页面标题与链接，是入门级网页爬虫的标准做法（注意遵守 robots 与频率限制）。"
+    },
+    {
+      "name": "定时任务调度",
+      "language": "python",
+      "code": "import schedule, time\n\ndef job():\n    print('执行每日数据备份...')\n\nschedule.every().day.at('02:00').do(job)\nschedule.every(30).minutes.do(lambda: print('健康检查'))\n\nwhile True:\n    schedule.run_pending()\n    time.sleep(1)",
+      "description": "使用 schedule 库定义每天 2 点备份、每 30 分钟健康检查等定时任务，适合轻量自动化。"
+    },
+    {
+      "name": "读取 YAML 配置",
+      "language": "python",
+      "code": "import yaml\n\nwith open('config.yaml', 'r', encoding='utf-8') as f:\n    cfg = yaml.safe_load(f)\n\ndb_url = cfg['database']['url']\ndebug = cfg.get('debug', False)\nprint(f\"连接 {db_url}，调试模式：{debug}\")",
+      "description": "使用 yaml.safe_load 安全解析配置文件，get 提供默认值，避免键缺失导致脚本崩溃。"
+    }
+  ]
+}
