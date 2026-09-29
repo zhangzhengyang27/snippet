@@ -310,7 +310,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 18px;
   width: var(--sidebar-width-knowledge);
   height: 100%;
   padding: 12px;
@@ -343,8 +343,11 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 /* ─── 详情视图切换 ────────────────────────────────────────────────────────── */
 .snippet-sidebar__viewgroup {
   display: flex;
-  gap: 6px;
-  padding: 0 12px;
+  gap: 3px;
+  margin: 0 8px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgb(var(--color-surface-variant-rgb) / 0.6);
 }
 
 .snippet-sidebar__viewbtn {
@@ -356,8 +359,8 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   height: 32px;
   padding: 0 8px;
   white-space: nowrap;
-  border: 1px solid var(--sb-border);
-  border-radius: var(--radius-sm);
+  border: none;
+  border-radius: 8px;
   background: transparent;
   color: var(--sb-text-muted);
   font-size: 0.75rem;
@@ -366,7 +369,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   transition:
     background var(--sb-transition),
     color var(--sb-transition),
-    border-color var(--sb-transition);
+    box-shadow var(--sb-transition);
 }
 
 .snippet-sidebar__viewbtn:hover {
@@ -375,40 +378,37 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 }
 
 .snippet-sidebar__viewbtn.is-active {
-  background: var(--sb-accent-bg);
+  background: rgb(var(--color-surface-rgb));
   color: var(--sb-accent);
-  border-color: var(--sb-accent);
   font-weight: 600;
+  box-shadow: 0 1px 4px rgb(var(--color-shadow-rgb) / 0.12);
 }
 
 /* ─── Header ────────────────────────────────────────────────────────────── */
 .snippet-sidebar__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  margin: 0 4px;
-  border-radius: var(--radius-sm);
-  background: rgb(var(--color-surface-variant-rgb));
-  border: 1px solid var(--sb-border);
+  gap: 6px;
+  padding: 2px 10px;
+  margin: 0 2px;
+  background: transparent;
+  border: none;
+}
+
+.snippet-sidebar__header-icon {
+  opacity: 0.55;
 }
 
 .snippet-sidebar__header--with-action {
   padding-right: 6px;
 }
 
-.snippet-sidebar__header-icon {
-  color: var(--sb-accent);
-  opacity: 0.8;
-}
-
 .snippet-sidebar__header-title {
   flex: 1;
-  font-family: var(--font-heading);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--sb-text);
-  letter-spacing: -0.01em;
+  font-size: 0.71875rem;
+  font-weight: 650;
+  color: var(--sb-text-faint);
+  letter-spacing: 0.08em;
 }
 
 .snippet-sidebar__header-action {
@@ -472,7 +472,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   height: 32px;
   padding: 0 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--sb-text-muted);
   font-family: var(--font-body);

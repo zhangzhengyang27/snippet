@@ -198,7 +198,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
         class="collection-row__public-badge"
         title="公共集合：只读，不可编辑/拖拽"
       >
-        公共
+        <AppIcon icon="material-symbols:public" :size="12" />
       </span>
     </button>
 
@@ -291,7 +291,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   padding-right: 12px;
   padding-left: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--sb-text-muted);
   font-family: var(--font-body);
@@ -321,12 +321,13 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
    父级高度时，top:50% 跟着下沉，导致徽章跑到子项中段位置造成错位）。 */
 .collection-row__public-badge {
   flex-shrink: 0;
-  margin-left: 8px;
-  padding: 0 6px;
-  border: 1px solid rgb(var(--color-primary-rgb) / 0.3);
-  border-radius: 4px;
-  background: rgb(var(--color-primary-rgb) / 0.1);
-  color: var(--sb-accent);
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgb(var(--color-text-tertiary-rgb));
   font-size: 0.625rem;
   line-height: 16px;
   pointer-events: none;
