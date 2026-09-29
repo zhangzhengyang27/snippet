@@ -7,7 +7,7 @@
  * 点击卡片跳转 /example/:id 查看详情与在线预览。
  */
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
 import type { CodeExample } from '@/types'
@@ -20,6 +20,7 @@ import { usePagination } from '@/composables/usePagination'
 import { useListShortcuts } from '@/composables/useListShortcuts'
 
 const router = useRouter()
+const route = useRoute()
 
 // ── 搜索（输入态 + 300ms 防抖查询态） ──
 const keyword = ref('')
@@ -79,6 +80,12 @@ async function load() {
 }
 
 onMounted(() => {
+  // 支持从示例详情「按来源分组」跳转带入初始搜索词（?search=xxx）
+  const initialSearch = route.query.search
+  if (typeof initialSearch === 'string' && initialSearch.trim()) {
+    keyword.value = initialSearch
+    debouncedKeyword.value = initialSearch
+  }
   void load()
 })
 
@@ -197,6 +204,9 @@ const { activeIndex } = useListShortcuts({
 
 <style scoped>
 .example-library {
+  /* 显式 100%：作为 .app-main（flex column）的子项，避免内容最宽子元素把 auto 宽度顶过父容器 */
+  width: 100%;
+  min-width: 0;
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-6) var(--page-padding-x, 22px) var(--space-12);
@@ -205,6 +215,7 @@ const { activeIndex } = useListShortcuts({
 /* ── 工具栏 ── */
 .library-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
@@ -267,12 +278,13 @@ const { activeIndex } = useListShortcuts({
 /* ── 卡片网格：与收藏夹卡片同族 ── */
 .library-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 14px;
 }
 
 .example-card {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 6px;
   padding: 16px;
@@ -362,7 +374,7 @@ const { activeIndex } = useListShortcuts({
   }
 
   .library-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

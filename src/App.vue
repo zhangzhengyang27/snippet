@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import CommandPalette from '@/components/common/CommandPalette.vue'
+import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/composables/useTheme'
 import { useIsMobile } from '@/composables/useIsMobile'
 import { isTypingTarget } from '@/utils/keyboard'
@@ -35,6 +36,9 @@ const openCommandPalette = () => commandPalette.value?.open()
 
 /** 登录页不展示 App Shell（顶栏 + 内容），保持沉浸式居中布局 */
 const isAuthPage = computed(() => route.name === 'login')
+
+// 应用启动即校验 cookie 会话（登录态/用户菜单依赖它；早于任何页面的数据请求）
+useAuthStore().initialize()
 
 // 全局快捷键：G H（代码块）/ G E（示例库）/ C（新建片段）
 // 采用 "g" 前缀序列，避免与单键冲突；输入态与组合态下不触发
@@ -141,6 +145,8 @@ onBeforeUnmount(() => {
   min-height: 0;
   display: flex;
   flex-direction: column;
+
+  min-width: 0;
 }
 
 .fade-enter-active,

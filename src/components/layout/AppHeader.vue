@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useExampleStore } from '@/stores/exampleStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useTheme } from '@/composables/useTheme'
 import { toast } from '@/composables/useToast'
@@ -57,7 +56,6 @@ defineProps<{
 
 const route = useRoute()
 const router = useRouter()
-const store = useExampleStore()
 const authStore = useAuthStore()
 const { theme, toggleTheme } = useTheme()
 const { copy } = useClipboard()
@@ -186,97 +184,33 @@ watch(
   }
 )
 
-const EXAMPLES_HUB_TOPIC_SLUGS = new Set(['html5', 'css'])
-
-const topicLinks = computed<NavLink[]>(() => {
-  return store.topics
-    .filter((t) => t.count > 0 && !EXAMPLES_HUB_TOPIC_SLUGS.has(t.slug))
-    .map((t) => ({
-      label: t.name,
-      href: `/topic/${t.slug}`,
-      active: route.params.slug === t.slug,
-    }))
-})
-
 const defaultLinks = computed<NavLink[]>(() => [
-  { label: '主题广场', href: '/', active: route.name === 'dashboard' },
+  { label: '概览', href: '/', active: route.name === 'dashboard' },
   {
-    label: '代码示例',
+    label: '代码块',
+    href: '/snippets',
+    active: route.path.startsWith('/snippets'),
+  },
+  {
+    label: '示例库',
     href: '/example',
     active: route.path === '/example' || route.path.startsWith('/example/'),
   },
   {
-    label: '我的收藏',
+    label: '收藏夹',
     href: '/favorites',
     active: route.name === 'favorites',
   },
   {
-    label: '静态网站',
-    href: '/static-sites',
-    active: route.path.startsWith('/static-sites'),
+    label: '最近',
+    href: '/recent',
+    active: route.name === 'recent',
   },
   {
-    label: '低代码',
-    href: '/lowcode',
-    active: route.path.startsWith('/lowcode'),
+    label: '关于',
+    href: '/about',
+    active: route.name === 'about',
   },
-  {
-    label: 'UI 组件',
-    href: '/ui-elements',
-    active: route.path.startsWith('/ui-elements') || route.name === 'UiElementDetail',
-  },
-  {
-    label: '视觉演示',
-    href: '/visual-demos',
-    active: route.path.startsWith('/visual-demos') || route.name === 'VisualDemoDetail',
-  },
-  {
-    label: 'Canvas',
-    href: '/canvas',
-    active: route.path.startsWith('/canvas'),
-  },
-  {
-    label: '可视化',
-    active: route.path.startsWith('/data-visualization'),
-    children: [
-      { label: '大屏可视化', href: '/data-visualization/bigscreen', active: route.path.startsWith('/data-visualization/bigscreen') },
-      { label: 'ECharts', href: '/data-visualization/charts/echarts', active: route.path === '/data-visualization/charts/echarts' },
-      { label: 'D3.js', href: '/data-visualization/charts/d3', active: route.path === '/data-visualization/charts/d3' },
-      { label: 'AntV', href: '/data-visualization/charts/antv', active: route.path === '/data-visualization/charts/antv' },
-      { label: 'Chart.js', href: '/data-visualization/charts/chartjs', active: route.path === '/data-visualization/charts/chartjs' },
-      { label: 'ApexCharts', href: '/data-visualization/charts/apexcharts', active: route.path === '/data-visualization/charts/apexcharts' },
-    ],
-  },
-  {
-    label: '工具',
-    active: route.path.startsWith('/tools'),
-    children: [
-      { label: '全部工具', href: '/tools', active: route.path === '/tools' },
-      { label: '代码运行', isGroupTitle: true },
-      { label: '代码运行器工作台', href: '/tools/run', active: route.path === '/tools/run' },
-      { label: 'Java 在线运行', href: '/tools/run/java', active: route.path === '/tools/run/java' },
-      { label: 'Python 在线运行', href: '/tools/run/python', active: route.path === '/tools/run/python' },
-      { label: 'JS / TS 运行', href: '/tools/run/js-ts', active: route.path === '/tools/run/js-ts' },
-      { label: 'Vue SFC 在线运行', href: '/tools/run/vue', active: route.path === '/tools/run/vue' },
-      { label: 'React / TSX 在线运行', href: '/tools/run/react', active: route.path === '/tools/run/react' },
-      { label: 'HTML / CSS / JS 在线运行', href: '/tools/run/web', active: route.path === '/tools/run/web' },
-      { label: 'PostgreSQL SQL 在线运行', href: '/tools/run/sql', active: route.path === '/tools/run/sql' },
-      { label: 'MySQL 运行器', href: '/tools/run/mysql', active: route.path === '/tools/run/mysql' },
-      { label: 'JSON', isGroupTitle: true },
-      { label: 'JSON 格式化', href: '/tools/json/format', active: route.path === '/tools/json/format' },
-      { label: 'JSON 转换器', href: '/tools/json/converter', active: route.path === '/tools/json/converter' },
-      { label: 'SQL 转 JSON', href: '/tools/json/sql-to-json', active: route.path === '/tools/json/sql-to-json' },
-      { label: '生成器', isGroupTitle: true },
-      { label: 'UUID 生成', href: '/tools/generate/uuid', active: route.path === '/tools/generate/uuid' },
-      { label: '密码生成', href: '/tools/generate/password', active: route.path === '/tools/generate/password' },
-      { label: '二维码生成', href: '/tools/generate/qrcode', active: route.path === '/tools/generate/qrcode' },
-      { label: '时间戳转换', href: '/tools/generate/timestamp', active: route.path === '/tools/generate/timestamp' },
-      { label: 'Lorem Ipsum 生成', href: '/tools/generate/lorem', active: route.path === '/tools/generate/lorem' },
-      { label: '颜色代码生成', href: '/tools/generate/color', active: route.path === '/tools/generate/color' },
-      { label: 'OpenAPI 模拟数据生成', href: '/tools/generate/mock-json', active: route.path === '/tools/generate/mock-json' },
-    ],
-  },
-  ...topicLinks.value,
 ])
 
 const mobileMenuOpen = ref(false)
@@ -343,7 +277,7 @@ function handleScroll() {
       <div class="app-header__inner">
         <router-link to="/" class="app-header__brand">
           <span class="app-header__logo-mark">&#9670;</span>
-          <span class="app-header__brand-text">DevCanvas</span>
+          <span class="app-header__brand-text">Snippet</span>
         </router-link>
 
         <nav class="app-header__nav" aria-label="主导航">
@@ -540,10 +474,6 @@ function handleScroll() {
           </template>
           <Button v-else severity="secondary" text size="small" @click="goToLogin"> 登录 </Button>
 
-          <Button severity="primary" size="small">
-            <AppIcon icon="lucide:send" :size="16" />
-            部署
-          </Button>
 
           <!-- 移动端：汉堡菜单 + 全屏导航面板 -->
           <Button
@@ -640,7 +570,7 @@ function handleScroll() {
                 </Button>
               </template>
               <Button v-else severity="secondary" text size="small" class="w-full" @click="goToLogin"> 登录 </Button>
-              <Button severity="primary" size="small" class="w-full">部署</Button>
+
             </div>
           </div>
         </div>
@@ -1314,4 +1244,22 @@ function handleScroll() {
 .w-full { width: 100%; }
 .ml-auto { margin-left: auto; }
 .opacity-50 { opacity: 0.5; }
+</style>
+
+<style scoped>
+/* 窄屏：收敛顶栏内边距与动作区间距，避免 375px 溢出 */
+@media (max-width: 480px) {
+  .app-header {
+    padding-inline: 14px;
+  }
+
+  .app-header__actions {
+    gap: 6px;
+  }
+
+  /* 窄屏隐藏全局搜索入口：⌘K 为桌面交互，各列表页有页内搜索 */
+  .app-header__actions .app-header__icon-btn[aria-label='搜索'] {
+    display: none;
+  }
+}
 </style>
