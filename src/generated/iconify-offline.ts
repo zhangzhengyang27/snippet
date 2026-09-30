@@ -3,7 +3,7 @@
  * 本文件由 scripts/build-iconify-offline.mjs 自动生成，请勿手工编辑。
  * 重新生成：npm run icons:build
  *
- * 作用：把项目实际用到的 82 个 Iconify 图标在构建期注入本地图标存储，
+ * 作用：把项目实际用到的 83 个 Iconify 图标在构建期注入本地图标存储，
  * 使 <Icon> 解析完全离线——不再依赖 api.iconify.design，也不再有图标闪烁。
  * 若新增图标后忘记重新生成，npm run icons:check 会失败。
  */
@@ -36,6 +36,7 @@ export const ICON_NAMES: string[] = [
   "material-symbols:cancel",
   "material-symbols:check",
   "material-symbols:check-circle",
+  "material-symbols:checklist",
   "material-symbols:chevron-right",
   "material-symbols:close",
   "material-symbols:code",
@@ -136,7 +137,7 @@ addCollection({
  "width": 24
 } as Collection)
 
-// material-symbols — 72 个图标
+// material-symbols — 73 个图标
 addCollection({
  "aliases": {
   "file-download": {
@@ -189,6 +190,9 @@ addCollection({
   },
   "check-circle": {
    "body": "<path fill=\"currentColor\" d=\"m10.6 16.6l7.05-7.05l-1.4-1.4l-5.65 5.65l-2.85-2.85l-1.4 1.4zM12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22\"/>"
+  },
+  "checklist": {
+   "body": "<path fill=\"currentColor\" d=\"M5.55 19L2 15.45l1.4-1.4l2.125 2.125l4.25-4.25l1.4 1.425zm0-8L2 7.45l1.4-1.4l2.125 2.125l4.25-4.25l1.4 1.425zM13 17v-2h9v2zm0-8V7h9v2z\"/>"
   },
   "chevron-right": {
    "body": "<path fill=\"currentColor\" d=\"M12.6 12L8 7.4L9.4 6l6 6l-6 6L8 16.6z\"/>"

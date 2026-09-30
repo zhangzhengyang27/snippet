@@ -332,6 +332,7 @@ const {
 const {
   batchMode,
   selectedIds,
+  toggleBatchMode,
   handleToggleCheck,
   selectAllOnPage,
   clearSelection,
@@ -403,7 +404,7 @@ const {
             @refresh="refreshAll"
           />
 
-          <!-- 数据管理：导出 / 导入 -->
+          <!-- 数据管理：导出 / 导入 / 批量 -->
           <div class="data-actions">
             <AppButton
               variant="text"
@@ -426,6 +427,27 @@ const {
                   ? `导入中 ${importProgress.done}/${importProgress.total}`
                   : '导入'
               }}
+            </AppButton>
+            <!--
+              批量模式开关。
+              此前 batchMode 全仓没有任何赋值点，导致「多选 → 批量打标签 / 批量删除」
+              整条链路不可达（v-if 恒假、勾选框永不显示、selectedIds 恒空）——
+              是数据恢复事故的遗留缺口（见 _RESTORE-REPORT.md）。
+              退出批量模式后若列表为空，按钮仍可点（用于退出），故 disabled 取反。
+            -->
+            <AppButton
+              variant="text"
+              size="small"
+              :class="{ 'is-active': batchMode }"
+              :disabled="!snippets.length && !batchMode"
+              :aria-pressed="batchMode"
+              @click="toggleBatchMode"
+            >
+              <AppIcon
+                :icon="batchMode ? 'material-symbols:close' : 'material-symbols:checklist'"
+                :size="14"
+              />
+              {{ batchMode ? '退出批量' : '批量' }}
             </AppButton>
           </div>
 
@@ -599,6 +621,19 @@ const {
   flex-direction: column;
   gap: 0.625rem;
   margin-top: 1rem;
+}
+
+.data-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 批量模式开关的激活态：与普通文字按钮区分开 */
+.data-actions .is-active {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .batch-bar {

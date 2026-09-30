@@ -23,6 +23,17 @@ export function useSnippetBatchOps(options: UseSnippetBatchOpsOptions) {
   const batchMode = ref(false)
   const selectedIds = ref<string[]>([])
 
+  /**
+   * 进入 / 退出批量模式。
+   *
+   * 退出时清空已选：选择是跨页累加的（「全选本页」配合翻页），若不清理，
+   * 下次进入批量模式会带着上次的残留选择，用户可能误删自己没看到的条目。
+   */
+  function toggleBatchMode() {
+    batchMode.value = !batchMode.value
+    if (!batchMode.value) selectedIds.value = []
+  }
+
   function handleToggleCheck(id: string) {
     if (selectedIds.value.includes(id)) {
       selectedIds.value = selectedIds.value.filter((x) => x !== id)
@@ -100,6 +111,7 @@ export function useSnippetBatchOps(options: UseSnippetBatchOpsOptions) {
   return {
     batchMode,
     selectedIds,
+    toggleBatchMode,
     handleToggleCheck,
     selectAllOnPage,
     clearSelection,
