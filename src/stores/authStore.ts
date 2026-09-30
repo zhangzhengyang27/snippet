@@ -3,6 +3,7 @@ import type { AuthUser, LoginUser } from '@/api/auth'
 import { checkMe, logout as apiLogout } from '@/api/auth'
 import { setAuthFailureHandler } from '@/api/client'
 import { clearFavorites } from '@/composables/useFavorites'
+import { resetSnippetListState } from '@/composables/useSnippetListState'
 
 /**
  * 认证会话 store。
@@ -37,6 +38,21 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
     },
 
+    /**
+     * 清理**按用户隔离**的前端缓存。
+     *
+     * 登出与会话失效都必须调用，否则下一个登录用户会看到上一个用户的数据。
+     * 这些缓存是模块级单例（不随组件卸载清理），且都是带用户上下文的接口结果：
+     * - 收藏的示例（`useFavorites`）
+     * - 片段列表 / 筛选 / 总数 / 选中项（`useSnippetListState`）
+     *
+     * 新增此类缓存时请一并加到这里 —— 散落在各处的 `clearXxx()` 很容易漏。
+     */
+    resetUserScopedState() {
+      clearFavorites()
+      resetSnippetListState()
+    },
+
     async logout() {
       try {
         await apiLogout()
@@ -44,8 +60,7 @@ export const useAuthStore = defineStore('auth', {
         // cookie 清除失败也继续清理本地状态
       }
       this.clearAuth()
-      // 清空收藏状态，避免下一个登录用户看到上一个用户的收藏
-      clearFavorites()
+      this.resetUserScopedState()
     },
 
     async initialize() {
@@ -59,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
         if (pathname.startsWith('/login')) return
 
         this.clearAuth()
-        clearFavorites()
+        this.resetUserScopedState()
 
         const redirect = encodeURIComponent(pathname + search)
         window.location.href = `/login?redirect=${redirect}`

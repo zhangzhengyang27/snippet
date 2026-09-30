@@ -66,6 +66,25 @@ const clearFilters = () => {
   favoritesOnly.value = false
   page.value = 1
 }
+
+/**
+ * 重置全部列表状态（登出 / 会话失效时调用）。
+ *
+ * 这些状态是**模块级单例**，不随组件卸载而清理。若登出时不重置，工作台仍会显示
+ * 上一个用户可见的片段列表，直到下一次筛选变化触发重新加载——在共用机器上属于
+ * 跨用户数据泄露。
+ *
+ * 与 `clearFilters` 的区别：那个只清筛选条件（保留数据与分页），
+ * 这个连数据、总数、选中项一起清掉。
+ */
+export function resetSnippetListState() {
+  snippets.value = []
+  total.value = 0
+  selectedSnippetId.value = ''
+  pendingSelectSnippetId.value = ''
+  snippetError.value = ''
+  clearFilters()
+}
 const listTimer = ref<number | null>(null)
 
 /**

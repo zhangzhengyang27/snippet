@@ -18,7 +18,6 @@ import {
   deleteKnowledgeSnippet,
   deleteKnowledgeSnippetCollection,
   listKnowledgeSnippetTags,
-  listKnowledgeSnippets,
   recordKnowledgeSnippetUse,
   updateKnowledgeSnippet,
 } from '@/api/knowledge-snippets'
@@ -45,7 +44,6 @@ export const useKnowledgeSnippetsPage = () => {
     collectionDialog,
     collectionDialogSaving,
     visibleCollections,
-    countCollections,
     collectAllCollectionIds,
     loadCollections,
     toggleCollectionExpanded,
@@ -111,12 +109,6 @@ export const useKnowledgeSnippetsPage = () => {
    */
   let tagLoadSeq = 0
 
-  const stats = computed(() => ({
-    globalSnippetCount: globalSnippetCount.value,
-    collectionCount: countCollections(collections.value),
-    tagCount: tags.value.length,
-  }))
-
   const loadTags = async () => {
     const seq = ++tagLoadSeq
     loadingTags.value = true
@@ -141,21 +133,7 @@ export const useKnowledgeSnippetsPage = () => {
     await Promise.all([loadCollections().catch(() => undefined), loadTags(), loadSnippets()])
   }
 
-  /** 侧栏「所有 Snippet」的全局计数：始终反映未过滤的真实总数，
-   * 与列表 total（随集合/搜索变化）区分。挂载时拉取，供深链进集合视图时也显示正确。 */
-  const globalSnippetCount = ref(0)
-  const refreshGlobalSnippetCount = () => {
-    listKnowledgeSnippets({ page: 1, pageSize: 1 })
-      .then((res: { total?: number }) => {
-        globalSnippetCount.value = res.total ?? 0
-      })
-      .catch(() => {
-        // 静默降级：保持旧值
-      })
-  }
-
   onMounted(() => {
-    refreshGlobalSnippetCount()
     void (async () => {
       // 片段页允许未登录访问（已从 PROTECTED_ROUTES 移除），路由守卫不再等待 initialize；
       // 且子组件 onMounted 先于 App.vue 触发，故此处必须先确保认证状态已恢复，
@@ -360,7 +338,6 @@ export const useKnowledgeSnippetsPage = () => {
     pendingSelectSnippetId,
     selectedSnippet,
     selectedSnippetPreviewHtml,
-    stats,
     tags,
     loadingTags,
     tagError,
