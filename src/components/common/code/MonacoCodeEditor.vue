@@ -17,6 +17,9 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+// 副作用引入：把 Monaco 配置为本地实例并注册 worker，摆脱 cdn.jsdelivr.net。
+// 放在这里而非 main.ts，是为了让 monaco 与编辑器一起被代码分割，不拖累首屏。
+import '@/utils/monaco-offline'
 import { useTheme } from '@/composables/useTheme'
 import { normalizeSnippetLanguage } from '@/types/code-block'
 import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
