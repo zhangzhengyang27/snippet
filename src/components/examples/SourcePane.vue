@@ -3,11 +3,13 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import type { CodeExample, CodeTab } from '@/types'
 import { toast } from '@/composables/useToast'
 import { useCopy } from '@/composables/useCopy'
-import * as prettierStandalone from 'prettier/standalone'
-import parserHtml from 'prettier/plugins/html'
-import parserPostcss from 'prettier/plugins/postcss'
-import parserBabel from 'prettier/plugins/babel'
-import parserEstree from 'prettier/plugins/estree'
+import { formatCode } from '@/utils/format-code'
+import {
+  buildUnifiedHtml,
+  extractScriptFromHtml,
+  sourceLanguageLabel,
+  stripScriptFromHtml,
+} from '@/utils/example-source'
 
 // Monaco Editor（统一封装组件，跟随应用主题）
 import { MonacoCodeEditor } from '@/components/common/code'
@@ -104,107 +106,18 @@ const allTabs: TabDef[] = [
   { key: 'js', label: 'JS', lang: 'js' },
 ]
 
-// ── Prettier formatting (standalone + plugins) ────────────────────────────────
-// prettier 插件动态加载，类型以 any 兼容多版本（no-explicit-any 已在 eslint 全局关闭）
-const parserPlugins: Record<string, { parser: string; plugins: any[] }> = {
-  html: { parser: 'html', plugins: [parserHtml] },
-  css: { parser: 'css', plugins: [parserPostcss] },
-  js: { parser: 'babel', plugins: [parserBabel, parserEstree] },
-  vue: { parser: 'html', plugins: [parserHtml] },
-  ts: { parser: 'babel', plugins: [parserBabel, parserEstree] },
-  typescript: { parser: 'babel', plugins: [parserBabel, parserEstree] },
-}
-
-async function formatCode(code: string, lang: string): Promise<string> {
-  if (!code) return ''
-
-  const config = parserPlugins[lang] ?? parserPlugins['html']
-  try {
-    const formatted = await prettierStandalone.format(code, {
-      parser: config.parser,
-      plugins: config.plugins,
-      semi: false,
-      singleQuote: true,
-      printWidth: 100,
-    })
-    // Prettier appends a trailing newline; drop it so Monaco line count matches visible lines.
-    return formatted.replace(/\n$/, '')
-  } catch {
-    return code
-  }
-}
+// ── 格式化与源码拆分/合并：均已下沉到 utils（见 @/utils/format-code、@/utils/example-source）──
 
 // ── Extract JS from HTML <script> tags ───────────────────────────────────────
-const extractedJs = computed<string>(() => {
-  const html = props.example.html ?? ''
-  const match = html.match(/<script[^>]*>([\s\S]*?)<\/script>/i)
-  return match ? match[1].trim() : ''
-})
+const extractedJs = computed<string>(() => extractScriptFromHtml(props.example.html ?? ''))
 
 // ── HTML without <script> block (for HTML tab display) ───────────────────────
-const htmlWithoutScript = computed<string>(() => {
-  const html = props.example.html ?? ''
-  return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').trim()
-})
+const htmlWithoutScript = computed<string>(() => stripScriptFromHtml(props.example.html ?? ''))
 
-const sourceTabLabel = computed<string>(() => {
-  const lang = props.sourceLanguage
-  if (lang === 'vue') return 'Vue'
-  if (lang === 'ts' || lang === 'typescript') return 'TypeScript'
-  if (lang === 'js' || lang === 'javascript') return 'JS'
-  if (lang === 'html') return 'HTML'
-  if (lang === 'css') return 'CSS'
-  return '源码'
-})
+const sourceTabLabel = computed<string>(() => sourceLanguageLabel(props.sourceLanguage))
 
 // ── Unified mode: merge html/css/js into a single complete HTML document ────
-function isFullDocument(html: string): boolean {
-  return /<!doctype\s|<html[\s>]|<head[\s>]|<body[\s>]/i.test(html)
-}
-
-const unifiedHtml = computed<string>(() => {
-  const ex = props.example
-  const snippet = props.activeSnippet
-  const rawHtml = (snippet?.html ?? ex.html ?? '').trim()
-  const css = [ex.css ?? '', snippet?.css ?? ''].filter(Boolean).join('\n')
-  const js = [ex.js ?? '', snippet?.js ?? ''].filter(Boolean).join('\n')
-
-  // 已经是完整文档：注入 style/script
-  if (isFullDocument(rawHtml)) {
-    let doc = rawHtml
-    if (css) {
-      const styleTag = `<style>\n${css}\n</style>`
-      doc = doc.replace(/<\/head>/i, `  ${styleTag}\n</head>`)
-    }
-    if (js) {
-      const scriptTag = `<script>\n${js}\n</scr` + 'ipt>'
-      doc = doc.replace(/<\/body>/i, `  ${scriptTag}\n</body>`)
-    }
-    return doc
-  }
-
-  // 片段式代码：包装为完整文档
-  const parts: string[] = ['<!DOCTYPE html>', '<html lang="zh-CN">', '<head>']
-  parts.push('  <meta charset="UTF-8">')
-  parts.push('  <meta name="viewport" content="width=device-width, initial-scale=1.0">')
-  if (ex.title) parts.push(`  <title>${ex.title}</title>`)
-  if (css) {
-    parts.push('  <style>')
-    parts.push(...css.split('\n').map((l) => `    ${l}`))
-    parts.push('  </style>')
-  }
-  parts.push('</head>')
-  parts.push('<body>')
-  parts.push(...rawHtml.split('\n').map((l) => `  ${l}`))
-  if (js) {
-    parts.push('  <script>')
-    parts.push(...js.split('\n').map((l) => `    ${l}`))
-    parts.push('  </scr' + 'ipt>')
-  }
-  parts.push('</body>')
-  parts.push('</html>')
-  return parts.join('\n')
-})
+const unifiedHtml = computed<string>(() => buildUnifiedHtml(props.example, props.activeSnippet))
 
 const availableTabs = computed<TabDef[]>(() => {
   if (props.sourceCode !== undefined) {
