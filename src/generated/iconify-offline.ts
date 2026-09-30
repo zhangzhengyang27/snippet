@@ -3,7 +3,7 @@
  * 本文件由 scripts/build-iconify-offline.mjs 自动生成，请勿手工编辑。
  * 重新生成：npm run icons:build
  *
- * 作用：把项目实际用到的 83 个 Iconify 图标在构建期注入本地图标存储，
+ * 作用：把项目实际用到的 84 个 Iconify 图标在构建期注入本地图标存储，
  * 使 <Icon> 解析完全离线——不再依赖 api.iconify.design，也不再有图标闪烁。
  * 若新增图标后忘记重新生成，npm run icons:check 会失败。
  */
@@ -86,6 +86,7 @@ export const ICON_NAMES: string[] = [
   "material-symbols:search-off",
   "material-symbols:security",
   "material-symbols:sell",
+  "material-symbols:settings-backup-restore",
   "material-symbols:share",
   "material-symbols:smartphone",
   "material-symbols:star",
@@ -137,7 +138,7 @@ addCollection({
  "width": 24
 } as Collection)
 
-// material-symbols — 73 个图标
+// material-symbols — 74 个图标
 addCollection({
  "aliases": {
   "file-download": {
@@ -340,6 +341,9 @@ addCollection({
   },
   "sell": {
    "body": "<path fill=\"currentColor\" d=\"m21.4 14.25l-7.15 7.15q-.3.3-.675.45t-.75.15t-.75-.15t-.675-.45l-8.825-8.825q-.275-.275-.425-.637T2 11.175V4q0-.825.588-1.412T4 2h7.175q.4 0 .775.163t.65.437l8.8 8.825q.3.3.438.675t.137.75t-.137.738t-.438.662M6.5 8q.625 0 1.063-.437T8 6.5t-.437-1.062T6.5 5t-1.062.438T5 6.5t.438 1.063T6.5 8\"/>"
+  },
+  "settings-backup-restore": {
+   "body": "<path fill=\"currentColor\" d=\"M12 14q-.825 0-1.412-.587T10 12t.588-1.412T12 10t1.413.588T14 12t-.587 1.413T12 14m0 7q-3.475 0-6.025-2.287T3.05 13H5.1q.35 2.6 2.313 4.3T12 19q2.925 0 4.963-2.037T19 12t-2.037-4.962T12 5q-1.725 0-3.225.8T6.25 8H9v2H3V4h2v2.35q1.275-1.6 3.113-2.475T12 3q1.875 0 3.513.713t2.85 1.924t1.925 2.85T21 12t-.712 3.513t-1.925 2.85t-2.85 1.925T12 21\"/>"
   },
   "share": {
    "body": "<path fill=\"currentColor\" d=\"M17 22q-1.25 0-2.125-.875T14 19q0-.15.075-.7L7.05 14.2q-.4.375-.925.588T5 15q-1.25 0-2.125-.875T2 12t.875-2.125T5 9q.6 0 1.125.213t.925.587l7.025-4.1q-.05-.175-.062-.337T14 5q0-1.25.875-2.125T17 2t2.125.875T20 5t-.875 2.125T17 8q-.6 0-1.125-.213T14.95 7.2l-7.025 4.1q.05.175.063.338T8 12t-.012.363t-.063.337l7.025 4.1q.4-.375.925-.587T17 16q1.25 0 2.125.875T20 19t-.875 2.125T17 22\"/>"

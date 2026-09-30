@@ -9,6 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppModal from '@/components/common/AppModal.vue'
+import SnippetVersionDialog from '@/components/snippets/SnippetVersionDialog.vue'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import { useToast } from '@/composables/useToast'
 import { useCopy } from '@/composables/useCopy'
@@ -166,6 +167,10 @@ async function confirmDelete() {
  }
 }
 
+/* 版本历史面板。与「编辑/删除」一样只对自有片段开放 —— 公共片段的 userId 为空，
+   后端 ensureSnippetOwned 会直接 404，因此不该把入口露给用户。 */
+const versionOpen = ref(false)
+
 const langColor = computed(() =>
  snippet.value ? languageColor(snippet.value.language) : '#9e9e9e'
 )
@@ -197,6 +202,10 @@ const langColor = computed(() =>
        <AppButton v-if="!snippet.isPublic" variant="glass" size="small" @click="editSnippet">
          <AppIcon icon="material-symbols:edit" :size="15" />
          编辑
+       </AppButton>
+       <AppButton v-if="!snippet.isPublic" variant="glass" size="small" @click="versionOpen = true">
+         <AppIcon icon="material-symbols:history" :size="15" />
+         版本
        </AppButton>
        <AppButton v-if="canPreview" variant="glass" size="small" @click="openPreview">
          <AppIcon icon="material-symbols:open-in-new" :size="15" />
@@ -350,6 +359,14 @@ const langColor = computed(() =>
        </div>
      </template>
    </AppModal>
+
+   <!-- 版本历史（仅自有片段） -->
+   <SnippetVersionDialog
+     v-if="snippet && !snippet.isPublic"
+     v-model:open="versionOpen"
+     :snippet="snippet"
+     @rolled-back="loadSnippet()"
+   />
  </div>
 </template>
 

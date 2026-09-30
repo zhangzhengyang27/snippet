@@ -1,69 +1,120 @@
 import { describe, it, expect } from 'vitest'
-import { computeVersionDiff } from './useSnippetVersions'
+import {
+  computeVersionDiff,
+  snippetComparableText,
+  versionMessageLabel,
+} from './useSnippetVersions'
+
+/** 把 diff 行折成 "kind:old:new:text" 便于断言，避免逐字段写对象字面量 */
+const shape = (lines: ReturnType<typeof computeVersionDiff>) =>
+  lines.map((l) => `${l.kind}:${l.oldLine ?? '-'}:${l.newLine ?? '-'}:${l.text}`)
 
 describe('computeVersionDiff', () => {
-  it('内容完全一致时，三组结果均为同一份行序列', () => {
-    const content = 'const a = 1\nconst b = 2'
-    const result = computeVersionDiff(content, content)
-
-    const expected = [
-      { lineNum: 1, text: 'const a = 1' },
-      { lineNum: 2, text: 'const b = 2' },
-    ]
-    expect(result.added).toEqual(expected)
-    expect(result.removed).toEqual(expected)
-    expect(result.unchanged).toEqual(expected)
+  it('内容一致时全部为 context，且新旧行号同步递增', () => {
+    const result = computeVersionDiff('a\nb', 'a\nb')
+    expect(shape(result)).toEqual(['context:1:1:a', 'context:2:2:b'])
   })
 
-  it('替换中间一行：新旧行分别进入 added / removed，未变行三组共享', () => {
+  it('中间一行被替换：先 removed 后 added，两行都不会被误标成 context', () => {
     const result = computeVersionDiff('a\nb\nc', 'a\nx\nc')
-
-    // 行号是贯穿整个 diff 序列的全局序号：a=1、b=2、x=3、c=4
-    expect(result.unchanged).toEqual([
-      { lineNum: 1, text: 'a' },
-      { lineNum: 4, text: 'c' },
+    expect(shape(result)).toEqual([
+      'context:1:1:a',
+      'removed:2:-:b',
+      'added:-:2:x',
+      'context:3:3:c',
     ])
-    expect(result.removed.filter((l) => l.text === 'b')).toEqual([{ lineNum: 2, text: 'b' }])
-    expect(result.added.filter((l) => l.text === 'x')).toEqual([{ lineNum: 3, text: 'x' }])
   })
 
-  it('末尾追加多行：added 按「未变 → 新增」顺序带全局行号', () => {
+  it('末尾追加多行：新增行只挂新侧行号，旧侧为 null', () => {
     const result = computeVersionDiff('a', 'a\nb\nc')
-
-    expect(result.added.map((l) => `${l.lineNum}:${l.text}`)).toEqual(['1:a', '2:b', '3:c'])
-    expect(result.unchanged).toEqual([{ lineNum: 1, text: 'a' }])
-    expect(result.removed).toEqual([{ lineNum: 1, text: 'a' }])
+    expect(shape(result)).toEqual(['context:1:1:a', 'added:-:2:b', 'added:-:3:c'])
   })
 
-  it('删除行：removed 覆盖被删行，行号保持全局递增', () => {
+  it('删除行：删除行只挂旧侧行号，新侧为 null', () => {
     const result = computeVersionDiff('a\nb\nc', 'a')
-
-    expect(result.removed).toEqual([
-      { lineNum: 1, text: 'a' },
-      { lineNum: 2, text: 'b' },
-      { lineNum: 3, text: 'c' },
-    ])
-    expect(result.added).toEqual([{ lineNum: 1, text: 'a' }])
-    expect(result.unchanged).toEqual([{ lineNum: 1, text: 'a' }])
+    expect(shape(result)).toEqual(['context:1:1:a', 'removed:2:-:b', 'removed:3:-:c'])
   })
 
-  it('整段替换：无未变行时 unchanged 为空，行号先旧后新连续编号', () => {
+  it('整段替换：无 context 行，行号两侧各自从头计数', () => {
     const result = computeVersionDiff('old-1\nold-2', 'new-1\nnew-2')
-
-    expect(result.unchanged).toEqual([])
-    expect(result.removed.map((l) => l.text)).toEqual(['old-1', 'old-2'])
-    expect(result.added).toEqual([
-      { lineNum: 3, text: 'new-1' },
-      { lineNum: 4, text: 'new-2' },
+    expect(shape(result)).toEqual([
+      'removed:1:-:old-1',
+      'removed:2:-:old-2',
+      'added:-:1:new-1',
+      'added:-:2:new-2',
     ])
   })
 
-  it('空内容与 null 视为空字符串，不抛错', () => {
-    // 实现里用 (oldContent ?? '') 兜底，null 不会抛错
-    const empty = null as unknown as string
-    expect(() => computeVersionDiff(empty, empty)).not.toThrow()
-    const result = computeVersionDiff(empty, empty)
-    // '' split('\n') 得到 ['']，两个空内容视为一行未变
-    expect(result.unchanged).toEqual([{ lineNum: 1, text: '' }])
+  it('不产生「每段多一个空行」的假行（diffLines 的尾部换行必须被吃掉）', () => {
+    const result = computeVersionDiff('a\n', 'a\n')
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ kind: 'context', text: 'a' })
+  })
+
+  it('空内容与 null 视为空串，不抛错', () => {
+    expect(() => computeVersionDiff(null, null)).not.toThrow()
+    expect(computeVersionDiff('', '')).toEqual([])
+    // 从空内容变成一行：该行是 added
+    expect(shape(computeVersionDiff('', 'x'))).toEqual(['added:-:1:x'])
+  })
+
+  it('行号在整段序列里连续，不因 kind 变化而重置', () => {
+    const result = computeVersionDiff('1\n2\n3', '1\nX\nY\n3')
+    const contextNos = result.filter((l) => l.kind === 'context').map((l) => l.newLine)
+    expect(contextNos).toEqual([1, 4])
+  })
+})
+
+describe('snippetComparableText', () => {
+  it('单文件片段取 content', () => {
+    expect(snippetComparableText({ content: 'const a = 1' })).toBe('const a = 1')
+  })
+
+  it('多文件片段优先展开 displayAttrs.files —— 其代码并不在 content 里', () => {
+    const text = snippetComparableText({
+      content: '（陈旧占位）',
+      displayAttrs: {
+        files: [
+          { name: 'index.html', code: '<p>hi</p>' },
+          { name: 'main.js', code: 'console.log(1)' },
+        ],
+      },
+    })
+    expect(text).toBe(
+      '// ===== index.html =====\n<p>hi</p>\n\n// ===== main.js =====\nconsole.log(1)'
+    )
+    expect(text).not.toContain('陈旧占位')
+  })
+
+  it('files 为空数组时回退到 content（空数组不等于多文件）', () => {
+    expect(snippetComparableText({ content: 'body{}', displayAttrs: { files: [] } })).toBe('body{}')
+  })
+
+  it('null / undefined 不抛错', () => {
+    expect(snippetComparableText(null)).toBe('')
+    expect(snippetComparableText(undefined)).toBe('')
+    expect(snippetComparableText({ content: null })).toBe('')
+  })
+
+  it('文件名不同但内容相同的两个快照应被判定为有差异（文件名在比较口径内）', () => {
+    const before = snippetComparableText({ displayAttrs: { files: [{ name: 'a.js', code: 'x' }] } })
+    const after = snippetComparableText({ displayAttrs: { files: [{ name: 'b.js', code: 'x' }] } })
+    expect(before).not.toBe(after)
+  })
+})
+
+describe('versionMessageLabel', () => {
+  it('固定标记翻译为中文', () => {
+    expect(versionMessageLabel('create')).toBe('创建')
+    expect(versionMessageLabel('update')).toBe('更新')
+    expect(versionMessageLabel('rollback:abc123')).toBe('回滚')
+  })
+
+  it('用户备注原样展示', () => {
+    expect(versionMessageLabel('改为打印2')).toBe('改为打印2')
+  })
+
+  it('空标记有兜底文案', () => {
+    expect(versionMessageLabel('')).toBe('快照')
   })
 })

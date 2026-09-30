@@ -11,6 +11,7 @@ import type {
  SnippetSortOption,
 } from '@/types/knowledge-snippet'
 import type { EnhancedCodeBlockAttrs } from '@/types/code-block'
+import type { SnippetVersionDetail, SnippetVersionListResult } from '@/types/snippet-version'
 
 /**
 * 获取片段集合列表（树形）。
@@ -177,6 +178,70 @@ export function updateKnowledgeSnippet(
 */
 export function deleteKnowledgeSnippet(id: string): Promise<{ ok: boolean }> {
  return del<{ ok: boolean }>(`/knowledge/snippets/${id}`)
+}
+
+/**
+* 获取片段的版本历史（分页，按时间倒序）。
+*
+* 列表项**不含正文**（省流量）；需要正文做 diff 时再调 `getSnippetVersion`。
+*
+* @param options.signal 取消信号，须透传给底层 `get`（见 client.ts 的 RequestOptions 说明）。
+*/
+export function listSnippetVersions(
+ snippetId: string,
+ params?: { page?: number; pageSize?: number },
+ options?: RequestOptions
+): Promise<SnippetVersionListResult> {
+ return get<SnippetVersionListResult>(
+   `/knowledge/snippets/${snippetId}/versions`,
+   { page: params?.page, pageSize: params?.pageSize },
+   options
+ )
+}
+
+/**
+* 获取单个版本快照的完整内容（含正文与 displayAttrs）。
+*
+* @param options.signal 取消信号，须透传给底层 `get`。
+*/
+export function getSnippetVersion(
+ snippetId: string,
+ versionId: string,
+ options?: RequestOptions
+): Promise<SnippetVersionDetail> {
+ return get<SnippetVersionDetail>(
+   `/knowledge/snippets/${snippetId}/versions/${versionId}`,
+   undefined,
+   options
+ )
+}
+
+/**
+* 删除单个版本快照（不影响片段正文）。
+*/
+export function deleteSnippetVersion(
+ snippetId: string,
+ versionId: string
+): Promise<{ ok: boolean; deleted: number }> {
+ return del<{ ok: boolean; deleted: number }>(
+   `/knowledge/snippets/${snippetId}/versions/${versionId}`
+ )
+}
+
+/**
+* 回滚到指定版本。
+*
+* 后端语义：把该版本的**正文**覆盖回片段，并**追加**一条 `rollback:<版本 id>`
+* 的快照（只追加、不原地回退，因此回滚这个动作本身也可以再被回滚）。
+* 返回的 `restoredFrom` 即来源版本 id。
+*/
+export function rollbackSnippetVersion(
+ snippetId: string,
+ versionId: string
+): Promise<{ ok: boolean; restoredFrom: string }> {
+ return post<{ ok: boolean; restoredFrom: string }>(
+   `/knowledge/snippets/${snippetId}/versions/${versionId}/rollback`
+ )
 }
 
 /**
