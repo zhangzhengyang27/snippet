@@ -222,9 +222,9 @@ function goExample(id: string) {
   gap: 8px;
   padding: 12px 16px;
   border: 1px solid rgb(var(--color-warning-rgb, 234 179 8) / 0.4);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgb(var(--color-warning-rgb, 234 179 8) / 0.08);
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 
 .favorites__tabs {
@@ -245,7 +245,7 @@ function goExample(id: string) {
   border: none;
   border-radius: 999px;
   background: transparent;
-  font-size: 13px;
+  font-size: var(--text-xs);
   cursor: pointer;
   transition: background 0.15s ease;
 }

@@ -619,7 +619,7 @@ const {
 .export-options {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.5rem;
   margin-top: 1rem;
 }
 
@@ -648,7 +648,7 @@ const {
 }
 
 .batch-bar__count {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   color: var(--color-text);
   font-weight: 600;
 }
@@ -666,7 +666,7 @@ const {
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   outline: none;
 }
 

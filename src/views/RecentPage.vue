@@ -145,7 +145,7 @@ async function handleClearRecent() {
   flex-direction: column;
   gap: 4px;
   padding: 14px 10px 12px;
-  border-radius: 16px;
+  border-radius: 12px;
   background: rgb(var(--color-surface-rgb) / 0.6);
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
 }
@@ -177,9 +177,9 @@ async function handleClearRecent() {
   gap: 11px;
   padding: 10px 12px;
   border: none;
-  border-radius: 11px;
+  border-radius: 8px;
   background: transparent;
-  font-size: 13px;
+  font-size: var(--text-xs);
   cursor: pointer;
   text-align: left;
   color: inherit;

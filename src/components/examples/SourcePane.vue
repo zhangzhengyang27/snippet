@@ -569,7 +569,7 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
   border: none;
   border-radius: 0;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: rgb(var(--color-text-secondary-rgb));
   cursor: pointer;
@@ -771,7 +771,7 @@ const isReadOnly = computed(() => !isEditing.value || props.readOnly)
 }
 
 .dialog-message {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: rgb(var(--color-text-secondary-rgb) / 0.7);
   line-height: 1.6;
 }

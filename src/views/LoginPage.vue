@@ -203,7 +203,7 @@ async function handleSubmit() {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   font-size: 13.5px;
   color: rgb(var(--color-text-secondary-rgb));
 }
@@ -273,7 +273,7 @@ async function handleSubmit() {
 }
 
 .login-label {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: rgb(var(--color-text-rgb) / 0.85);
 }
@@ -307,7 +307,7 @@ async function handleSubmit() {
   border-radius: var(--radius);
   background: rgb(var(--color-error-rgb) / 0.12);
   color: rgb(var(--color-error-rgb));
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .login-submit {
@@ -348,7 +348,7 @@ async function handleSubmit() {
   border-radius: var(--radius-md);
   background: transparent;
   color: rgb(var(--color-text-secondary-rgb));
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -372,7 +372,7 @@ async function handleSubmit() {
   display: block;
   margin-top: 24px;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: rgb(var(--color-text-secondary-rgb));
   text-decoration: none;
   transition: color 0.2s;

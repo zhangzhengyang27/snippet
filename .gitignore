@@ -77,3 +77,13 @@ data/
 # 依赖锁定文件（可选，根据项目需求）
 # package-lock.json
 # yarn.lock
+
+# vue-tsc -b 的编译产物：会把 vite.config.ts 编译成 vite.config.js / .d.ts
+# ⚠️ 危险：vite 的配置查找顺序中 vite.config.js 优先于 .ts，
+#    一旦跟踪/保留它，后续对 vite.config.ts 的修改会被静默忽略。
+vite.config.js
+vite.config.d.ts
+*.tsbuildinfo
+
+# 本地备份文件（不入库）
+*.css.bak

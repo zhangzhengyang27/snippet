@@ -67,7 +67,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       <AppIcon
         icon="material-symbols:list-alt"
         :size="24"
-        class="text-brand drop-shadow-[0_0_12px_rgb(139_92_246/0.45)]"
+        class="text-brand drop-shadow-[0_0_12px_rgb(113_112_255/0.45)]"
       />
       <h2 class="font-heading text-[1.375rem] font-bold tracking-[-0.02em] text-(--color-text)">
         片段列表
@@ -104,24 +104,21 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       @update:value="emit('update:sort', $event as SnippetSortOption)"
     />
 
-    <!-- group 是必需的：prefix 图标靠 group-focus-within 变色，少一个类整段交互就静默失效 -->
-    <div v-if="!props.compact" class="group min-w-48 flex-1">
+    <!-- group 是必需的：图标靠 group-focus-within 变色，少一个类整段交互就静默失效 -->
+    <div v-if="!props.compact" class="group relative min-w-48 flex-1">
+      <AppIcon
+        icon="material-symbols:search"
+        :size="14"
+        class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary"
+      />
       <AppInput
         :value="props.keyword"
         type="text"
         placeholder="搜索片段"
-        class="w-full"
+        class="w-full pl-8"
         allow-clear
         @update:value="emit('update:keyword', String($event ?? ''))"
-      >
-        <template #prefix>
-          <AppIcon
-            icon="material-symbols:search"
-            :size="14"
-            class="text-text-secondary transition-colors group-focus-within:text-primary"
-          />
-        </template>
-      </AppInput>
+      />
     </div>
 
     <AppButton variant="glass" class="h-8" @click="handleCreateClick">

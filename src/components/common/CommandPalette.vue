@@ -380,7 +380,7 @@ defineExpose({ open: openPalette, close })
   max-height: 70vh;
   overflow: hidden;
   border: 1px solid rgb(var(--color-border-glass-rgb) / 0.8);
-  border-radius: 16px;
+  border-radius: 12px; /* Linear featured radius */
   background: rgb(var(--color-surface-rgb));
   box-shadow: 0 24px 64px rgb(0 0 0 / 0.25);
 }
@@ -388,8 +388,8 @@ defineExpose({ open: openPalette, close })
 .cmdk__input-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgb(var(--color-border-rgb) / 0.5);
 }
 
@@ -404,7 +404,7 @@ defineExpose({ open: openPalette, close })
   outline: none;
   background: transparent;
   color: rgb(var(--color-text-rgb));
-  font-size: 15px;
+  font-size: var(--text-body-sm);
 }
 
 .cmdk__lang {
@@ -414,7 +414,7 @@ defineExpose({ open: openPalette, close })
   border-radius: 8px;
   background: rgb(var(--color-surface-rgb));
   color: rgb(var(--color-text-secondary-rgb));
-  font-size: 12px;
+  font-size: var(--text-code-sm);
 }
 
 .cmdk__kbd {
@@ -422,13 +422,13 @@ defineExpose({ open: openPalette, close })
   padding: 2px 6px;
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--text-label-caps);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
 .cmdk__error {
   padding: 10px 16px;
-  font-size: 13px;
+  font-size: var(--text-xs);
   color: rgb(var(--color-danger-rgb, 239 68 68));
 }
 
@@ -441,26 +441,26 @@ defineExpose({ open: openPalette, close })
 .cmdk__hint {
   padding: 24px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--text-xs);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
 .cmdk__group-title {
-  padding: 8px 10px 4px;
-  font-size: 12px;
+  padding: 8px 12px 4px;
+  font-size: var(--text-code-sm);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
 .cmdk__item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 8px 12px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  font-size: 14px;
+  font-size: var(--text-code);
   text-align: left;
   cursor: pointer;
 }
@@ -492,16 +492,16 @@ defineExpose({ open: openPalette, close })
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: var(--text-code-sm);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
 .cmdk__footer {
   display: flex;
   gap: 16px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-top: 1px solid rgb(var(--color-border-rgb) / 0.5);
-  font-size: 12px;
+  font-size: var(--text-code-sm);
   color: rgb(var(--color-text-secondary-rgb));
 }
 

@@ -237,7 +237,7 @@ async function handleCopy() {
   background-color: rgb(var(--color-surface-bright-rgb));
   color: rgb(var(--color-text-rgb));
   font-family: var(--font-mono);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1.7;
 }
 
@@ -256,7 +256,7 @@ async function handleCopy() {
 .cb-header__left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -296,7 +296,7 @@ async function handleCopy() {
 
 .cb-header__title {
   font-weight: 600;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -373,7 +373,7 @@ async function handleCopy() {
 }
 
 .cb-gutter__line {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.7;
   min-width: 1.5em;
 }

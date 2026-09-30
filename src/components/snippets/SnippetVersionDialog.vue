@@ -400,7 +400,7 @@ function closePending() {
   border-radius: var(--radius-sm);
   background: transparent;
   color: rgb(var(--color-text-rgb));
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   cursor: pointer;
   text-align: left;
   transition:
@@ -461,7 +461,7 @@ function closePending() {
   min-width: 0;
   min-height: 0;
   padding: 14px 16px;
-  gap: 10px;
+  gap: 12px;
 }
 
 .svd__detail-head {
@@ -475,7 +475,7 @@ function closePending() {
 .svd__detail-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -545,7 +545,7 @@ function closePending() {
   padding: 0 4px;
   border-right: none;
   border: 1px solid rgb(var(--color-border-rgb));
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.6875rem;
 }
 
@@ -626,7 +626,7 @@ function closePending() {
 
 .svd__confirm-text {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   line-height: 1.7;
   color: rgb(var(--color-text-secondary-rgb));
 }
@@ -634,7 +634,7 @@ function closePending() {
 .svd__confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
 }
 </style>

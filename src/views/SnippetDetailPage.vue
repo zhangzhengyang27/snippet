@@ -429,7 +429,7 @@ const langColor = computed(() =>
  padding: 4px 6px;
  border-radius: var(--radius-sm);
  color: rgb(var(--color-text-secondary-rgb));
- font-size: 0.8125rem;
+ font-size: var(--text-xs);
  cursor: pointer;
 }
 
@@ -443,7 +443,7 @@ const langColor = computed(() =>
 }
 
 .snippet-detail__crumb-current {
- font-size: 0.8125rem;
+ font-size: var(--text-xs);
  font-weight: 600;
  color: rgb(var(--color-text-rgb));
  white-space: nowrap;
@@ -468,7 +468,7 @@ const langColor = computed(() =>
  gap: 12px;
  padding: 60px 20px;
  color: rgb(var(--color-text-secondary-rgb));
- font-size: 0.875rem;
+ font-size: var(--text-sm);
 }
 
 .snippet-detail__state p {
@@ -592,7 +592,7 @@ const langColor = computed(() =>
  gap: 6px;
  padding: 4px 16px;
  font-family: var(--font-mono);
- font-size: 0.7rem;
+ font-size: 0.6875rem;
  color: rgb(var(--color-text-tertiary-rgb));
  border-top: 1px solid rgb(var(--color-border-rgb));
 }
@@ -629,7 +629,7 @@ const langColor = computed(() =>
 
 .snippet-detail__desc {
  margin: 10px 0 0;
- font-size: 0.8125rem;
+ font-size: var(--text-xs);
  line-height: 1.7;
  color: rgb(var(--color-text-secondary-rgb));
  word-break: break-word;
@@ -697,7 +697,7 @@ const langColor = computed(() =>
 
 .snippet-detail__delete-text {
  margin: 0;
- font-size: 0.875rem;
+ font-size: var(--text-sm);
  line-height: 1.6;
  color: rgb(var(--color-text-secondary-rgb));
 }
@@ -705,7 +705,7 @@ const langColor = computed(() =>
 .snippet-detail__delete-actions {
  display: flex;
  justify-content: flex-end;
- gap: 10px;
+ gap: 12px;
  width: 100%;
 }
 

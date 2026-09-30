@@ -73,7 +73,7 @@ const modelValue = computed({
   background: rgb(var(--color-surface-rgb));
   box-shadow: 0 0 0 1px rgb(var(--color-border-rgb) / 0.6) inset;
   border-radius: 8px;
-  min-height: 34px;
+  min-height: 32px; /* Linear control height */
 }
 
 .app-select :deep(.el-select__wrapper.is-focused) {

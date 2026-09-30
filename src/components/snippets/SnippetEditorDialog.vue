@@ -238,7 +238,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 .snippet-editor-dialog__meta {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .snippet-editor-dialog__row {
@@ -264,7 +264,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 .snippet-editor-dialog__label {
   flex: 0 0 auto;
   width: 56px;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: rgb(var(--color-text-secondary-rgb) / 0.85);
   text-align: right;
@@ -321,7 +321,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 .snippet-editor-dialog__editor-options {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .snippet-editor-dialog__select--sm {
@@ -346,7 +346,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
   border-radius: var(--radius);
   background: rgb(var(--color-error-rgb) / 0.08);
   color: rgb(var(--color-error-rgb));
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
 }
 

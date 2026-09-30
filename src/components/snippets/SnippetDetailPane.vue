@@ -177,9 +177,9 @@ function openPreviewWindow() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   color: rgb(var(--color-text-secondary-rgb));
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 
 .snippet-detail-drawer__head {
@@ -279,7 +279,7 @@ function openPreviewWindow() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 16px;
   border-top: 1px solid var(--color-border-glass);
 }

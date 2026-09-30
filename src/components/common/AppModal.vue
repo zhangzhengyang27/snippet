@@ -112,7 +112,7 @@ function handleConfirm() {
 <style>
 /* 主题 token 对接 EP 弹窗（对话框挂载在 body，需全局样式） */
 .app-modal.el-dialog {
-  border-radius: 14px;
+  border-radius: 12px; /* Linear featured radius */
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
   background: rgb(var(--color-surface-rgb));
 }

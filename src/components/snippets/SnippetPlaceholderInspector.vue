@@ -89,7 +89,7 @@ function formatOptions(def: SnippetPlaceholderDef): string {
 .snippet-placeholder-inspector {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
   border: 1px solid rgb(var(--color-border-glass-rgb) / 0.12);
   border-radius: var(--radius-md);
@@ -102,7 +102,7 @@ function formatOptions(def: SnippetPlaceholderDef): string {
   align-items: center;
   gap: 6px;
   font-family: var(--font-heading);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: rgb(var(--color-text-rgb));
 }
@@ -131,7 +131,7 @@ function formatOptions(def: SnippetPlaceholderDef): string {
 }
 
 .snippet-placeholder-inspector__error {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: rgb(var(--color-error-rgb));
 }

@@ -244,7 +244,7 @@ const { activeIndex } = useListShortcuts({
   background: rgb(var(--color-surface-rgb) / 0.9);
   color: rgb(var(--color-text-rgb));
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   outline: none;
   transition:
     border-color 0.18s ease,
@@ -279,7 +279,7 @@ const { activeIndex } = useListShortcuts({
 .library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .example-card {
@@ -344,7 +344,7 @@ const { activeIndex } = useListShortcuts({
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.55;
   color: rgb(var(--color-text-secondary-rgb));
   min-height: 2.5em;

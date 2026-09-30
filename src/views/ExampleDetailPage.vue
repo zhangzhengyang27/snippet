@@ -299,7 +299,7 @@ useEventListener(window, 'keydown', handleKeyDown)
 
 .snippet-tabs__tab {
  font-family: var(--font-heading);
- font-size: 0.78125rem;
+ font-size: 0.75rem;
  font-weight: 500;
  color: rgb(var(--color-text-secondary-rgb));
  background: rgb(var(--color-surface-dim-rgb));
@@ -345,7 +345,7 @@ useEventListener(window, 'keydown', handleKeyDown)
  display: inline-flex;
  align-items: center;
  gap: 8px;
- font-size: 0.8125rem;
+ font-size: var(--text-xs);
  min-width: 0;
 }
 

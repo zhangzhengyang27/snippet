@@ -197,7 +197,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
   max-height: 70vh;
   overflow: hidden;
   border: 1px solid rgb(var(--color-border-glass-rgb) / 0.8);
-  border-radius: 16px;
+  border-radius: 12px;
   background: rgb(var(--color-surface-rgb));
   box-shadow: 0 24px 64px rgb(0 0 0 / 0.25);
 }
@@ -205,7 +205,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
 .app-header__search-title {
   padding: 14px 16px 8px;
   font-family: var(--font-heading);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: rgb(var(--color-text-secondary-rgb));
 }
@@ -214,7 +214,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
   margin: 0 12px 10px;
   padding: 10px 12px;
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgb(var(--color-surface-variant-rgb) / 0.5);
   color: rgb(var(--color-text-rgb));
   font-size: 14px;
@@ -238,16 +238,16 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
 /* 「搜索中…」「未找到匹配的示例」等纯文本提示 */
 .app-header__search-results > div:not(.app-header__search-item) {
   padding: 10px 8px;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
 .app-header__search-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 9px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background var(--duration-fast) ease;
 }
@@ -269,7 +269,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
 .search-result__title {
   overflow: hidden;
   color: rgb(var(--color-text-rgb));
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

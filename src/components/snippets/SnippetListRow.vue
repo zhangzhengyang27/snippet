@@ -417,7 +417,7 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   overflow: visible;
 }
 
@@ -460,7 +460,7 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
   height: 18px;
   line-height: 18px;
   font-family: var(--font-heading);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: rgb(var(--color-text-rgb));
   white-space: nowrap;
@@ -504,7 +504,7 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
   width: 22px;
   height: 22px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   color: rgb(var(--color-text-secondary-rgb));
   cursor: pointer;

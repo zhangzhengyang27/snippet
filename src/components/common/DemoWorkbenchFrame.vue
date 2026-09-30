@@ -123,10 +123,10 @@ const displayDescription = computed(() =>
   display: inline-flex;
   align-items: center;
   min-height: 24px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-radius: 999px;
   background: rgb(var(--color-primary-rgb) / 0.12);
-  font-size: 11px;
+  font-size: var(--text-label-caps);
   font-weight: 600;
   color: rgb(var(--color-primary-rgb));
   white-space: nowrap;
@@ -138,7 +138,7 @@ const displayDescription = computed(() =>
 }
 
 .demo-card {
-  border-radius: var(--radius-lg, 1rem);
+  border-radius: var(--radius-lg, 0.5rem);
   background: rgb(var(--color-surface-rgb));
 }
 
@@ -164,7 +164,7 @@ const displayDescription = computed(() =>
 }
 
 .demo-workbench__description {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   line-height: 1.75;
   color: rgb(var(--color-text-secondary-rgb) / 0.86);
 }
@@ -176,7 +176,7 @@ const displayDescription = computed(() =>
 }
 
 .demo-workbench__control-card {
-  border-radius: var(--radius-xl, 1.5rem);
+  border-radius: var(--radius-xl, 0.75rem);
   padding: 16px;
 }
 
@@ -195,7 +195,7 @@ const displayDescription = computed(() =>
 
 .demo-workbench__notes {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .demo-workbench__notes p {

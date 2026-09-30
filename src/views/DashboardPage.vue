@@ -153,11 +153,11 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
         </p>
       </div>
       <div class="dash__greet-actions">
-        <AppButton variant="glass" size="small" @click="openPalette">
+        <AppButton variant="glass" @click="openPalette">
           <span class="dash__kbd mono">⌘K</span>
           命令面板
         </AppButton>
-        <AppButton variant="primary" size="small" @click="router.push('/snippets?new=1')">
+        <AppButton variant="primary" @click="router.push('/snippets?new=1')">
           <AppIcon icon="material-symbols:add-circle" :size="14" />
           新建片段
         </AppButton>
@@ -322,7 +322,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 
 .dash__date {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--text-xs);
   color: rgb(var(--color-text-secondary-rgb) / 0.9);
 }
 
@@ -334,7 +334,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .dash__greet-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: none;
 }
 
@@ -351,7 +351,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .dash__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 14px;
 }
 
@@ -360,9 +360,9 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   padding: 18px 20px;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
   background: rgb(var(--color-surface-rgb) / 0.6);
   cursor: pointer;
@@ -414,7 +414,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .stat-card__icon {
   width: 46px;
   height: 46px;
-  border-radius: 13px;
+  border-radius: 12px;
   flex: none;
   display: flex;
   align-items: center;
@@ -452,18 +452,18 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .dash__bento {
   display: grid;
   grid-template-columns: 1fr 330px;
-  gap: 14px;
+  gap: 12px;
   align-items: start;
 }
 
 .dash__rail {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .bento-card {
-  border-radius: 16px;
+  border-radius: 12px;
   background: rgb(var(--color-surface-rgb) / 0.6);
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
 }
@@ -515,12 +515,12 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   width: 100%;
   padding: 10px 12px;
   border: none;
-  border-radius: 11px;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
   cursor: pointer;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-xs);
   transition: background 0.13s ease;
 }
 
@@ -597,7 +597,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .quick-item__icon {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 8px;
   flex: none;
   display: flex;
   align-items: center;
@@ -608,7 +608,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 
 .quick-item__title {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: rgb(var(--color-text-rgb));
 }
@@ -651,7 +651,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 .explore-item__thumb {
   width: 52px;
   height: 42px;
-  border-radius: 9px;
+  border-radius: 8px;
   flex: none;
   display: flex;
   align-items: center;

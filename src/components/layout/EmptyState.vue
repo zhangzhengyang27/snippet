@@ -220,7 +220,7 @@ const stateIcon = computed(() => {
 
 .empty-state__description {
   max-width: 420px;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.6;
   color: rgb(var(--color-text-secondary-rgb) / 0.85);
 }

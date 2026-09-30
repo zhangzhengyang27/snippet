@@ -181,7 +181,7 @@ const securityNotes = [
 .shortcut-list__item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
   background: rgb(var(--color-surface-variant-rgb) / 0.6);
@@ -212,7 +212,7 @@ const securityNotes = [
 }
 
 .shortcut-list__desc {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: rgb(var(--color-text-secondary-rgb));
 }
 
@@ -220,13 +220,13 @@ const securityNotes = [
 .tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .tech-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
   border: 1px solid rgb(var(--color-border-rgb) / 0.6);
   border-radius: var(--radius-md);
@@ -247,13 +247,13 @@ const securityNotes = [
 }
 
 .tech-item__name {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: rgb(var(--color-text-rgb));
 }
 
 .tech-item__detail {
-  font-size: 0.78125rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: rgb(var(--color-text-secondary-rgb));
 }
@@ -262,7 +262,7 @@ const securityNotes = [
 .security-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -271,7 +271,7 @@ const securityNotes = [
 .security-list__item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: var(--radius-md);
   background: rgb(var(--color-surface-variant-rgb) / 0.5);
@@ -290,13 +290,13 @@ const securityNotes = [
 }
 
 .security-list__title {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: rgb(var(--color-text-rgb));
 }
 
 .security-list__detail {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   line-height: 1.6;
   color: rgb(var(--color-text-secondary-rgb));
 }

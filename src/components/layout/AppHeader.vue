@@ -444,7 +444,7 @@ function handleScroll() {
   border-radius: 0 0 10px 10px;
   background: rgb(var(--color-primary-rgb));
   color: rgb(var(--color-background-rgb));
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
   transition: top 0.2s ease;
@@ -488,7 +488,7 @@ function handleScroll() {
   justify-content: center;
 }
 .app-header__nav-link {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: rgb(var(--color-text-secondary-rgb) / 0.7);
   text-decoration: none;
@@ -532,7 +532,7 @@ function handleScroll() {
 }
 .app-header__dropdown-item {
   display: block;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: rgb(var(--color-text-secondary-rgb));
   text-decoration: none;
@@ -563,11 +563,11 @@ function handleScroll() {
 .app-header__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 .app-header__icon-btn {
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1)) !important;
   background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1)) !important;
   color: rgb(var(--color-text-secondary-rgb) / 0.8) !important;
@@ -582,7 +582,7 @@ function handleScroll() {
   align-items: center;
   gap: 8px;
   padding: 5px 10px 5px 5px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
   background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
   color: rgb(var(--color-text-secondary-rgb));
@@ -609,7 +609,7 @@ function handleScroll() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: rgb(var(--color-text-secondary-rgb));
 }
@@ -621,7 +621,7 @@ function handleScroll() {
   right: 0;
   width: 280px;
   padding: 0 !important;
-  border-radius: 18px !important;
+  border-radius: 12px !important;
   background: rgb(var(--color-surface-rgb)) !important;
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1)) !important;
   box-shadow: 0 24px 60px rgb(var(--color-shadow-rgb) / 0.28), 0 0 0 1px rgb(var(--color-text-rgb) / 0.03) inset !important;
@@ -640,9 +640,9 @@ function handleScroll() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 22px 14px 18px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(145deg, rgb(var(--color-surface-bright-rgb) / 0.6), rgb(var(--color-surface-rgb)));
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
   text-align: center;
@@ -705,7 +705,7 @@ function handleScroll() {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: rgb(var(--color-primary-rgb) / 0.1);
   color: rgb(var(--color-primary-rgb));
   font-size: 0.6875rem;
@@ -719,7 +719,7 @@ function handleScroll() {
   gap: 6px;
   margin-top: 2px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 12px;
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
   background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
   color: rgb(var(--color-text-secondary-rgb) / 0.85);
@@ -772,7 +772,7 @@ function handleScroll() {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 8px;
   color: rgb(var(--color-background-rgb));
   flex-shrink: 0;
 }
@@ -803,11 +803,11 @@ function handleScroll() {
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
   color: rgb(var(--color-accent-rose-rgb));
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;

@@ -183,7 +183,7 @@ defineExpose({ toggleFullscreen: handleFullscreen })
   z-index: 100;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
   background: rgb(var(--color-surface-rgb));
   backdrop-filter: blur(12px);

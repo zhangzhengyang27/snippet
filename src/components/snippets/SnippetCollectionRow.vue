@@ -384,7 +384,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   background: transparent;
   color: var(--sb-text-muted);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 400;
   text-align: left;
   transition:
@@ -432,7 +432,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   border: none;
   background: transparent;
   color: rgb(var(--color-text-tertiary-rgb));
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   line-height: 16px;
   pointer-events: none;
 }
@@ -461,7 +461,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   border: none;
   background: transparent;
   color: var(--sb-text-faint);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     transform 200ms cubic-bezier(0.4, 0, 0.2, 1),

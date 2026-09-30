@@ -9,6 +9,11 @@
  * ⚠️ allowClear 只用自绘的 #suffix 清空钮，**不要**再给 el-input 传 clearable：
  *    两者会同时渲染（EP 原生那个 hover 时可见），同一输入框里出现两个 ✕。
  *    实测确认过：`clearable` + `#suffix` 并存 → 悬停时并排两个清空按钮。
+ *
+ * ℹ️ **不转发 `#prefix`**（2026-09-30 项目决策移除）：需要前缀图标的调用方自行处理
+ *    （本仓库唯一用例 SnippetsToolbar 搜索框用「绝对定位图标 + pl-8」实现）。
+ *    **同样不要改成全插槽转发**——`suffix` 被本组件消费（自绘清空钮），
+ *    照 `AppButton` 的 `v-for="(_, name) in $slots"` 写法会与之冲突。
  */
 import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -66,9 +71,6 @@ function handleClear() {
     v-bind="$attrs"
     @update:model-value="handleInput"
   >
-    <template v-if="$slots.prefix" #prefix>
-      <slot name="prefix" />
-    </template>
     <template v-if="showClear && !props.disabled && modelValue" #suffix>
       <button type="button" class="app-input__clear" aria-label="清空" @click.stop="handleClear">
         <AppIcon icon="material-symbols:cancel" :size="13" />

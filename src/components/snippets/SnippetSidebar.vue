@@ -307,7 +307,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   /* 固定宽度：原 --sidebar-width-knowledge 变量从未定义，宽度实际由内容撑开，
      展开子集合时侧栏会随长名变宽。收缩链见下方 min-width: 0 一组规则。 */
   width: 236px;
@@ -338,7 +338,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   gap: 3px;
   margin: 0 8px;
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgb(var(--color-surface-variant-rgb) / 0.6);
 }
 
@@ -397,7 +397,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
 .snippet-sidebar__header-title {
   flex: 1;
-  font-size: 0.71875rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   color: var(--sb-text-faint);
   letter-spacing: 0.08em;
@@ -470,7 +470,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   background: transparent;
   color: var(--sb-text-muted);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-weight: 400;
   cursor: pointer;
   text-align: left;
@@ -587,7 +587,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 .snippet-sidebar__tag-skeleton-item {
   height: 22px;
   width: 56px;
-  border-radius: 11px;
+  border-radius: 8px;
   background: rgb(var(--color-surface-variant-rgb) / 0.6);
   animation: snippet-sidebar-pulse 1.5s ease-in-out infinite;
 }
@@ -616,7 +616,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   height: 22px;
   padding: 0 8px;
   border: 1px solid var(--sb-border);
-  border-radius: 11px;
+  border-radius: 8px;
   background: transparent;
   color: var(--sb-text-muted);
   font-family: var(--font-body);
@@ -653,7 +653,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
 
 .snippet-sidebar__tag-count {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   opacity: 0.6;
   margin-left: 2px;
 }
