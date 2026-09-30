@@ -18,22 +18,9 @@ import { useToast } from '@/composables/useToast'
 import { snippetSortOptions } from '@/composables/useSnippetListState'
 import { useKnowledgeSnippetsPage } from '@/composables/useKnowledgeSnippetsPage'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
-import {
-  createKnowledgeSnippet,
-  getKnowledgeSnippet,
-  batchAddKnowledgeSnippetTag,
-  batchDeleteKnowledgeSnippets,
-} from '@/api/knowledge-snippets'
-import {
-  exportSnippetsJson,
-  exportSnippetsMarkdown,
-  parseSnippetsJson,
-  planSnippetImport,
-  readFileAsText,
-  SNIPPET_IMPORT_MAX_ITEMS,
-  type SnippetImportPlan,
-} from '@/utils/snippet-export-import'
-import { getApiErrorMessage } from '@/api/client'
+import { useSnippetImportExport } from '@/composables/useSnippetImportExport'
+import { useSnippetBatchOps } from '@/composables/useSnippetBatchOps'
+import { getKnowledgeSnippet } from '@/api/knowledge-snippets'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 
 const router = useRouter()
@@ -325,186 +312,36 @@ onBeforeUnmount(() => {
   keywordTimer = null
 })
 
-// 导出 / 导入（纯客户端）
-type ExportFormat = 'json' | 'markdown'
-const exportOpen = ref(false)
-const exporting = ref(false)
-const importFileInput = ref<HTMLInputElement | null>(null)
-/** 导入进行中：禁用按钮防止重复触发，并展示逐条进度 */
-const importing = ref(false)
-const importProgress = ref<{ done: number; total: number } | null>(null)
+// 导出 / 导入（纯客户端）—— 逻辑下沉到 composables/useSnippetImportExport
+const {
+  exportOpen,
+  exporting,
+  importFileInput,
+  importing,
+  importProgress,
+  handleExportConfirm,
+  handleImportFile,
+} = useSnippetImportExport({
+  snippets,
+  collections,
+  collectAllCollectionIds,
+  refresh: refreshAll,
+})
 
-async function handleExportConfirm(format: ExportFormat) {
-  if (!snippets.value.length) return
-  exporting.value = true
-  try {
-    if (format === 'json') exportSnippetsJson(snippets.value)
-    else exportSnippetsMarkdown(snippets.value)
-    exportOpen.value = false
-    toast.success(`已导出 ${snippets.value.length} 条片段`)
-  } finally {
-    exporting.value = false
-  }
-}
-
-async function handleImportFile(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-
-  // 先解析并规划落位：文件本身不可读/格式错误时整批不开始
-  let planned: SnippetImportPlan[] = []
-  let skipped = 0
-  let overflow = 0
-  try {
-    const text = await readFileAsText(file)
-    const knownIds = new Set(collectAllCollectionIds(collections.value))
-    const plan = planSnippetImport(parseSnippetsJson(text), knownIds)
-    planned = plan.planned
-    skipped = plan.skipped
-    overflow = plan.overflow
-  } catch (err) {
-    toast.error(err instanceof Error ? err.message : '导入失败')
-    return
-  }
-
-  // 超上限整批拒绝：截断导入的话，用户重试同一文件会把已导入部分重复创建
-  if (overflow > 0) {
-    toast.error(
-      `文件含 ${planned.length + overflow} 条可导入片段，超过单次导入上限 ` +
-        `${SNIPPET_IMPORT_MAX_ITEMS} 条，请拆分文件后分批导入`
-    )
-    return
-  }
-
-  if (!planned.length) {
-    toast.error('文件内没有可导入的片段')
-    return
-  }
-
-  // 逐条容错：单条失败（正文超限、字段被后端拒绝等）不影响其余条目
-  let created = 0
-  let relocated = 0
-  let failed = 0
-  let firstError = ''
-  importing.value = true
-  importProgress.value = { done: 0, total: planned.length }
-  try {
-    for (const entry of planned) {
-      try {
-        await createKnowledgeSnippet({
-          name: entry.item.name,
-          description: entry.item.description,
-          language: entry.item.language,
-          content: entry.item.code,
-          collectionId: entry.collectionId,
-          tags: entry.item.tags,
-          favorite: entry.item.favorite,
-          displayAttrs: entry.item.displayAttrs,
-        })
-        created += 1
-        if (entry.relocated) relocated += 1
-      } catch (err) {
-        failed += 1
-        if (!firstError) firstError = getApiErrorMessage(err, '创建失败')
-      } finally {
-        importProgress.value = { done: created + failed, total: planned.length }
-      }
-    }
-  } finally {
-    importing.value = false
-    importProgress.value = null
-  }
-
-  const notes: string[] = []
-  if (relocated) notes.push(`${relocated} 条的集合不属于当前账号，已放入未分组`)
-  if (skipped) notes.push(`跳过 ${skipped} 条名称或内容为空`)
-  if (failed) notes.push(`${failed} 条失败：${firstError}`)
-
-  if (created) {
-    toast.success(
-      notes.length ? `已导入 ${created} 条（${notes.join('；')}）` : `已导入 ${created} 条片段`
-    )
-  } else {
-    toast.error(notes.length ? `未导入任何片段：${notes.join('；')}` : '文件内没有可导入的片段')
-  }
-
-  if (created) await refreshAll()
-}
-
-// 批量操作（多选）
-const batchMode = ref(false)
-const selectedIds = ref<string[]>([])
-
-function handleToggleCheck(id: string) {
-  if (selectedIds.value.includes(id)) {
-    selectedIds.value = selectedIds.value.filter((x) => x !== id)
-  } else {
-    selectedIds.value = [...selectedIds.value, id]
-  }
-}
-
-function selectAllOnPage() {
-  const pageIds = snippets.value.map((s) => s.id)
-  const merged = Array.from(new Set([...selectedIds.value, ...pageIds]))
-  selectedIds.value = merged
-}
-
-function clearSelection() {
-  selectedIds.value = []
-}
-
-const batchTagOpen = ref(false)
-const batchTagValue = ref('')
-const batchTagSaving = ref(false)
-
-async function confirmBatchTag() {
-  const tag = batchTagValue.value.trim()
-  if (!tag || !selectedIds.value.length) return
-  batchTagSaving.value = true
-  try {
-    const result = await batchAddKnowledgeSnippetTag(selectedIds.value, tag)
-    batchTagOpen.value = false
-    batchTagValue.value = ''
-    const missingNote = result.missing.length ? `，${result.missing.length} 条不存在或无权操作` : ''
-    toast.success(
-      result.updated > 0
-        ? `已为 ${result.updated} 条片段添加标签「${tag}」${missingNote}`
-        : `没有需要更新的片段（可能均已拥有该标签）${missingNote}`
-    )
-    await refreshAll()
-  } catch (err) {
-    toast.error(getApiErrorMessage(err, '批量加标签失败'))
-  } finally {
-    batchTagSaving.value = false
-  }
-}
-
-const batchDeleting = ref(false)
-
-async function handleBatchDelete() {
-  if (!selectedIds.value.length) return
-  if (!window.confirm(`确认删除选中的 ${selectedIds.value.length} 条片段？该操作不可恢复。`)) return
-  batchDeleting.value = true
-  try {
-    const result = await batchDeleteKnowledgeSnippets(selectedIds.value)
-    if (result.deleted > 0) {
-      const missingNote = result.deleted < selectedIds.value.length
-        ? `，其余 ${selectedIds.value.length - result.deleted} 条不存在或无权操作`
-        : ''
-      toast.success(`已删除 ${result.deleted} 条片段${missingNote}`)
-    } else {
-      toast.error('没有可删除的片段（可能已被删除或无权操作）')
-    }
-    selectedIds.value = []
-    await refreshAll()
-  } catch (err) {
-    toast.error(getApiErrorMessage(err, '批量删除失败'))
-  } finally {
-    batchDeleting.value = false
-  }
-}
+// 批量操作（多选）—— 逻辑下沉到 composables/useSnippetBatchOps
+const {
+  batchMode,
+  selectedIds,
+  handleToggleCheck,
+  selectAllOnPage,
+  clearSelection,
+  batchTagOpen,
+  batchTagValue,
+  batchTagSaving,
+  confirmBatchTag,
+  batchDeleting,
+  handleBatchDelete,
+} = useSnippetBatchOps({ snippets, refresh: refreshAll })
 </script>
 
 <template>
