@@ -1,12 +1,20 @@
 <script setup lang="ts">
 /**
  * 收藏夹页：聚合收藏的代码片段与示例，Tab 切换浏览。
+ *
+ * 三态（加载中 / 加载失败 / 空）统一由 useResourceFetch + EmptyState 表达。
+ *
+ * 此前这里用 `catch { list = [] }` 把异常吞成空数组，导致**「加载失败」在界面上
+ * 与「没有收藏」完全无法区分**——用户断网或后端 5xx 时会以为自己的收藏丢了，
+ * 这是最容易被投诉的一类体验缺陷。现在失败态会明确显示并提供「重试」。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { listKnowledgeSnippets } from '@/api/knowledge-snippets'
 import { getFavorites } from '@/api/favorites'
+import { getApiErrorMessage } from '@/api/client'
+import { useResourceFetch } from '@/composables/useResourceFetch'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import type { CodeExample } from '@/types'
 import PageHeader from '@/components/layout/PageHeader.vue'
@@ -19,36 +27,36 @@ const authStore = useAuthStore()
 type FavTab = 'snippets' | 'examples'
 const activeTab = ref<FavTab>('snippets')
 
-const favSnippets = ref<KnowledgeSnippet[]>([])
-const favExamples = ref<CodeExample[]>([])
-const loadingSnippets = ref(true)
-const favLoading = ref(true)
+/**
+ * 收藏的片段。
+ * pageSize 100 是后端尚未提供收藏分页接口前的折中——超过 100 条的部分不会显示，
+ * 待补分页后改为真实翻页（见评审报告第 1 节 P1）。
+ */
+const {
+  data: favSnippetsRaw,
+  loading: snippetsLoading,
+  error: snippetsError,
+  refresh: reloadSnippets,
+} = useResourceFetch<KnowledgeSnippet[]>(async () => {
+  const res = await listKnowledgeSnippets({ favorite: true, page: 1, pageSize: 100 })
+  return res.items ?? []
+})
+
+/** 收藏的示例。未登录时后端会拒绝，此处直接返回空列表，属于正常情况而非错误。 */
+const {
+  data: favExamplesRaw,
+  loading: examplesLoading,
+  error: examplesError,
+  refresh: reloadExamples,
+} = useResourceFetch<CodeExample[]>(async () =>
+  authStore.isLoggedIn ? await getFavorites() : []
+)
+
+// useResourceFetch 的 data 初始为 null（未加载 / 失败），列表渲染统一兜底成空数组
+const favSnippets = computed(() => favSnippetsRaw.value ?? [])
+const favExamples = computed(() => favExamplesRaw.value ?? [])
 
 const totalCount = computed(() => favSnippets.value.length + favExamples.value.length)
-
-async function loadSnippets() {
-  loadingSnippets.value = true
-  try {
-    const res = await listKnowledgeSnippets({ favorite: true, page: 1, pageSize: 100 })
-    favSnippets.value = res.items ?? []
-  } catch {
-    favSnippets.value = []
-  } finally {
-    loadingSnippets.value = false
-  }
-}
-
-async function loadExamples() {
-  favLoading.value = true
-  try {
-    // 未登录时后端会拒绝，直接保持空列表
-    favExamples.value = authStore.isLoggedIn ? await getFavorites() : []
-  } catch {
-    favExamples.value = []
-  } finally {
-    favLoading.value = false
-  }
-}
 
 function goSnippet(id: string) {
   router.push(`/snippets?focus=${encodeURIComponent(id)}`)
@@ -57,11 +65,6 @@ function goSnippet(id: string) {
 function goExample(id: string) {
   router.push(`/example/${encodeURIComponent(id)}`)
 }
-
-onMounted(() => {
-  loadSnippets()
-  loadExamples()
-})
 </script>
 
 <template>
@@ -103,7 +106,14 @@ onMounted(() => {
 
     <!-- 代码片段 Tab -->
     <div v-if="activeTab === 'snippets'" class="favorites__body">
-      <div v-if="loadingSnippets" class="favorites__empty">加载中…</div>
+      <EmptyState v-if="snippetsLoading" type="loading" />
+      <EmptyState
+        v-else-if="snippetsError"
+        type="error"
+        :description="getApiErrorMessage(snippetsError, '收藏的代码片段加载失败，请稍后重试。')"
+        show-retry
+        @retry="reloadSnippets"
+      />
       <EmptyState
         v-else-if="!favSnippets.length"
         title="暂无收藏的代码片段"
@@ -129,7 +139,14 @@ onMounted(() => {
 
     <!-- 示例 Tab -->
     <div v-else class="favorites__body">
-      <div v-if="favLoading" class="favorites__empty">加载中…</div>
+      <EmptyState v-if="examplesLoading" type="loading" />
+      <EmptyState
+        v-else-if="examplesError"
+        type="error"
+        :description="getApiErrorMessage(examplesError, '收藏的示例加载失败，请稍后重试。')"
+        show-retry
+        @retry="reloadExamples"
+      />
       <EmptyState
         v-else-if="!favExamples.length"
         title="暂无收藏的示例"
@@ -208,12 +225,6 @@ onMounted(() => {
 
 .favorites__body {
   min-height: 200px;
-}
-
-.favorites__empty {
-  padding: 24px;
-  font-size: 13px;
-  color: rgb(var(--color-text-secondary-rgb));
 }
 
 .favorites__grid {

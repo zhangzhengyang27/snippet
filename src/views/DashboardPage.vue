@@ -3,15 +3,17 @@
  * 概览页 · Bento 布局（布局设计稿 public/design-dashboard.html 的 Vue 实现）：
  * 问候行 → 三张统计卡 → 宽窄双栏（最近浏览 | 快捷开始 + 探索示例库）。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
 import { getFavorites } from '@/api/favorites'
 import { getExamples } from '@/api/examples'
+import { getApiErrorMessage } from '@/api/client'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import type { CodeExample } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
+import { useResourceFetch } from '@/composables/useResourceFetch'
 import { formatRelativeTime, formatDateLabel } from '@/utils/date-format'
 import EmptyState from '@/components/layout/EmptyState.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -21,12 +23,56 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { recent: recentIds } = useRecentSnippets()
 
-const loading = ref(true)
-const snippetTotal = ref(0)
-const favoriteTotal = ref(0)
-const exampleTotal = ref(0)
-const recentSnippets = ref<KnowledgeSnippet[]>([])
-const exploreExamples = ref<CodeExample[]>([])
+/** 概览页聚合数据（一次请求拿齐，避免 4 个独立的 loading/error 状态） */
+interface DashboardData {
+  snippetTotal: number
+  favoriteTotal: number
+  exampleTotal: number
+  exploreExamples: CodeExample[]
+  recentSnippets: KnowledgeSnippet[]
+}
+
+/**
+ * 概览页数据统一走 useResourceFetch，三态由 EmptyState 表达。
+ *
+ * 此前统计块用 `catch {}` 静默降级为 0 —— 但 0 是一个**合法数值**，
+ * 断网时用户会看到「你有 0 个片段」，被误读成数据丢了。
+ * 现在失败态把数字显示为「—」（未知），与真实的 0 区分开。
+ */
+const {
+  data: dash,
+  loading,
+  error,
+  refresh: reload,
+} = useResourceFetch<DashboardData>(async () => {
+  const [snipRes, favRes, exRes] = await Promise.all([
+    listKnowledgeSnippets({ page: 1, pageSize: 1 }),
+    authStore.isLoggedIn ? getFavorites() : Promise.resolve([]),
+    getExamples({ page: 1, limit: 2 }),
+  ])
+
+  // 最近浏览：localStorage 只存 id，详情按需回查；单条失败（片段已删除）跳过即可
+  const ids = recentIds.value.slice(0, 6)
+  const recent = ids.length
+    ? (await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))).filter(
+        (x): x is KnowledgeSnippet => x != null
+      )
+    : []
+
+  return {
+    snippetTotal: snipRes.total ?? 0,
+    favoriteTotal: Array.isArray(favRes) ? favRes.length : 0,
+    exampleTotal: exRes.pagination?.total ?? 0,
+    exploreExamples: exRes.data?.slice(0, 2) ?? [],
+    recentSnippets: recent,
+  }
+})
+
+const snippetTotal = computed(() => dash.value?.snippetTotal ?? 0)
+const favoriteTotal = computed(() => dash.value?.favoriteTotal ?? 0)
+const exampleTotal = computed(() => dash.value?.exampleTotal ?? 0)
+const recentSnippets = computed(() => dash.value?.recentSnippets ?? [])
+const exploreExamples = computed(() => dash.value?.exploreExamples ?? [])
 
 const username = computed(() => authStore.user?.username ?? '')
 const greeting = computed(() => {
@@ -94,35 +140,6 @@ const langTag = (s: KnowledgeSnippet) => s.language || 'text'
 const goSnippet = (id: string) => router.push(`/snippets?focus=${encodeURIComponent(id)}`)
 const goExample = (id: string) => router.push(`/example/${encodeURIComponent(id)}`)
 const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-command-palette'))
-
-async function load() {
-  loading.value = true
-  try {
-    const [snipRes, favRes, exRes] = await Promise.all([
-      listKnowledgeSnippets({ page: 1, pageSize: 1 }),
-      authStore.isLoggedIn ? getFavorites().catch(() => []) : Promise.resolve([]),
-      getExamples({ page: 1, limit: 2 }),
-    ])
-    snippetTotal.value = snipRes.total ?? 0
-    favoriteTotal.value = Array.isArray(favRes) ? favRes.length : 0
-    exampleTotal.value = exRes.pagination?.total ?? 0
-    exploreExamples.value = exRes.data?.slice(0, 2) ?? []
-  } catch {
-    // 统计失败静默降级为 0，不阻塞页面
-  }
-
-  try {
-    const ids = recentIds.value.slice(0, 6)
-    if (ids.length) {
-      const results = await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))
-      recentSnippets.value = results.filter((x): x is KnowledgeSnippet => x != null)
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(load)
 </script>
 
 <template>
@@ -165,7 +182,7 @@ onMounted(load)
           <AppIcon :icon="item.icon" :size="20" />
         </span>
         <span class="stat-card__meta">
-          <span class="stat-card__num mono">{{ loading ? '—' : item.num }}</span>
+          <span class="stat-card__num mono">{{ loading || error ? '—' : item.num }}</span>
           <span class="stat-card__label">
             {{ item.label }}<span class="stat-card__sub"> · {{ item.sub }}</span>
           </span>
@@ -186,7 +203,15 @@ onMounted(load)
           <router-link to="/recent" class="bento-card__link">查看全部 →</router-link>
         </div>
 
-        <div v-if="loading" class="dash__loading">加载中…</div>
+        <EmptyState v-if="loading" type="loading" compact />
+        <EmptyState
+          v-else-if="error"
+          type="error"
+          compact
+          :description="getApiErrorMessage(error, '数据加载失败，请稍后重试。')"
+          show-retry
+          @retry="reload"
+        />
         <EmptyState
           v-else-if="!recentSnippets.length"
           compact
@@ -477,12 +502,6 @@ onMounted(load)
 
 .bento-card__link:hover {
   text-decoration: underline;
-}
-
-.dash__loading {
-  padding: 28px;
-  font-size: 13px;
-  color: rgb(var(--color-text-secondary-rgb));
 }
 
 /* ─── 最近浏览列表 ─── */

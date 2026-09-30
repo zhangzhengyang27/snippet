@@ -1,4 +1,4 @@
-import { ref, watch, type Ref, type WatchSource } from 'vue'
+import { getCurrentScope, onScopeDispose, ref, watch, type Ref, type WatchSource } from 'vue'
 import type { ResourceFetchResult } from '@/types/refactor'
 
 export interface UseResourceFetchOptions<T> {
@@ -83,6 +83,19 @@ export function useResourceFetch<T>(
   // 监听源变化时自动重新加载
   if (options.watch) {
     watch(options.watch, () => void run())
+  }
+
+  // 组件卸载 / effect scope 销毁时中止在途请求。缺这一步会有两个后果：
+  //   1) 请求继续悬挂到超时（占用连接，而组件早已不可见）
+  //   2) 卸载后回调仍可能写入 data / loading，Vue 会对已销毁实例告警
+  // 放在 scope 判断内，是因为该 composable 也可能在组件外被调用。
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      requestId++ // 让在途请求的返回被判为过期，不再写入 state
+      abortController?.abort()
+      abortController = null
+      loading.value = false
+    })
   }
 
   return {

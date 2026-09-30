@@ -1,12 +1,17 @@
 <script setup lang="ts">
 /**
  * 最近使用页：展示最近使用（后端 lastUsedAt）与最近浏览（localStorage）的片段。
+ *
+ * 三态由 useResourceFetch + EmptyState 表达。此前用 `catch { 两个列表都清空 }`
+ * 吞掉异常，断网时页面会显示「暂无使用记录」——把「加载失败」伪装成「没有数据」。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { getApiErrorMessage } from '@/api/client'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
+import { useResourceFetch } from '@/composables/useResourceFetch'
 import { formatRelativeTime } from '@/utils/date-format'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import EmptyState from '@/components/layout/EmptyState.vue'
@@ -16,34 +21,31 @@ import AppButton from '@/components/common/AppButton.vue'
 const router = useRouter()
 const { recent: recentIds, clearRecent } = useRecentSnippets()
 
-const loading = ref(true)
-const usedSnippets = ref<KnowledgeSnippet[]>([])
-const recentSnippets = ref<KnowledgeSnippet[]>([])
+const {
+  data: lists,
+  loading,
+  error,
+  refresh: reload,
+} = useResourceFetch<{ used: KnowledgeSnippet[]; recent: KnowledgeSnippet[] }>(async () => {
+  // 最近使用：按 lastUsedAt 倒序取前 8 条
+  const used = await listKnowledgeSnippets({ sort: 'lastUsedAt', page: 1, pageSize: 8 })
+  const usedItems = (used.items ?? []).filter((s) => s.lastUsedAt)
 
+  // 最近浏览：localStorage 里只存 id，详情按需回查。
+  // 单条回查失败（如片段已被删除）不应让整页报错，故逐条 catch 成 null 后过滤。
+  const ids = recentIds.value
+  const recentItems = ids.length
+    ? (await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))).filter(
+        (x): x is KnowledgeSnippet => x != null
+      )
+    : []
+
+  return { used: usedItems, recent: recentItems }
+})
+
+const usedSnippets = computed(() => lists.value?.used ?? [])
+const recentSnippets = computed(() => lists.value?.recent ?? [])
 const hasAny = computed(() => usedSnippets.value.length > 0 || recentSnippets.value.length > 0)
-
-async function load() {
-  loading.value = true
-  try {
-    // 最近使用：按 lastUsedAt 倒序取前 8 条
-    const used = await listKnowledgeSnippets({ sort: 'lastUsedAt', page: 1, pageSize: 8 })
-    usedSnippets.value = (used.items ?? []).filter((s) => s.lastUsedAt)
-
-    // 最近浏览：localStorage 里只存 id，详情按需回查
-    const ids = recentIds.value
-    if (ids.length) {
-      const results = await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))
-      recentSnippets.value = results.filter((x): x is KnowledgeSnippet => x != null)
-    } else {
-      recentSnippets.value = []
-    }
-  } catch {
-    usedSnippets.value = []
-    recentSnippets.value = []
-  } finally {
-    loading.value = false
-  }
-}
 
 function goSnippet(id: string) {
   router.push(`/snippets?focus=${encodeURIComponent(id)}`)
@@ -51,11 +53,9 @@ function goSnippet(id: string) {
 
 async function handleClearRecent() {
   clearRecent()
-  recentSnippets.value = []
+  // recentIds 已清空，重新加载即可（fetcher 内部读的就是 recentIds.value）
+  await reload()
 }
-
-/** 相对时间展示：N 分钟前 / 小时前 / 天前，超过一周回退为日期。 */
-onMounted(load)
 </script>
 
 <template>
@@ -69,7 +69,14 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <div v-if="loading" class="recent__empty">加载中…</div>
+    <EmptyState v-if="loading" type="loading" />
+    <EmptyState
+      v-else-if="error"
+      type="error"
+      :description="getApiErrorMessage(error, '最近记录加载失败，请稍后重试。')"
+      show-retry
+      @retry="reload"
+    />
 
     <template v-else>
       <EmptyState
@@ -136,12 +143,6 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.recent__empty {
-  padding: 24px;
-  font-size: 13px;
-  color: rgb(var(--color-text-secondary-rgb));
 }
 
 .recent__section {

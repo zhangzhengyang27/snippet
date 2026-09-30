@@ -69,7 +69,23 @@ const showDescription = computed(
   () => !!props.descriptionHtml || !!props.description || !props.title
 )
 
-const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'not-found')
+/**
+ * 各状态对应的图标。
+ *
+ * ⚠️ 必须走 el-empty 的 `#image` 插槽，**不能**用 `:image` prop ——
+ * 后者是「图片 URL」，传 'error' 这类字符串会被当成路径去请求，渲染成破图；
+ * 而且一旦传了 image，EP 就不再渲染 `#image` 插槽，自定义图标会整个消失。
+ */
+const stateIcon = computed(() => {
+  switch (props.type) {
+    case 'error':
+      return 'material-symbols:error'
+    case 'not-found':
+      return 'material-symbols:search-off'
+    default:
+      return 'material-symbols:folder-open'
+  }
+})
 </script>
 
 <template>
@@ -86,19 +102,12 @@ const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'n
       <p class="empty-state__title">{{ displayTitle }}</p>
     </div>
 
-    <!-- 空态：el-empty（空 / 未找到 / 错误共用图片位，错误着主色） -->
+    <!-- 空态 / 未找到 / 错误：统一走 #image 插槽自绘图标，不用 el-empty 的 :image -->
     <template v-else>
-      <el-empty
-        :image="isEmptyVisual ? undefined : 'error'"
-        :image-size="props.compact ? 72 : 96"
-        :description="undefined"
-      >
+      <el-empty :image-size="props.compact ? 72 : 96">
         <template #image>
           <div class="empty-state__icon" aria-hidden="true">
-            <AppIcon
-              :icon="props.type === 'error' ? 'material-symbols:error' : props.type === 'not-found' ? 'material-symbols:search-off' : 'material-symbols:folder-open'"
-              :size="props.compact ? 26 : 34"
-            />
+            <AppIcon :icon="stateIcon" :size="props.compact ? 26 : 34" />
           </div>
         </template>
       </el-empty>
@@ -144,7 +153,12 @@ const isEmptyVisual = computed(() => props.type === 'empty' || props.type === 'n
   padding: 0;
 }
 
-.empty-state :deep(.el-empty__bottom) {
+/* 隐藏 el-empty 自带的描述文案。
+   注意要同时覆盖 __bottom 与 __description —— 不同 EP 版本把描述放在不同层级，
+   只隐藏 __bottom 会让「暂无数据」这个 i18n 默认值漏出来（:description 传空串
+   也会被 EP 回落到该默认值，所以只能靠 CSS 隐藏）。 */
+.empty-state :deep(.el-empty__bottom),
+.empty-state :deep(.el-empty__description) {
   display: none;
 }
 

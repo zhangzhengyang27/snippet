@@ -20,19 +20,32 @@ export class ApiError extends Error {
 /**
  * 从 API 错误中提取可供用户阅读的错误信息。
  * 兼容后端 NestJS 返回的 `{ message: string | string[] }` 结构。
+ *
+ * 两条防泄漏规则（都是实测踩过的）：
+ * 1. **响应体是 HTML 时不能用**。网关 / nginx / 静态服务器在 502、504、404 时
+ *    返回的是整页 HTML 错误页，直接透出会让用户在界面上看到一堆标签。
+ * 2. **响应体过长时不能用**。超过 200 字符基本不是给用户看的错误信息。
+ *
+ * 拿不到可读信息时返回 `fallback`，而不是 `API Error: 404 Not Found - /api/xxx`
+ * 这种面向开发者的文本——技术细节仍在 ApiError 对象上，调用方可自行记日志。
  */
 export function getApiErrorMessage(error: unknown, fallback = '请求失败'): string {
   if (error instanceof ApiError) {
     const body = error.body as { message?: string | string[] } | string | undefined
-    if (typeof body === 'string' && body) return body
-    if (body && typeof body === 'object') {
+
+    if (typeof body === 'string') {
+      const text = body.trim()
+      if (text && !text.startsWith('<') && text.length <= 200) return text
+    } else if (body && typeof body === 'object') {
       if (Array.isArray(body.message) && body.message.length > 0) {
         return body.message.join('；')
       }
       if (typeof body.message === 'string' && body.message) return body.message
     }
-    return error.message
+
+    return fallback
   }
+
   if (error instanceof Error && error.message) return error.message
   return fallback
 }
