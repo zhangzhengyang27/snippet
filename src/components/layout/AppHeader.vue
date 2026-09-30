@@ -145,6 +145,18 @@ function handleCommandSelect(exampleId: string) {
   router.push({ name: 'example-detail', params: { id: exampleId } })
 }
 
+/**
+ * 搜索结果项的键盘激活（Enter / Space）。
+ * 与 SnippetListRow 的 `role="button"` + `@keydown` 保持同一套模式 ——
+ * 此前该项只有 @click，键盘用户无法打开搜索结果。
+ */
+function handleSearchItemKeydown(exampleId: string, e: KeyboardEvent) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    handleCommandSelect(exampleId)
+  }
+}
+
 function handleKeyDown(e: KeyboardEvent) {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault()
@@ -304,6 +316,8 @@ function handleScroll() {
                 @keydown.escape="closeDropdownNow()"
                 @mouseenter="openDropdown(link.label)"
                 @mouseleave="_scheduleCloseDropdown()"
+                @focus="openDropdown(link.label)"
+                @blur="_scheduleCloseDropdown()"
               >
                 {{ link.label }}
                 <AppIcon
@@ -315,6 +329,10 @@ function handleScroll() {
                   }"
                 />
               </button>
+              <!-- 弹出层容器：只负责「鼠标/焦点在菜单内时保持展开」，
+                   本身不是交互控件（真正的交互元素是里面的链接）。
+                   故定点禁用，而非给它加 role/tabindex 伪造交互语义。 -->
+              <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
               <div
                 v-if="activeDropdown === link.label"
                 class="app-header__dropdown-menu-content"
@@ -486,6 +504,9 @@ function handleScroll() {
     </header>
 
     <!-- 搜索对话框：使用原生实现 -->
+    <!-- 模态背景：点击空白处关闭。键盘等价路径是 Esc（见输入框的 @keydown.escape），
+         背景本身不应是可聚焦控件。定点禁用，理由同 CommandPalette。 -->
+    <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -->
     <div v-if="searchOpen" class="app-header__search-overlay" @click.self="closeSearch">
       <div class="app-header__search-dialog">
         <div class="app-header__search-title">搜索示例</div>
@@ -509,7 +530,10 @@ function handleScroll() {
             v-for="example in limitedResults"
             :key="example.id"
             class="app-header__search-item"
+            tabindex="0"
+            role="button"
             @click="handleCommandSelect(example.id)"
+            @keydown="handleSearchItemKeydown(example.id, $event)"
           >
             <div class="search-result__content">
               <span class="search-result__title">{{ example.title }}</span>

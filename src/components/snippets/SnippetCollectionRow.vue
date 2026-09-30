@@ -7,7 +7,7 @@
  * 最小投放区，松手后由顶层 provide 的 handlers.persist 把最新树结构落库。
  * 视觉风格对齐 ToolsSidebar 的子菜单：32px 高、6px 圆角、inset 选中态、左侧缩进竖线，操作入口改为右键菜单。
  */
-import { computed, inject, onUnmounted, ref, watch } from 'vue'
+import { computed, inject, nextTick, onUnmounted, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
 import AppIcon from '@/components/common/AppIcon.vue'
 import {
@@ -77,6 +77,24 @@ const menuItems = computed<MenuItem[]>(() => [
   },
 ])
 
+/**
+ * 行主体的键盘交互（对齐 WAI-ARIA tree 模式）：
+ * ArrowRight 展开 / ArrowLeft 收起。Enter·Space 由 `<button>` 原生负责（即选中）。
+ *
+ * 有了它，键盘用户不必 Tab 到那个 16px 的小箭头上也能展开集合 ——
+ * 箭头按钮仍保留在 Tab 顺序里，两种路径并存。
+ */
+function handleRowKeydown(e: KeyboardEvent) {
+  if (!hasChildren.value) return
+  if (e.key === 'ArrowRight' && !isExpanded.value) {
+    e.preventDefault()
+    handlers.toggleExpand(props.item.id)
+  } else if (e.key === 'ArrowLeft' && isExpanded.value) {
+    e.preventDefault()
+    handlers.toggleExpand(props.item.id)
+  }
+}
+
 const handleContextMenu = (event: MouseEvent) => {
   if (props.item.isPublic) return
   event.preventDefault()
@@ -88,6 +106,55 @@ const handleContextMenu = (event: MouseEvent) => {
 const handleMenuItemClick = (item: MenuAction) => {
   item.action()
   menuVisible.value = false
+}
+
+/** 可执行项（过滤分隔符），与 DOM 中的 [role="menuitem"] 一一对应 */
+const actionableItems = computed(() =>
+  menuItems.value.filter((i): i is MenuAction => !('separator' in i))
+)
+
+const menuListRef = ref<HTMLElement | null>(null)
+const menuItemEls = (): HTMLElement[] =>
+  Array.from(menuListRef.value?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])
+
+/**
+ * 菜单内的键盘导航。
+ *
+ * `role="menu"` 的语义就是：菜单项**不进 Tab 顺序**（所以是 `tabindex="-1"`），
+ * 由容器接管方向键移动焦点。此前菜单项只有 `@click`，键盘用户即使能用
+ * Shift+F10 唤出菜单，也无法选中任何一项 —— 这是真实的**可达性缺陷**，
+ * 不是 lint 洁癖。
+ */
+function handleMenuKeydown(e: KeyboardEvent) {
+  const items = menuItemEls()
+  if (!items.length) return
+  const current = items.indexOf(document.activeElement as HTMLElement)
+
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault()
+      items[(current + 1 + items.length) % items.length]?.focus()
+      break
+    case 'ArrowUp':
+      e.preventDefault()
+      items[(current - 1 + items.length) % items.length]?.focus()
+      break
+    case 'Home':
+      e.preventDefault()
+      items[0]?.focus()
+      break
+    case 'End':
+      e.preventDefault()
+      items[items.length - 1]?.focus()
+      break
+    case 'Enter':
+    case ' ': {
+      e.preventDefault()
+      const action = actionableItems.value[current]
+      if (action) handleMenuItemClick(action)
+      break
+    }
+  }
 }
 
 const handleDocumentClick = (event: MouseEvent) => {
@@ -103,10 +170,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 }
 
-watch(menuVisible, (visible) => {
+watch(menuVisible, async (visible) => {
   if (visible) {
     document.addEventListener('click', handleDocumentClick, true)
     document.addEventListener('keydown', handleKeyDown)
+    // 打开后把焦点移入第一项，键盘用户才能立刻用方向键操作
+    await nextTick()
+    menuItemEls()[0]?.focus()
   } else {
     document.removeEventListener('click', handleDocumentClick, true)
     document.removeEventListener('keydown', handleKeyDown)
@@ -164,43 +234,58 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
     :class="{ 'is-public': props.item.isPublic, 'is-root': props.depth === 0 }"
     :data-collection-id="props.item.id"
   >
-    <button
-      type="button"
+    <!--
+      行主体拆成「布局容器 + 内层按钮」两层。
+      此前展开箭头是嵌在行按钮**内部**的可点击 span —— 两个问题：
+        1. 嵌套交互元素（button 里放可点击元素）是无效 HTML；
+        2. 箭头拿不到焦点，**键盘用户完全无法展开集合**（只能点击）。
+      拆成兄弟节点后，箭头是真正的 <button>，可 Tab 聚焦、可 Enter 触发。
+    -->
+    <div
       class="collection-row__item"
       :class="{
         'is-active': isSelected,
         'has-children': hasChildren,
         'is-public': props.item.isPublic,
       }"
-      :aria-current="isSelected ? 'true' : undefined"
-      @click="handlers.select(props.item.id)"
-      @contextmenu="handleContextMenu"
     >
-      <span
+      <button
         v-if="hasChildren"
+        type="button"
         class="collection-row__toggle"
         :class="{ 'is-expanded': isExpanded }"
+        :aria-expanded="isExpanded"
+        :aria-label="isExpanded ? '收起子集合' : '展开子集合'"
         @click.stop="handlers.toggleExpand(props.item.id)"
       >
         <AppIcon icon="material-symbols:chevron-right" :size="12" />
-      </span>
+      </button>
       <span v-else class="collection-row__spacer" aria-hidden="true" />
 
-      <AppIcon :icon="folderIcon" :size="14" class="collection-row__folder" aria-hidden="true" />
-
-      <span class="collection-row__label">{{ props.item.name }}</span>
-
-      <!-- 公共集合徽章：放在按钮内部作为最后一个 flex 项。
-           之前挂在 button 外面用 absolute 定位父级 .collection-row，
-           子菜单展开后父级高度被撑高，top:50% 跟着沉到子菜单中段造成错位。 -->
-      <span
-        v-if="props.item.isPublic && props.depth === 0"
-        class="collection-row__public-badge"
-        title="公共集合：只读，不可编辑/拖拽"
+      <button
+        type="button"
+        class="collection-row__main"
+        :aria-current="isSelected ? 'true' : undefined"
+        @click="handlers.select(props.item.id)"
+        @keydown="handleRowKeydown"
+        @contextmenu="handleContextMenu"
       >
-        <AppIcon icon="material-symbols:public" :size="12" />
-      </span>
-    </button>
+        <AppIcon :icon="folderIcon" :size="14" class="collection-row__folder" aria-hidden="true" />
+
+        <span class="collection-row__label">{{ props.item.name }}</span>
+
+        <!-- 公共集合徽章：作为按钮内最后一个 flex 项，label 共享剩余空间后徽章自然右贴。
+             之前挂在 button 外面用 absolute 定位父级 .collection-row，
+             子菜单展开后父级高度被撑高，top:50% 跟着沉到子菜单中段造成错位。 -->
+        <span
+          v-if="props.item.isPublic && props.depth === 0"
+          class="collection-row__public-badge"
+          title="公共集合：只读，不可编辑/拖拽"
+        >
+          <AppIcon icon="material-symbols:public" :size="12" />
+        </span>
+      </button>
+    </div>
 
     <!-- 右键菜单：替代 hover 操作按钮；通过 Teleport 挂载到 body，避免被 sidebar 裁剪 -->
     <Teleport to="body">
@@ -210,7 +295,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
         :style="{ left: `${menuX}px`, top: `${menuY}px` }"
         @click.stop
       >
-        <ul class="snippet-collection-row__context-menu-list" role="menu">
+        <ul ref="menuListRef" class="snippet-collection-row__context-menu-list" role="menu">
           <template v-for="(item, index) in menuItems" :key="index">
             <li
               v-if="'separator' in item"
@@ -224,6 +309,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
               role="menuitem"
               tabindex="-1"
               @click="handleMenuItemClick(item)"
+              @keydown="handleMenuKeydown"
             >
               <AppIcon
                 v-if="item.icon"
@@ -281,7 +367,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   position: relative;
 }
 
-/* 主项 */
+/* 主项：布局容器（内层 __main 才是按钮） */
 .collection-row__item {
   min-width: 0;
   display: flex;
@@ -300,7 +386,6 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   font-family: var(--font-body);
   font-size: 0.8125rem;
   font-weight: 400;
-  cursor: grab;
   text-align: left;
   transition:
     background var(--sb-transition),
@@ -309,13 +394,29 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
     opacity var(--sb-transition);
 }
 
-.collection-row__item:active {
+/* 行主按钮：占满容器剩余宽度，重置按钮默认外观 */
+.collection-row__main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: grab;
+}
+
+.collection-row__main:active {
   cursor: grabbing;
 }
 
 /* 公共集合为只读：不可拖拽，光标为普通指针 */
-.collection-row__item.is-public,
-.collection-row__item.is-public:active {
+.collection-row__item.is-public .collection-row__main,
+.collection-row__item.is-public .collection-row__main:active {
   cursor: pointer;
 }
 
@@ -348,7 +449,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / 0.15);
 }
 
-/* 展开/收起箭头 */
+/* 展开/收起箭头（真正的按钮，可 Tab 聚焦） */
 .collection-row__toggle {
   display: inline-flex;
   align-items: center;
@@ -356,6 +457,9 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: var(--sb-text-faint);
   border-radius: 4px;
   cursor: pointer;

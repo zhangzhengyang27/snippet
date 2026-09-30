@@ -294,6 +294,10 @@ defineExpose({ open: openPalette, close })
 <template>
   <Teleport to="body">
     <Transition name="cmdk-fade">
+      <!-- 模态背景：点击空白处关闭。键盘等价路径是 Esc（见 onKeydown 的 Escape 分支），
+           背景本身**不应**是可聚焦控件 —— 硬加 tabindex 只会多一个无意义的 Tab 停靠点。
+           故此处定点禁用，而非为消除警告而牺牲交互模型。 -->
+      <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -->
       <div v-if="open" class="cmdk" @click.self="close">
         <div class="cmdk__panel" role="dialog" aria-label="命令面板">
           <!-- 搜索输入 -->
@@ -329,6 +333,7 @@ defineExpose({ open: openPalette, close })
                   :class="{ 'is-active': flatItems[activeIndex] === item }"
                   :data-cmdk-offset="sectionOffset(g.key)"
                   @mouseenter="activeIndex = sectionOffset(g.key) + g.items.indexOf(item)"
+                  @focus="activeIndex = sectionOffset(g.key) + g.items.indexOf(item)"
                   @click="onSelect(item)"
                 >
                   <AppIcon :icon="itemIcon(item)" :size="16" class="cmdk__item-icon" />
