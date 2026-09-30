@@ -18,6 +18,7 @@ import { useResourceFetch } from '@/composables/useResourceFetch'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import type { CodeExample } from '@/types'
 import PageHeader from '@/components/layout/PageHeader.vue'
+import Pagination from '@/components/layout/Pagination.vue'
 import EmptyState from '@/components/layout/EmptyState.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 
@@ -28,19 +29,45 @@ type FavTab = 'snippets' | 'examples'
 const activeTab = ref<FavTab>('snippets')
 
 /**
- * 收藏的片段。
- * pageSize 100 是后端尚未提供收藏分页接口前的折中——超过 100 条的部分不会显示，
- * 待补分页后改为真实翻页（见评审报告第 1 节 P1）。
+ * 收藏的片段（服务端分页）。
+ *
+ * 此前写死 `pageSize: 100`，超过 100 条的收藏会被**静默截断** —— 用户既看不到
+ * 也得不到任何提示。后端本就支持 `page`/`pageSize`，故改为真实翻页。
  */
+interface FavSnippetsResult {
+  items: KnowledgeSnippet[]
+  total: number
+}
+
+const favPage = ref(1)
+const favPageSize = ref(24)
+
 const {
-  data: favSnippetsRaw,
+  data: favSnippetsResult,
   loading: snippetsLoading,
   error: snippetsError,
   refresh: reloadSnippets,
-} = useResourceFetch<KnowledgeSnippet[]>(async () => {
-  const res = await listKnowledgeSnippets({ favorite: true, page: 1, pageSize: 100 })
-  return res.items ?? []
-})
+} = useResourceFetch<FavSnippetsResult>(
+  async (signal) => {
+    const res = await listKnowledgeSnippets(
+      { favorite: true, page: favPage.value, pageSize: favPageSize.value },
+      { signal }
+    )
+    return { items: res.items ?? [], total: res.total ?? 0 }
+  },
+  // 页码 / 每页条数变化时自动重新加载（useResourceFetch 内置竞态保护）
+  { watch: [favPage, favPageSize] }
+)
+
+const favSnippets = computed(() => favSnippetsResult.value?.items ?? [])
+const favTotal = computed(() => favSnippetsResult.value?.total ?? 0)
+const favTotalPages = computed(() => Math.max(1, Math.ceil(favTotal.value / favPageSize.value)))
+
+/** 改每页条数后必须回到第 1 页，否则可能停在一个不存在的页码上 */
+function handleFavPageSizeChange(size: number) {
+  favPageSize.value = size
+  favPage.value = 1
+}
 
 /** 收藏的示例。未登录时后端会拒绝，此处直接返回空列表，属于正常情况而非错误。 */
 const {
@@ -53,10 +80,10 @@ const {
 )
 
 // useResourceFetch 的 data 初始为 null（未加载 / 失败），列表渲染统一兜底成空数组
-const favSnippets = computed(() => favSnippetsRaw.value ?? [])
 const favExamples = computed(() => favExamplesRaw.value ?? [])
 
-const totalCount = computed(() => favSnippets.value.length + favExamples.value.length)
+// 注意用服务端 total 而非当前页长度 —— 分页后后者只是「本页条数」
+const totalCount = computed(() => favTotal.value + favExamples.value.length)
 
 function goSnippet(id: string) {
   router.push(`/snippets?focus=${encodeURIComponent(id)}`)
@@ -90,7 +117,7 @@ function goExample(id: string) {
         @click="activeTab = 'snippets'"
       >
         代码片段
-        <span class="favorites__tab-count">{{ favSnippets.length }}</span>
+        <span class="favorites__tab-count">{{ favTotal }}</span>
       </button>
       <button
         type="button"
@@ -126,8 +153,7 @@ function goExample(id: string) {
           type="button"
           class="fav-card"
           @click="goSnippet(s.id)"
-        >
-          <div class="fav-card__top">
+        >          <div class="fav-card__top">
             <span class="fav-card__lang">{{ s.language }}</span>
             <span class="fav-card__meta">{{ s.tags.slice(0, 2).join(' · ') }}</span>
           </div>
@@ -135,6 +161,17 @@ function goExample(id: string) {
           <span class="fav-card__desc">{{ s.description || '无描述' }}</span>
         </button>
       </div>
+
+      <!-- 服务端分页：超过一页时才显示（组件内置 hideOnSinglePage） -->
+      <Pagination
+        v-if="!snippetsLoading && !snippetsError && favSnippets.length"
+        :page="favPage"
+        :total="favTotal"
+        :total-pages="favTotalPages"
+        :page-size="favPageSize"
+        @update:page="favPage = $event"
+        @update:page-size="handleFavPageSizeChange"
+      />
     </div>
 
     <!-- 示例 Tab -->

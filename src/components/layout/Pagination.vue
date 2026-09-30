@@ -35,7 +35,15 @@ const emit = defineEmits<{
   pageSizeChange: [pageSize: number]
 }>()
 
-const totalRecords = computed(() => props.totalPages * props.pageSize)
+/**
+ * el-pagination 的 total。
+ *
+ * **优先用调用方传的真实 `total`** —— 此前无条件用 `totalPages * pageSize` 反推，
+ * 只要总数不是每页条数的整数倍，显示的「共 N 条」就会**偏大**
+ * （实测：30 条收藏 / 每页 24 → 显示「共 48 条」，用户会以为数据多了）。
+ * 仅在调用方没传 total（只知页数）时才回退到反推值。
+ */
+const totalRecords = computed(() => props.total || props.totalPages * props.pageSize)
 
 /** EP 分页布局：按组件开关拼装（total/sizes/jumper 可选） */
 const paginationLayout = computed(() => {
