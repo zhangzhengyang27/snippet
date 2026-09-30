@@ -129,6 +129,7 @@ function closeDropdown() {
         class="sti-input"
         type="text"
         placeholder="输入后按回车添加..."
+        aria-label="添加标签"
         @focus="onInputFocus"
         @blur="closeDropdown"
         @keydown="onInputKeydown"

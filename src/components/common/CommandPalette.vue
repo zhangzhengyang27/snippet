@@ -282,6 +282,7 @@ defineExpose({ open: openPalette, close })
               type="text"
               class="cmdk-input"
               placeholder="搜索代码片段与示例…"
+              aria-label="搜索代码片段与示例"
             />
             <select v-model="selectedLanguage" class="cmdk__lang" aria-label="按语言过滤">
               <option value="">全部语言</option>

@@ -9,6 +9,7 @@ import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { formatDateTime } from '@/utils/date-format'
 
 interface Props {
   /** 面板是否处于激活状态（移动端 Bottom Sheet 展开态） */
@@ -62,10 +63,6 @@ function openPreviewWindow() {
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
-function formatDateTime(value: string | null): string {
-  if (!value) return '—'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
-}
 </script>
 
 <template>

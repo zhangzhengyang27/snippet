@@ -34,6 +34,8 @@ const emit = defineEmits<{
       }}
     </p>
 
+    <!-- 该 <label> 包裹的是自定义组件 AppInput，规则无法穿透组件边界识别其内部的原生 input -->
+    <!-- eslint-disable-next-line vuejs-accessibility/label-has-for -->
     <label class="block space-y-2">
       <span class="text-body-sm font-medium text-text">集合名称</span>
       <AppInput

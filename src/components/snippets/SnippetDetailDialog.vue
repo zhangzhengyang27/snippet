@@ -6,6 +6,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import type { KnowledgeSnippet, SnippetFile } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
+import { formatDateTime } from '@/utils/date-format'
 
 const props = defineProps<{
   open: boolean
@@ -52,11 +53,6 @@ watch(
     activeFileIndex.value = 0
   }
 )
-
-const formatDateTime = (value: string | null) => {
-  if (!value) return '暂无'
-  return new Date(value).toLocaleString('zh-CN', { hour12: false })
-}
 
 const handleClose = () => {
   emit('update:open', false)
@@ -188,7 +184,7 @@ const handleClose = () => {
         </div>
         <span class="snippet-detail-drawer__updated">
           <AppIcon icon="material-symbols:schedule" :size="12" />
-          更新 {{ formatDateTime(props.snippet.updatedAt) }}
+          更新 {{ formatDateTime(props.snippet.updatedAt, '暂无') }}
         </span>
       </div>
     </div>

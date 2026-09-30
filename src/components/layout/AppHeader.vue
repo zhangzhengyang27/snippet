@@ -247,6 +247,27 @@ function _scheduleCloseDropdown() {
   }, 150)
 }
 
+/** 立即关闭（不防抖）。用于点击切换与 Esc。 */
+function closeDropdownNow() {
+  if (dropdownCloseTimer) {
+    clearTimeout(dropdownCloseTimer)
+    dropdownCloseTimer = null
+  }
+  activeDropdown.value = null
+}
+
+/**
+ * 点击/键盘切换下拉。
+ *
+ * 此前下拉只有 `@mouseenter` 一条路径，**键盘用户根本无法打开**——这是真实缺陷，
+ * 不是 lint 洁癖。补上标准的 disclosure 模式：点击切换 + Esc 关闭 + aria-expanded。
+ * 悬停仍然保留，作为鼠标用户的渐进增强。
+ */
+function toggleDropdown(label: string) {
+  if (activeDropdown.value === label) closeDropdownNow()
+  else openDropdown(label)
+}
+
 function handleScroll() {
   scrolled.value = window.scrollY > 0
 }
@@ -270,6 +291,10 @@ function handleScroll() {
                 type="button"
                 class="app-header__nav-link app-header__nav-link--dropdown"
                 :class="{ 'app-header__nav-link--active': link.active }"
+                aria-haspopup="true"
+                :aria-expanded="activeDropdown === link.label"
+                @click="toggleDropdown(link.label)"
+                @keydown.escape="closeDropdownNow()"
                 @mouseenter="openDropdown(link.label)"
                 @mouseleave="_scheduleCloseDropdown()"
               >
@@ -288,6 +313,8 @@ function handleScroll() {
                 class="app-header__dropdown-menu-content"
                 @mouseenter="openDropdown(link.label)"
                 @mouseleave="_scheduleCloseDropdown()"
+                @focusin="openDropdown(link.label)"
+                @focusout="_scheduleCloseDropdown()"
               >
                 <template v-for="child in link.children" :key="child.label">
                   <div
@@ -455,13 +482,19 @@ function handleScroll() {
     <div v-if="searchOpen" class="app-header__search-overlay" @click.self="closeSearch">
       <div class="app-header__search-dialog">
         <div class="app-header__search-title">搜索示例</div>
+        <!-- autofocus：这是用户主动点击「搜索」才打开的对话框，聚焦输入框是正确 UX；
+             该规则针对的是页面加载即抢焦点的情况，不适用于此处。
+             用区块禁用而非 next-line —— 违规报告在 autofocus 属性那一行，而 HTML 注释无法插入标签内部。 -->
+        <!-- eslint-disable vuejs-accessibility/no-autofocus -->
         <input
           v-model="searchQuery"
           class="app-header__search-input"
           placeholder="搜索示例、标签、教程…"
+          aria-label="搜索示例、标签、教程"
           autofocus
           @keydown.escape="closeSearch"
         />
+        <!-- eslint-enable vuejs-accessibility/no-autofocus -->
         <div class="app-header__search-results">
           <div v-if="searchLoading">搜索中…</div>
           <div v-else-if="limitedResults.length === 0 && searchQuery.trim()">未找到匹配的示例</div>

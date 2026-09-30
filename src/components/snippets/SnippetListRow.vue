@@ -12,6 +12,7 @@ import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
+import { formatRelativeDay } from '@/utils/date-format'
 import { languageLabel, languageColor } from '@/utils/snippet-languages'
 
 
@@ -46,26 +47,7 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-/** 「3 天前 / 昨天 / 2026-08-18」 */
-function formatRelative(value: string | null): string {
-  if (!value) return ''
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return ''
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffD = Math.floor(diffMs / 86_400_000)
-  if (diffD === 0) {
-    const diffH = Math.floor(diffMs / 3_600_000)
-    if (diffH <= 0) return '刚刚'
-    return `${diffH} 小时前`
-  }
-  if (diffD === 1) return '昨天'
-  if (diffD < 7) return `${diffD} 天前`
-  if (d.getFullYear() === now.getFullYear()) {
-    return `${d.getMonth() + 1}/${d.getDate()}`
-  }
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
-}
+/** 「3 天前 / 昨天 / 2026-08-18」——实现已收口到 @/utils/date-format 的 formatRelativeDay */
 
 const langHex = computed(() => languageColor(props.snippet.language))
 
@@ -207,7 +189,7 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
         >
           +{{ props.snippet.tags.length - 2 }}
         </span>
-        <span class="snippet-card__date">{{ formatRelative(props.snippet.updatedAt) }}</span>
+        <span class="snippet-card__date">{{ formatRelativeDay(props.snippet.updatedAt) }}</span>
         <span
           v-if="props.snippet.isPublic"
           class="snippet-card__badge"

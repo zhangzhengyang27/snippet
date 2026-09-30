@@ -22,6 +22,7 @@ import type { KnowledgeSnippet, SnippetFile } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
 import { languageLabel, languageColor } from '@/utils/snippet-languages'
 import { openSnippetPreviewWindow } from '@/utils/sandbox'
+import { formatDateTime } from '@/utils/date-format'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,11 +152,6 @@ async function confirmDelete() {
  } finally {
    deleting.value = false
  }
-}
-
-const formatDateTime = (value: string | null) => {
- if (!value) return '—'
- return new Date(value).toLocaleString('zh-CN', { hour12: false })
 }
 
 const langColor = computed(() =>

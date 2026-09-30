@@ -12,6 +12,7 @@ import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import type { CodeExample } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
+import { formatRelativeTime, formatDateLabel } from '@/utils/date-format'
 import EmptyState from '@/components/layout/EmptyState.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppButton from '@/components/common/AppButton.vue'
@@ -35,9 +36,7 @@ const greeting = computed(() => {
   if (h < 18) return '下午好'
   return '晚上好'
 })
-const dateLabel = computed(() =>
-  new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
-)
+const dateLabel = computed(() => formatDateLabel(new Date()))
 
 const stats = computed(() => [
   {
@@ -91,18 +90,6 @@ const quickActions = [
 ] as const
 
 const langTag = (s: KnowledgeSnippet) => s.language || 'text'
-const relativeTime = (value: string | null): string => {
-  if (!value) return '—'
-  const diff = Date.now() - new Date(value).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes} 分钟前`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days} 天前`
-  return new Date(value).toLocaleDateString('zh-CN')
-}
 
 const goSnippet = (id: string) => router.push(`/snippets?focus=${encodeURIComponent(id)}`)
 const goExample = (id: string) => router.push(`/example/${encodeURIComponent(id)}`)
@@ -216,7 +203,7 @@ onMounted(load)
           >
             <span class="recent-item__lang mono">{{ langTag(s) }}</span>
             <span class="recent-item__name">{{ s.name }}</span>
-            <span class="recent-item__time">{{ relativeTime(s.updatedAt) }}</span>
+            <span class="recent-item__time">{{ formatRelativeTime(s.updatedAt) }}</span>
             <AppIcon icon="material-symbols:arrow-forward" :size="14" class="recent-item__arrow" />
           </button>
         </div>

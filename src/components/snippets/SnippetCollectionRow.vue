@@ -222,6 +222,7 @@ const onChildMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => 
               class="snippet-collection-row__context-menu-item"
               :class="{ 'is-danger': item.danger }"
               role="menuitem"
+              tabindex="-1"
               @click="handleMenuItemClick(item)"
             >
               <AppIcon

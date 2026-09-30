@@ -88,6 +88,10 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
     <div class="snippet-editor-dialog">
       <div class="snippet-editor-dialog__body">
         <!-- 元信息 -->
+        <!-- eslint-disable vuejs-accessibility/label-has-for -->
+        <!-- 说明：以下 <label> 包裹的都是自定义组件（AppInput / AppSelect / SnippetTagInput），
+             vuejs-accessibility 规则无法穿透组件边界识别其内部渲染的原生表单控件，
+             因而误判为「label 未关联控件」。关联由这些组件自身负责，故本区块禁用该规则。 -->
         <div class="snippet-editor-dialog__meta">
           <div class="snippet-editor-dialog__row snippet-editor-dialog__row--2">
             <label class="snippet-editor-dialog__field">
@@ -131,6 +135,7 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
             />
           </label>
         </div>
+        <!-- eslint-enable vuejs-accessibility/label-has-for -->
 
         <div class="snippet-editor-dialog__divider" />
 

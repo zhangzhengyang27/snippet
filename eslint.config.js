@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
+import vueA11y from 'eslint-plugin-vuejs-accessibility'
 import prettierConfig from 'eslint-config-prettier'
 
 // 浏览器全局变量（统一声明，避免多处重复）
@@ -125,7 +126,32 @@ export default tseslint.config(
       },
       globals: browserGlobals,
     },
+    plugins: {
+      // 可访问性门禁：把 a11y 从「靠自觉」变成「靠 lint」
+      'vuejs-accessibility': vueA11y,
+    },
     rules: {
+      ...vueA11y.configs.recommended.rules,
+      // label-has-for 默认只认「label 包裹控件」这一种关联方式，会把标准的
+      // `<label for="x"> + <input id="x">` 误判为未关联（LoginPage 就是这种情况）。
+      // 改为 nesting 或 id 满足其一即可，这才是 WCAG 认可的两种等价关联方式。
+      'vuejs-accessibility/label-has-for': [
+        'error',
+        { required: { some: ['nesting', 'id'] } },
+      ],
+      // 以下三条降为 warn。它们要求为「鼠标交互」补上键盘等价路径，但**每一处的正确
+      // 做法取决于该组件应有的键盘交互模型**（模态背景点击关闭要不要给 tabindex？
+      // 列表项要不要进 Tab 顺序？右键菜单要不要方向键导航？），属于需要逐个设计的小项目，
+      // 不适合一次性机械改完。保留 warn 是为了让这些问题每次 lint 都可见，而非被静默忽略。
+      //
+      // 已按此思路修掉的真实缺陷（不在 warn 之列）：
+      //   · AppHeader 导航下拉此前只有 @mouseenter，键盘用户根本打不开 —— 已补
+      //     click 切换 / Esc 关闭 / aria-haspopup / aria-expanded
+      //   · 5 个表单控件缺可访问名 —— 已补 aria-label
+      //   · role="menuitem" 不可聚焦 —— 已补 tabindex="-1"
+      'vuejs-accessibility/click-events-have-key-events': 'warn',
+      'vuejs-accessibility/no-static-element-interactions': 'warn',
+      'vuejs-accessibility/mouse-events-have-key-events': 'warn',
       'vue/multi-word-component-names': 'off',
       'vue/no-reserved-component-names': 'off',
       'vue/no-side-effects-in-computed-properties': 'off',

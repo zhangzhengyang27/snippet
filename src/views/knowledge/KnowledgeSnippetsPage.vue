@@ -626,6 +626,7 @@ async function handleBatchDelete() {
             type="file"
             accept="application/json,.json"
             class="hidden"
+            aria-label="选择要导入的 JSON 文件"
             @change="handleImportFile"
           />
 
@@ -736,6 +737,7 @@ async function handleBatchDelete() {
           class="batch-tag-input"
           type="text"
           placeholder="输入标签名，回车确认"
+          aria-label="标签名"
           @keydown.enter="confirmBatchTag"
         />
         <AppButton variant="primary" :loading="batchTagSaving" @click="confirmBatchTag">
