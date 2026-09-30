@@ -1,4 +1,5 @@
 import { get, patch } from './client'
+import type { RequestOptions } from './client'
 import type { CodeExample } from '@/types'
 
 /**
@@ -43,19 +44,29 @@ export interface ExampleListResult {
 
 /**
  * 获取示例列表（公共接口，无需登录）。
+ *
+ * @param options.signal 取消信号。约定：**必须透传给底层 `get`**，否则
+ *   `useResourceFetch` 的取消能力对该请求无效。
  */
-export function getExamples(params?: ExampleListParams): Promise<ExampleListResult> {
-  return get<ExampleListResult>('/examples', {
-    topicSlug: params?.topicSlug,
-    categorySlug: params?.categorySlug,
-    search: params?.search,
-    isInteractive: params?.isInteractive,
-    sourceFilePrefix: params?.sourceFilePrefix,
-    sourceGroup: params?.sourceGroup,
-    ids: params?.ids?.length ? params.ids.join(',') : undefined,
-    page: params?.page,
-    limit: params?.limit,
-  })
+export function getExamples(
+  params?: ExampleListParams,
+  options?: RequestOptions
+): Promise<ExampleListResult> {
+  return get<ExampleListResult>(
+    '/examples',
+    {
+      topicSlug: params?.topicSlug,
+      categorySlug: params?.categorySlug,
+      search: params?.search,
+      isInteractive: params?.isInteractive,
+      sourceFilePrefix: params?.sourceFilePrefix,
+      sourceGroup: params?.sourceGroup,
+      ids: params?.ids?.length ? params.ids.join(',') : undefined,
+      page: params?.page,
+      limit: params?.limit,
+    },
+    options
+  )
 }
 
 /**

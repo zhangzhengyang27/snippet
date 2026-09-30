@@ -10,6 +10,7 @@ import { useRouter } from 'vue-router'
 import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
 import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
+import { useResourceFetch } from '@/composables/useResourceFetch'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import type { CodeExample } from '@/types'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
@@ -28,15 +29,67 @@ type CommandItem =
 
 const open = ref(false)
 const keyword = ref('')
-const loading = ref(false)
-const errorMsg = ref('')
 const selectedLanguage = ref('')
 const activeIndex = ref(0)
 
-const snippetHits = ref<KnowledgeSnippet[]>([])
-const exampleHits = ref<CodeExample[]>([])
-const hasMoreSnippets = ref(false)
-const hasMoreExamples = ref(false)
+/** 搜索聚合结果：一次请求同时拿片段与示例，避免两组独立的 loading/error 状态 */
+interface SearchBundle {
+  snippets: KnowledgeSnippet[]
+  examples: CodeExample[]
+  hasMoreSnippets: boolean
+  hasMoreExamples: boolean
+}
+
+const EMPTY_BUNDLE: SearchBundle = {
+  snippets: [],
+  examples: [],
+  hasMoreSnippets: false,
+  hasMoreExamples: false,
+}
+
+/**
+ * 命令面板搜索。走 useResourceFetch 以获得竞态保护与卸载中止 ——
+ * 连续输入会触发多个并发请求，慢响应覆盖新结果时，用户看到的列表
+ * 会与输入框里的关键词对不上。
+ */
+const {
+  data: searchBundle,
+  loading,
+  error: searchError,
+  execute: runSearch,
+} = useResourceFetch<SearchBundle>(
+  async (signal) => {
+    const q = keyword.value.trim()
+    if (!q) return EMPTY_BUNDLE
+
+    const [snipRes, exRes] = await Promise.all([
+      listKnowledgeSnippets(
+        { q, page: 1, pageSize: 8, language: selectedLanguage.value || undefined },
+        { signal }
+      ),
+      getExamples({ search: q, limit: 8 }, { signal }),
+    ])
+
+    const snippets = snipRes.items ?? []
+    const examples = exRes.data ?? []
+    return {
+      snippets,
+      examples,
+      hasMoreSnippets: (snipRes.total ?? 0) > snippets.length,
+      hasMoreExamples: (exRes.pagination?.total ?? 0) > examples.length,
+    }
+  },
+  { immediate: false }
+)
+
+const snippetHits = computed(() => searchBundle.value?.snippets ?? [])
+const exampleHits = computed(() => searchBundle.value?.examples ?? [])
+const hasMoreSnippets = computed(() => searchBundle.value?.hasMoreSnippets ?? false)
+const hasMoreExamples = computed(() => searchBundle.value?.hasMoreExamples ?? false)
+const errorMsg = computed(() =>
+  searchError.value ? getApiErrorMessage(searchError.value, '搜索失败') : ''
+)
+
 const recentSnippets = ref<KnowledgeSnippet[]>([])
 
 const actionItems = computed<CommandItem[]>(() => [
@@ -110,36 +163,6 @@ const grouped = computed(() => {
 })
 
 let searchTimer: number | null = null
-
-const runSearch = async () => {
-  const q = keyword.value.trim()
-  if (!q) {
-    snippetHits.value = []
-    exampleHits.value = []
-    return
-  }
-  loading.value = true
-  errorMsg.value = ''
-  try {
-    const [snipRes, exRes] = await Promise.all([
-      listKnowledgeSnippets({
-        q,
-        page: 1,
-        pageSize: 8,
-        language: selectedLanguage.value || undefined,
-      }),
-      getExamples({ search: q, limit: 8 }),
-    ])
-    snippetHits.value = snipRes.items ?? []
-    exampleHits.value = exRes.data ?? []
-    hasMoreSnippets.value = (snipRes.total ?? 0) > snippetHits.value.length
-    hasMoreExamples.value = (exRes.pagination?.total ?? 0) > exampleHits.value.length
-  } catch (err) {
-    errorMsg.value = getApiErrorMessage(err, '搜索失败')
-  } finally {
-    loading.value = false
-  }
-}
 
 // 打开面板时载入最近浏览片段（按 id 逐条取，失败忽略）
 const loadRecent = async () => {
@@ -226,11 +249,10 @@ const onSelect = (item: CommandItem) => execute(item)
 const openPalette = () => {
   open.value = true
   keyword.value = ''
-  snippetHits.value = []
-  exampleHits.value = []
-  hasMoreSnippets.value = false
-  hasMoreExamples.value = false
   activeIndex.value = 0
+  // 关键词已为空时 watch 不会触发，故显式执行一次以清空上次的结果
+  // （fetcher 对空关键词返回 EMPTY_BUNDLE）
+  void runSearch()
   void loadRecent()
   void nextTick(() => document.querySelector<HTMLInputElement>('.cmdk-input')?.focus())
 }

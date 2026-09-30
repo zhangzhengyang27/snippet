@@ -347,16 +347,28 @@ function buildQueryString(params?: Record<string, string | number | boolean | un
 }
 
 /**
+ * 单个请求的可选参数。
+ *
+ * `signal` 用于取消请求 —— 页面迁移到 `useResourceFetch` 后，composable 会把它的
+ * signal 透传下来，从而在「参数变化触发新请求」与「组件卸载」时中止旧请求。
+ * 约定：**fetcher 必须把这个 signal 一路传到底**，否则取消能力形同虚设。
+ */
+export interface RequestOptions {
+  signal?: AbortSignal
+}
+
+/**
  * GET 请求
  */
 export function get<T>(
   endpoint: string,
-  params?: Record<string, string | number | boolean | undefined>
+  params?: Record<string, string | number | boolean | undefined>,
+  options?: RequestOptions
 ): Promise<T> {
   // 仅在 disableCache=true 时添加时间戳防止浏览器缓存
   const cacheBust = config.disableCache ? { _t: Date.now().toString() } : undefined
   const queryString = buildQueryString({ ...params, ...cacheBust })
-  return request<T>(`${endpoint}${queryString}`, { method: 'GET' })
+  return request<T>(`${endpoint}${queryString}`, { method: 'GET', signal: options?.signal })
 }
 
 /**

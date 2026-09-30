@@ -1,6 +1,7 @@
 /** 封装知识片段相关接口请求。 */
 
 import { get, post, patch, del } from './client'
+import type { RequestOptions } from './client'
 import type {
  KnowledgeSnippet,
  KnowledgeSnippetCollection,
@@ -63,25 +64,31 @@ export function listKnowledgeSnippetTags(): Promise<KnowledgeSnippetTagListResul
 
 /**
 * 获取片段列表。
+*
+* @param options.signal 取消信号，须透传给底层 `get`（见 client.ts 的 RequestOptions 说明）。
 */
-export function listKnowledgeSnippets(params?: {
- q?: string
- collectionId?: string
- tag?: string
- language?: string
- favorite?: boolean
- sort?: SnippetSortOption
- page?: number
- pageSize?: number
-}): Promise<KnowledgeSnippetListResult> {
- return get<KnowledgeSnippetListResult>('/knowledge/snippets', params)
+export function listKnowledgeSnippets(
+ params?: {
+  q?: string
+  collectionId?: string
+  tag?: string
+  language?: string
+  favorite?: boolean
+  sort?: SnippetSortOption
+  page?: number
+  pageSize?: number
+ },
+ options?: RequestOptions
+): Promise<KnowledgeSnippetListResult> {
+  return get<KnowledgeSnippetListResult>('/knowledge/snippets', params, options)
 }
-
 /**
 * 获取片段详情。
+*
+* @param options.signal 取消信号，须透传给底层 `get`。
 */
-export function getKnowledgeSnippet(id: string): Promise<KnowledgeSnippet> {
- return get<KnowledgeSnippet>(`/knowledge/snippets/${id}`)
+export function getKnowledgeSnippet(id: string, options?: RequestOptions): Promise<KnowledgeSnippet> {
+ return get<KnowledgeSnippet>(`/knowledge/snippets/${id}`, undefined, options)
 }
 
 /**

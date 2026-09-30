@@ -7,6 +7,7 @@ import { toast } from '@/composables/useToast'
 import { getExamples } from '@/api'
 import { isTypingTarget } from '@/utils/keyboard'
 import { useCopy } from '@/composables/useCopy'
+import { useResourceFetch } from '@/composables/useResourceFetch'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { CodeExample } from '@/types'
 
@@ -61,7 +62,6 @@ const currentUser = computed(() => authStore.user)
 
 const searchOpen = ref(false)
 const searchQuery = ref('')
-const searchLoading = ref(false)
 
 const userMenuOpen = ref(false)
 
@@ -76,45 +76,52 @@ const userRoleLabel = computed(() => {
   return '普通用户'
 })
 
-const searchResults = ref<SearchResult[]>([])
-
 const activeIndex = ref(-1)
+
+/**
+ * 顶栏搜索结果。走 useResourceFetch 以获得竞态保护与卸载中止：
+ * 搜索是典型的「连续输入触发多个并发请求」场景，慢响应若覆盖新结果，
+ * 用户会看到与当前关键词不匹配的列表。
+ */
+const {
+  data: searchResultsRaw,
+  loading: searchLoading,
+  execute: executeSearch,
+} = useResourceFetch<SearchResult[]>(
+  async (signal) => {
+    const q = searchQuery.value.trim()
+    if (!q) return []
+    try {
+      const response = await getExamples({ search: q, page: 1, limit: 8 }, { signal })
+      return response.data.map(toSearchResult)
+    } catch {
+      // 搜索失败展示空结果（与改动前一致；本组件没有错误展示位）。
+      // 取消产生的 AbortError 也走这里，但 useResourceFetch 会因 requestId 过期
+      // 而丢弃这次返回值，不会覆盖更新的结果。
+      return []
+    }
+  },
+  { immediate: false, initial: [] }
+)
+
+const searchResults = computed(() => searchResultsRaw.value ?? [])
 
 const limitedResults = computed(() => searchResults.value.slice(0, 8))
 
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
-
-async function executeSearch(query: string) {
-  if (!query.trim()) {
-    searchResults.value = []
-    return
-  }
-  searchLoading.value = true
-  try {
-    const response = await getExamples({
-      search: query.trim(),
-      page: 1,
-      limit: 8,
-    })
-    searchResults.value = response.data.map(toSearchResult)
-  } catch {
-    searchResults.value = []
-  } finally {
-    searchLoading.value = false
-  }
-}
 
 watch(searchQuery, (value) => {
   if (searchDebounceTimer) {
     clearTimeout(searchDebounceTimer)
   }
   if (!value.trim()) {
-    searchResults.value = []
     activeIndex.value = -1
+    // fetcher 对空关键词直接返回 []，无需手动清空结果
+    void executeSearch()
     return
   }
   searchDebounceTimer = setTimeout(() => {
-    executeSearch(value)
+    void executeSearch()
   }, 300)
 })
 
@@ -124,8 +131,8 @@ function openSearch() {
 
 function closeSearch() {
   searchOpen.value = false
+  // 置空关键词会触发上面的 watch，进而把结果清掉（fetcher 对空关键词返回 []）
   searchQuery.value = ''
-  searchResults.value = []
   activeIndex.value = -1
   if (searchDebounceTimer) {
     clearTimeout(searchDebounceTimer)

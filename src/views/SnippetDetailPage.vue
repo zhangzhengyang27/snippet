@@ -4,7 +4,7 @@
 * 左侧文件树 + 中间卡片列表，点击后进入本页。
 * 全屏展示片段代码，含返回导航、信息面板、收藏/复制/编辑/删除操作。
 */
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -13,6 +13,8 @@ import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import { useToast } from '@/composables/useToast'
 import { useCopy } from '@/composables/useCopy'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
+import { useResourceFetch } from '@/composables/useResourceFetch'
+import { getApiErrorMessage } from '@/api/client'
 import {
  getKnowledgeSnippet,
  updateKnowledgeSnippet,
@@ -30,11 +32,39 @@ const { toast } = useToast()
 const { copy } = useCopy()
 const { pushRecent } = useRecentSnippets()
 
-const snippet = ref<KnowledgeSnippet | null>(null)
-const loading = ref(true)
-const error = ref('')
-
+// 文件 tab 索引。必须在 useResourceFetch 之前声明 —— 其 fetcher 会在 setup 期间
+// 同步执行（immediate 默认 true），其中会重置这个索引。
 const activeFileIndex = ref(0)
+
+/**
+ * 片段详情。走 useResourceFetch 以获得三件事：
+ * - **竞态保护**：快速切换片段时，慢响应不会覆盖新片段的数据
+ * - **卸载中止**：离开页面时中止在途请求
+ * - **参数变化自动重载**：watch route.params.id
+ * 原先用 `.then/.catch` 手写，既无竞态保护也无取消。
+ */
+const {
+  data: snippet,
+  loading,
+  error: loadError,
+  execute: loadSnippet,
+} = useResourceFetch<KnowledgeSnippet>(async (signal) => {
+  const id = String(route.params.id ?? '')
+  if (!id) throw new Error('缺少片段 id')
+  // 切换片段时重置文件 tab，避免沿用上一条的索引
+  activeFileIndex.value = 0
+  const data = await getKnowledgeSnippet(id, { signal })
+  pushRecent(id)
+  return data
+}, {
+  watch: () => route.params.id,
+})
+
+/** 模板消费的是字符串错误，这里统一转成可读文案 */
+const error = computed(() =>
+  loadError.value ? getApiErrorMessage(loadError.value, '加载片段失败') : ''
+)
+
 const snippetFiles = computed<SnippetFile[]>(() => snippet.value?.displayAttrs?.files ?? [])
 const hasFiles = computed(() => snippetFiles.value.length > 0)
 const activeFile = computed<SnippetFile | null>(
@@ -55,24 +85,6 @@ const difficultyValue = computed<SnippetDifficulty | ''>(
 const difficultyText = computed(() => snippetDifficultyLabel(difficultyValue.value))
 
 const favoriteBusy = ref(false)
-
-function load(id: string) {
- loading.value = true
- error.value = ''
- snippet.value = null
- activeFileIndex.value = 0
- getKnowledgeSnippet(id)
-   .then((data) => {
-     snippet.value = data
-     pushRecent(id)
-   })
-   .catch((err) => {
-     error.value = err instanceof Error ? err.message : '加载片段失败'
-   })
-   .finally(() => {
-     loading.value = false
-   })
-}
 
 function goBack() {
  if (window.history.length > 1) router.back()
@@ -157,14 +169,6 @@ async function confirmDelete() {
 const langColor = computed(() =>
  snippet.value ? languageColor(snippet.value.language) : '#9e9e9e'
 )
-
-watch(
- () => route.params.id,
- (id) => {
-   if (typeof id === 'string') load(id)
- },
- { immediate: true }
-)
 </script>
 
 <template>
@@ -213,7 +217,8 @@ watch(
    <div v-else-if="error" class="snippet-detail__state">
      <AppIcon icon="material-symbols:error" :size="28" class="snippet-detail__state-icon" />
      <p>{{ error }}</p>
-     <AppButton variant="primary" size="small" @click="goList">返回列表</AppButton>
+     <AppButton variant="primary" size="small" @click="loadSnippet()">重试</AppButton>
+     <AppButton variant="glass" size="small" @click="goList">返回列表</AppButton>
    </div>
 
    <template v-else-if="snippet">
