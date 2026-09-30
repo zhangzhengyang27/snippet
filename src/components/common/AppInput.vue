@@ -5,6 +5,10 @@
  * 对外保持项目既有 API：value + @update:value 受控、rows>0 渲染多行、
  * allowClear 显示清空钮；内部全部映射到 el-input。
  * 未声明的 attrs（class 等）透传到 el-input。
+ *
+ * ⚠️ allowClear 只用自绘的 #suffix 清空钮，**不要**再给 el-input 传 clearable：
+ *    两者会同时渲染（EP 原生那个 hover 时可见），同一输入框里出现两个 ✕。
+ *    实测确认过：`clearable` + `#suffix` 并存 → 悬停时并排两个清空按钮。
  */
 import { computed } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -59,10 +63,12 @@ function handleClear() {
     :placeholder="props.placeholder"
     :disabled="props.disabled"
     :maxlength="props.maxlength === undefined ? undefined : Number(props.maxlength)"
-    :clearable="props.allowClear"
     v-bind="$attrs"
     @update:model-value="handleInput"
   >
+    <template v-if="$slots.prefix" #prefix>
+      <slot name="prefix" />
+    </template>
     <template v-if="showClear && !props.disabled && modelValue" #suffix>
       <button type="button" class="app-input__clear" aria-label="清空" @click.stop="handleClear">
         <AppIcon icon="material-symbols:cancel" :size="13" />

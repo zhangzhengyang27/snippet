@@ -59,10 +59,17 @@ const modelValue = computed({
 </template>
 
 <style scoped>
-/* 不设默认宽度：el-select 收缩为内容宽，需要撑满的调用方显式加 w-full
- * （scoped 样式是未分层 CSS，在层叠中永远压过 @layer utilities 里的 Tailwind 宽度类） */
+/* width:100% 是**防御性**声明，注意别把它当成本地故障的根因。
+ * 实测（2026-09-30，浏览器 computed）：当前 EP 版本 `.el-select` 根算出来是 `display:block`，
+ * 而 `.el-select__wrapper` 是块级盒 → `width:auto` 本就等于父宽，这条声明在此处是冗余的
+ * （把 wrapper 的 width 改成 auto 实测仍是 148px，不会掉成内容宽）。
+ * 保留的理由：EP 若把根改回 inline-flex，wrapper 会收缩到内容宽——这正是
+ * 「下拉框只剩几十像素」那类故障的成因，显式写死可免疫版本漂移。
+ * 另：.app-select 自身不设宽度，需要定宽的调用方在自己 scoped 里给
+ * （scoped 样式是未分层 CSS，会压过 @layer utilities 里的 Tailwind 宽度类）。 */
 /* 主题 token 对接 EP 下拉 */
 .app-select :deep(.el-select__wrapper) {
+  width: 100%;
   background: rgb(var(--color-surface-rgb));
   box-shadow: 0 0 0 1px rgb(var(--color-border-rgb) / 0.6) inset;
   border-radius: 8px;

@@ -82,6 +82,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       v-if="props.showFilters"
       :value="props.selectedTag"
       class="toolbar-select shrink-0"
+      placeholder="全部标签"
       :options="tagOptions"
       @update:value="emit('update:selectedTag', String($event ?? ''))"
     />
@@ -90,6 +91,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       v-if="props.showFilters"
       :value="props.selectedLanguage"
       class="toolbar-select shrink-0"
+      placeholder="全部语言"
       :options="languageOptions"
       @update:value="emit('update:selectedLanguage', String($event ?? ''))"
     />
@@ -102,20 +104,24 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       @update:value="emit('update:sort', $event as SnippetSortOption)"
     />
 
-    <div v-if="!props.compact" class="group relative min-w-0 max-w-64 flex-1">
-      <AppIcon
-        icon="material-symbols:search"
-        :size="14"
-        class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary transition-colors group-focus-within:text-primary"
-      />
+    <!-- group 是必需的：prefix 图标靠 group-focus-within 变色，少一个类整段交互就静默失效 -->
+    <div v-if="!props.compact" class="group min-w-48 flex-1">
       <AppInput
         :value="props.keyword"
         type="text"
         placeholder="搜索片段"
-        class="w-full pl-8"
+        class="w-full"
         allow-clear
         @update:value="emit('update:keyword', String($event ?? ''))"
-      />
+      >
+        <template #prefix>
+          <AppIcon
+            icon="material-symbols:search"
+            :size="14"
+            class="text-text-secondary transition-colors group-focus-within:text-primary"
+          />
+        </template>
+      </AppInput>
     </div>
 
     <AppButton variant="glass" class="h-8" @click="handleCreateClick">
