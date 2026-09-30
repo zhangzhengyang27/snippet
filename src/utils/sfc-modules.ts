@@ -12,7 +12,6 @@ import { logger } from './logger'
 // 这里在 glob 中排除它们，并在 registerAliasGlob 之后手动注册等价的别名解析。
 import AppHeader from '@/components/layout/AppHeader.vue'
 import CommandPalette from '@/components/common/CommandPalette.vue'
-import AppBridge from '@/components/common/AppBridge.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import * as loggerModule from '@/utils/logger'
@@ -83,7 +82,6 @@ const aliasVueModules = import.meta.glob(
     '@/components/**/*.vue',
     '!@/components/layout/AppHeader.vue',
     '!@/components/common/CommandPalette.vue',
-    '!@/components/common/AppBridge.vue',
     '!@/components/common/AppButton.vue',
     '!@/components/common/AppIcon.vue',
   ],
@@ -145,8 +143,6 @@ const staticAliasModules: [string, ModuleLoader][] = [
   ['@/components/layout/AppHeader.vue', async () => AppHeader],
   ['@/components/common/CommandPalette', async () => CommandPalette],
   ['@/components/common/CommandPalette.vue', async () => CommandPalette],
-  ['@/components/common/AppBridge', async () => AppBridge],
-  ['@/components/common/AppBridge.vue', async () => AppBridge],
   ['@/components/common/AppButton', async () => AppButton],
   ['@/components/common/AppButton.vue', async () => AppButton],
   ['@/components/common/AppIcon', async () => AppIcon],

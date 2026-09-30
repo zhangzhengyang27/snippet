@@ -1,6 +1,7 @@
 /** 封装知识片段 Page 相关组合式状态与交互逻辑。 */
 
 import { computed, onMounted, ref } from 'vue'
+import { useCopy } from '@/composables/useCopy'
 import { useTransientToast } from '@/composables/useTransientToast'
 import { useSnippetCollectionsState } from '@/composables/useSnippetCollectionsState'
 import { useSnippetListState } from '@/composables/useSnippetListState'
@@ -81,6 +82,8 @@ export const useKnowledgeSnippetsPage = () => {
   } = useSnippetListState()
 
   const { showToast, toastMessage, toastType, showToastMessage } = useTransientToast()
+  // 复制统一走 useCopy（含 navigator.clipboard 不可用时的 execCommand 降级）
+  const { copy: copyToClipboard } = useCopy()
 
   const authStore = useAuthStore()
   /** 是否已登录：控制写操作按钮的显隐与 recordUse 的调用 */
@@ -312,17 +315,19 @@ export const useKnowledgeSnippetsPage = () => {
   }
 
   const copySnippetCode = async (snippet: KnowledgeSnippet, textOverride?: string) => {
-    try {
-      await navigator.clipboard.writeText(textOverride ?? buildCopyText(snippet))
-      showToastMessage(`已复制「${snippet.name}」代码。`, 'success')
-      // 记录使用次数，驱动“最近使用”排序（fire-and-forget，失败不影响复制）。
-      // recordUse 要求登录：匿名用户复制代码时不调用，避免 401 触发跳转登录页。
-      if (authStore.isLoggedIn) {
-        void recordKnowledgeSnippetUse(snippet.id).catch(() => undefined)
-      }
-    } catch (error) {
-      logger.error('use-knowledge-snippets-page', '复制片段失败:', error)
+    // silent：复制失败的提示要带上片段名，故由本处自行反馈
+    const ok = await copyToClipboard(textOverride ?? buildCopyText(snippet), { silent: true })
+    if (!ok) {
+      logger.error('use-knowledge-snippets-page', '复制片段失败:', snippet.id)
       showToastMessage('复制失败，请稍后重试。', 'error')
+      return
+    }
+
+    showToastMessage(`已复制「${snippet.name}」代码。`, 'success')
+    // 记录使用次数，驱动“最近使用”排序（fire-and-forget，失败不影响复制）。
+    // recordUse 要求登录：匿名用户复制代码时不调用，避免 401 触发跳转登录页。
+    if (authStore.isLoggedIn) {
+      void recordKnowledgeSnippetUse(snippet.id).catch(() => undefined)
     }
   }
 

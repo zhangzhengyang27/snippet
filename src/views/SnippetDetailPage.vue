@@ -11,6 +11,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import AppModal from '@/components/common/AppModal.vue'
 import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import { useToast } from '@/composables/useToast'
+import { useCopy } from '@/composables/useCopy'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import {
  getKnowledgeSnippet,
@@ -25,6 +26,7 @@ import { openSnippetPreviewWindow } from '@/utils/sandbox'
 const route = useRoute()
 const router = useRouter()
 const { toast } = useToast()
+const { copy } = useCopy()
 const { pushRecent } = useRecentSnippets()
 
 const snippet = ref<KnowledgeSnippet | null>(null)
@@ -99,10 +101,9 @@ function copyCode() {
  const s = snippet.value
  if (!s) return
  const text = activeCode.value || s.content || ''
- navigator.clipboard
-   .writeText(text)
-   .then(() => toast.success('已复制到剪贴板'))
-   .catch(() => toast.error('复制失败'))
+ // 走 useCopy：内含 navigator.clipboard 不可用时的 execCommand 降级。
+ // 原先直接调 navigator.clipboard 在非安全上下文会抛未捕获的 TypeError。
+ void copy(text)
 }
 
 /* 预览：仅 HTML 片段可新标签页打开独立预览（blob URL，同示例库效果）。

@@ -1,8 +1,8 @@
 import { computed, onUnmounted, ref } from 'vue'
-import { useClipboard } from '@vueuse/core'
 import type { CodeExample, ViewMode } from '@/types'
 import { buildSrcDoc, type Snippet } from '@/utils/sandbox'
 import { toast } from '@/composables/useToast'
+import { useCopy } from '@/composables/useCopy'
 
 /** Width/height pair describing the iframe dimensions for a given mode. */
 interface DeviceDimensions {
@@ -101,7 +101,8 @@ export function usePreview(
 
   // ---- Code copy -----------------------------------------------------------
 
-  const { copy, isSupported } = useClipboard({ copiedDuring: 2000 })
+  // 复制统一走 useCopy（含 navigator.clipboard 不可用时的 execCommand 降级）
+  const { copy } = useCopy()
 
   type Tab = 'html' | 'css' | 'js'
 
@@ -116,16 +117,12 @@ export function usePreview(
     }
 
     const code = codeMap[tab]
-    if (code == null || !isSupported.value) return false
+    if (code == null) return false
 
-    try {
-      await copy(code)
-      toast.success('代码已复制')
-      return true
-    } catch {
-      toast.error('复制失败')
-      return false
-    }
+    const ok = await copy(code, { silent: true })
+    if (ok) toast.success('代码已复制')
+    else toast.error('复制失败')
+    return ok
   }
 
   // ---- Open in new window --------------------------------------------------

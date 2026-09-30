@@ -1,5 +1,3 @@
-import type { AppContext } from 'vue'
-import { getCurrentInstance } from 'vue'
 import { ElMessage } from 'element-plus'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -8,56 +6,26 @@ export interface ToastOptions {
   duration?: number
 }
 
-interface MessageApi {
-  success(content: string, duration?: number): void
-  error(content: string, duration?: number): void
-  warning(content: string, duration?: number): void
-  info(content: string, duration?: number): void
-}
-
-// 模块顶层缓存 appContext，解决 getCurrentInstance() 在事件回调/async/setTimeout 中返回 null 的问题
-let cachedAppContext: AppContext | null = null
-
-// Element Plus 的 message 挂载在 body 上，暗色由 html.dark 的 EP css-vars 驱动。
-let appMessageApi: MessageApi | null = null
-
 /**
- * 初始化 toast 模块（在 main.ts 中 app.mount 之前调用）。
- * 缓存 appContext 后，toast 可在任意上下文中使用（事件回调/Promise/setTimeout）。
+ * 轻量 toast 封装。
+ *
+ * 直接调用 Element Plus 的 `ElMessage` —— 它把消息挂到 body 上，暗色由 `html.dark`
+ * 上的 EP css-vars 驱动，因此**不依赖 app 实例**，在事件回调 / async / setTimeout
+ * 里都能正常使用，不需要缓存 AppContext。
+ *
+ * 历史注记：早期实现走 `app.config.globalProperties.$message`，为此需要
+ * `initToast(app._context)` 缓存上下文、并靠 AppBridge 组件在挂载时
+ * `registerToastApi()` 注册主题感知实例。这套机制已全部移除，原因有三：
+ *   1. `AppBridge.vue` 在 UI 库迁移（e3bf116）时被删除，registerToastApi 再无调用方；
+ *   2. 实际发送路径一直是 `ElMessage(...)` 直调，`$message` 回退分支被 `void` 显式废弃；
+ *   3. `app.use(ElementPlus)` 已改为按需引入，`$message` 全局属性本身也不再存在。
+ * 留着它会是一个「永远取不到值」的陷阱。
  */
-export function initToast(appContext: AppContext): void {
-  cachedAppContext = appContext
-}
-
-/**
- * 注册 xy-app 上下文中的 message api（AppBridge 挂载时调用）。
- * 注册后 toast 走主题感知的实例，静态 $message 仅在未注册时回退使用。
- */
-export function registerToastApi(api: MessageApi): void {
-  appMessageApi = api
-}
-
-function resolveAppContext(): AppContext | null {
-  // 优先使用缓存的 appContext（覆盖事件回调/async/setTimeout 场景）
-  if (cachedAppContext) return cachedAppContext
-  // 回退到 getCurrentInstance（覆盖 setup 同步执行场景）
-  const instance = getCurrentInstance()
-  return instance?.appContext ?? null
-}
-
-function resolveFallbackApi(): MessageApi | null {
-  const appContext = resolveAppContext()
-  if (!appContext) return null
-  return (appContext.config.globalProperties as { $message?: MessageApi }).$message ?? null
-}
-
 function show(
   severity: 'success' | 'info' | 'warn' | 'error',
   message: string,
   opts?: ToastOptions
 ) {
-  void appMessageApi
-  void resolveFallbackApi
   ElMessage({
     type: severity === 'warn' ? 'warning' : severity,
     message,

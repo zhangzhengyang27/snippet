@@ -6,7 +6,7 @@ import { useTheme } from '@/composables/useTheme'
 import { toast } from '@/composables/useToast'
 import { getExamples } from '@/api'
 import { isTypingTarget } from '@/utils/keyboard'
-import { useClipboard } from '@vueuse/core'
+import { useCopy } from '@/composables/useCopy'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { CodeExample } from '@/types'
 
@@ -54,7 +54,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const { theme, toggleTheme } = useTheme()
-const { copy } = useClipboard()
+const { copy } = useCopy()
 
 const isLoggedIn = computed(() => authStore.isLoggedIn)
 const currentUser = computed(() => authStore.user)
@@ -217,10 +217,12 @@ function handleLogout() {
   toast.success('已退出登录')
 }
 
-function copyUserId() {
+async function copyUserId() {
   if (!currentUser.value?.id) return
-  copy(currentUser.value.id)
-  toast.success('用户 ID 已复制')
+  // 原实现未 await 就提示成功，复制失败时也会显示「已复制」。改为按结果反馈。
+  const ok = await copy(currentUser.value.id, { silent: true })
+  if (ok) toast.success('用户 ID 已复制')
+  else toast.error('复制失败')
 }
 
 function handleToggleTheme() {

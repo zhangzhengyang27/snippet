@@ -2,12 +2,24 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import ElementPlus from 'unplugin-element-plus/vite'
 
 // 开发期代理到已有 NestJS 后端（默认 http://localhost:3000）
 const API_TARGET = process.env.API_TARGET || 'http://localhost:3000'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    // Element Plus 按需引入：模板里的 <el-*> 自动导入组件 + 对应样式，
+    // 替代原先的 app.use(ElementPlus) 全量注册 + element-plus/dist/index.css（478 KB）。
+    Components({ resolvers: [ElementPlusResolver()], dts: false }),
+    // 补显式 import 的 EP 组件的样式（如 useToast 里的 ElMessage）。
+    // useSource: false → 引预编译 CSS，不要求项目装 sass。
+    ElementPlus({ useSource: false }),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -21,6 +33,16 @@ export default defineConfig({
         fileURLToPath(new URL('./node_modules/.pnpm', import.meta.url)),
       ],
     },
+    proxy: {
+      '/api': {
+        target: API_TARGET,
+        changeOrigin: true,
+      },
+    },
+  },
+  // preview（跑构建产物）与 dev 共用同一套代理，便于用真实产物做端到端验证
+  preview: {
+    port: 5556,
     proxy: {
       '/api': {
         target: API_TARGET,
