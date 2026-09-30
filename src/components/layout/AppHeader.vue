@@ -158,11 +158,10 @@ function handleSearchItemKeydown(exampleId: string, e: KeyboardEvent) {
 }
 
 function handleKeyDown(e: KeyboardEvent) {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    openSearch()
-    return
-  }
+  // 注意：**不处理 ⌘K**。全局命令面板（CommandPalette）已经监听 ⌘K，
+  // 此前这里也监听，导致一次 ⌘K 会同时打开两个搜索框（实测确认），
+  // 用户看到的是命令面板，而顶栏搜索框被压在下面（它当时还没样式，见 style 区注释）。
+  // 顶栏搜索框的快捷键保留为 `/`。
   if (e.key === '/' && !isTypingTarget(e) && !searchOpen.value) {
     e.preventDefault()
     openSearch()
@@ -950,5 +949,120 @@ function handleScroll() {
 .user-panel__logout:hover {
   background: rgb(var(--color-accent-rose-rgb) / 0.08);
   border-color: rgb(var(--color-accent-rose-rgb) / 0.2);
+}
+
+/* ─── 搜索对话框 ────────────────────────────────────────────────────────────
+   ⚠️ 这组样式曾在数据恢复事故中整体丢失：全仓原本**不存在任何**
+   `.app-header__search-*` / `.search-result__*` 规则，导致搜索框以无样式的
+   原始文本贴在左上角、与品牌 Logo 重叠（实测截图确认）。
+   这里按全局命令面板（CommandPalette）的设计语言补回，保持两者观感一致。 */
+.app-header__search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: rgb(var(--color-background-rgb) / 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.app-header__search-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  overflow: hidden;
+  border: 1px solid rgb(var(--color-border-glass-rgb) / 0.8);
+  border-radius: 16px;
+  background: rgb(var(--color-surface-rgb));
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.25);
+}
+
+.app-header__search-title {
+  padding: 14px 16px 8px;
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+.app-header__search-input {
+  margin: 0 12px 10px;
+  padding: 10px 12px;
+  border: 1px solid rgb(var(--color-border-rgb) / 0.6);
+  border-radius: 10px;
+  background: rgb(var(--color-surface-variant-rgb) / 0.5);
+  color: rgb(var(--color-text-rgb));
+  font-size: 14px;
+  outline: none;
+}
+
+.app-header__search-input:focus-visible {
+  border-color: rgb(var(--color-primary-rgb) / 0.6);
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-rgb) / 0.15);
+}
+
+.app-header__search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 10px;
+}
+
+/* 「搜索中…」「未找到匹配的示例」等纯文本提示 */
+.app-header__search-results > div:not(.app-header__search-item) {
+  padding: 10px 8px;
+  font-size: 0.8125rem;
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+.app-header__search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--duration-fast) ease;
+}
+
+.app-header__search-item:hover,
+.app-header__search-item:focus-visible {
+  background: rgb(var(--color-surface-variant-rgb) / 0.6);
+  outline: none;
+}
+
+.search-result__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-result__title {
+  overflow: hidden;
+  color: rgb(var(--color-text-rgb));
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result__desc {
+  overflow: hidden;
+  color: rgb(var(--color-text-secondary-rgb));
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result__category {
+  color: rgb(var(--color-text-tertiary-rgb));
+  font-size: 0.6875rem;
 }
 </style>
