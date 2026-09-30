@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** 面板组件，负责片段列表以卡片网格或条状列表形式展示与交互操作。 */
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import Pagination from '@/components/layout/Pagination.vue'
@@ -57,6 +57,52 @@ watch(
     scrollContainer.value?.scrollTo({ top: 0 })
   }
 )
+
+/**
+ * 无限滚动哨兵：滚动到接近底部时请求追加下一页。
+ *
+ * 此前 `loadMore` 只有 emit 声明和父组件绑定、**没有任何触发点**，整条追加链路不可达
+ * （疑为数据恢复事故中丢失，同类问题见体检查报告 4.10）。这里补回触发点。
+ */
+const loadMoreSentinel = ref<HTMLElement | null>(null)
+let scrollObserver: IntersectionObserver | null = null
+
+function teardownScrollObserver() {
+  scrollObserver?.disconnect()
+  scrollObserver = null
+}
+
+/**
+ * 建立/重建哨兵观察器。
+ *
+ * 用 IntersectionObserver 而非 scroll 事件：scroll 回调在高频滚动下开销大，还要自己
+ * 计算「距底还剩多少像素」；观察器由浏览器在合成线程判定，代价低得多。
+ * 预取边距 200px —— 用户滑到底之前就开始加载下一页。
+ */
+function setupScrollObserver() {
+  teardownScrollObserver()
+
+  const root = scrollContainer.value
+  const target = loadMoreSentinel.value
+  if (!root || !target) return
+
+  scrollObserver = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      // 加载中、或已到最后一页 → 不再请求（重复触发由这两条挡住）
+      if (props.loading || props.page >= props.totalPages) return
+      emit('loadMore')
+    },
+    { root, rootMargin: '200px 0px', threshold: 0 }
+  )
+
+  scrollObserver.observe(target)
+}
+
+// 容器与哨兵会被 v-if 重建（切换视图模式、空态与列表互切），refs 变化时重挂
+onMounted(setupScrollObserver)
+watch([scrollContainer, loadMoreSentinel], setupScrollObserver, { flush: 'post' })
+onBeforeUnmount(teardownScrollObserver)
 </script>
 
 <template>
@@ -110,9 +156,11 @@ watch(
       </div>
     </div>
 
-    <!-- 空状态：图标 + 文案 + 操作引导（参照 Notion 空状态） -->
+    <!-- 空状态：图标 + 文案 + 操作引导（参照 Notion 空状态）。
+         注意 `!props.error`：加载失败时只保留上方的错误横幅 —— 否则会同时出现
+         「暂无匹配的代码片段」与「新建片段」，让用户以为是「真的没有数据」。 -->
     <div
-      v-else-if="props.snippets.length === 0"
+      v-else-if="!props.error && props.snippets.length === 0"
       class="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center"
     >
       <AppIcon
@@ -163,6 +211,8 @@ watch(
         @copy="emit('copySnippet', item.id)"
         @toggle-check="emit('toggleCheck', $event)"
       />
+      <!-- 无限滚动哨兵：滚到这里即请求追加下一页（本次加载中/已到末页时忽略） -->
+      <div ref="loadMoreSentinel" class="col-span-full h-px w-full shrink-0" aria-hidden="true" />
     </div>
 
     <!-- 列表：卡片（基于面板宽度的容器查询：每列舒适宽度≈240px，最多 5 列）。刷新态同条状列表 -->
@@ -185,6 +235,8 @@ watch(
         @copy="emit('copySnippet', item.id)"
         @toggle-check="emit('toggleCheck', $event)"
       />
+      <!-- 无限滚动哨兵：滚到这里即请求追加下一页（本次加载中/已到末页时忽略） -->
+      <div ref="loadMoreSentinel" class="col-span-full h-px w-full shrink-0" aria-hidden="true" />
     </div>
 
     <!-- 分页 -->

@@ -15,7 +15,7 @@
  *   <CodeBlock :code="code" language="typescript" />
  *   <CodeBlock :code="code" language="vue" variant="macos" :show-line-numbers="true" />
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import { useCopy } from '@/composables/useCopy'
@@ -23,6 +23,15 @@ import { useTheme } from '@/composables/useTheme'
 import { highlightCode, getShikiTheme, escapeHtml } from '@/utils/highlighter'
 
 export type CodeBlockVariant = 'default' | 'macos' | 'minimal'
+
+/**
+ * 高亮防抖窗口。
+ *
+ * 列表里用方向键连续切换片段时，每按一次都会换一份 code —— 若每次都立刻跑一遍
+ * Shiki（含按需加载 grammar），会堆积大量无用计算，长会话下尤其明显。
+ * 首帧仍然**立即**渲染，只有「切换」才走防抖，避免首屏可感知的延迟。
+ */
+const HIGHLIGHT_DEBOUNCE_MS = 120
 
 interface Props {
   /** 代码内容 */
@@ -88,24 +97,67 @@ const lineCount = computed(() => {
 
 const lineNumbers = computed(() => Array.from({ length: lineCount.value }, (_, i) => i + 1))
 
+/**
+ * 渲染序号：高亮是异步的（Shiki 按需加载 grammar），期间若 code 又变了，
+ * 旧结果必须丢弃——否则会把上一次片段的代码渲染到当前片段上。
+ */
+let renderSeq = 0
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
 async function renderHighlight() {
+  const seq = ++renderSeq
+
   if (!props.code) {
     highlightedCode.value = ''
+    isHighlighting.value = false
     return
   }
+
   isHighlighting.value = true
   try {
-    highlightedCode.value = await highlightCode(
-      props.code,
-      props.language,
-      getShikiTheme(theme.value)
-    )
+    const html = await highlightCode(props.code, props.language, getShikiTheme(theme.value))
+    if (seq !== renderSeq) return
+    highlightedCode.value = html
   } catch {
+    if (seq !== renderSeq) return
     highlightedCode.value = `<pre class="cb-fallback"><code>${escapeHtml(props.code)}</code></pre>`
   } finally {
-    isHighlighting.value = false
+    if (seq === renderSeq) isHighlighting.value = false
   }
 }
+
+function cancelPendingHighlight() {
+  if (debounceTimer !== null) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+}
+
+function scheduleHighlight() {
+  cancelPendingHighlight()
+  // 立刻进入加载态：否则防抖窗口内会继续显示上一段代码，看起来像渲染错了
+  if (props.code) isHighlighting.value = true
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null
+    void renderHighlight()
+  }, HIGHLIGHT_DEBOUNCE_MS)
+}
+
+onScopeDispose(() => {
+  cancelPendingHighlight()
+  // 递增序号让仍在飞行中的高亮结果回来时被丢弃
+  renderSeq += 1
+})
+
+// 首帧直接渲染，不经过防抖（保证首屏无额外延迟）
+void renderHighlight()
+
+watch(
+  () => [props.code, props.language, theme.value],
+  () => {
+    scheduleHighlight()
+  }
+)
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
@@ -115,14 +167,6 @@ async function handleCopy() {
   if (!props.code.trim()) return
   await copy(props.code)
 }
-
-watch(
-  () => [props.code, props.language, theme.value],
-  () => {
-    void renderHighlight()
-  },
-  { immediate: true }
-)
 </script>
 
 <template>

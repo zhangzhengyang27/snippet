@@ -18,6 +18,20 @@ export const snippetListPageSize = 20
 export const snippetPageSizeOptions = [12, 20, 24, 36, 48]
 
 /**
+ * 追加加载的条数硬上限。
+ *
+ * 分页模式下每页最多 48 条，渲染量天然有界；但追加加载（`loadMore`）一旦被触发，
+ * 「总数很大 + 持续追加」会让 DOM 无界增长。这里留一道上限兜底：达到后不再追加，
+ * 用户只能靠翻页继续浏览。
+ *
+ * ⚠️ 现状备注：`loadMore` 目前**没有任何调用方** —— `SnippetListPanel` 声明了
+ * `loadMore` emit、`KnowledgeSnippetsPage` 也绑定了 `@load-more`，但面板内部从未
+ * `emit('loadMore')`，整条追加链路不可达（疑为数据恢复事故中丢失触发点，同类问题见
+ * 报告 4.10 的「批量功能入口缺失」）。此处先加上界，待确定是补回触发点还是移除死代码。
+ */
+export const snippetMaxAppendedItems = 200
+
+/**
  * 片段列表支持的排序选项。
  */
 export const snippetSortOptions: Array<{ label: string; value: SnippetSortOption }> = [
@@ -206,6 +220,8 @@ let appendingMore = false
 const loadMore = async () => {
   if (loadingSnippets.value) return
   if (page.value >= totalPages.value) return
+  // 达到追加上限：停止继续堆 DOM，交给分页
+  if (snippets.value.length >= snippetMaxAppendedItems) return
   appendingMore = true
   try {
     page.value += 1
