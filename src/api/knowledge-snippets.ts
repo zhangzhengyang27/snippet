@@ -77,10 +77,30 @@ export function listKnowledgeSnippets(
   sort?: SnippetSortOption
   page?: number
   pageSize?: number
+  /**
+   * 按 id 批量取详情（「最近浏览」等先有 id 列表的场景）。
+   * 一次请求取代 N 次回查；传 ids 时后端**不套分页**。
+   */
+  ids?: string[]
  },
  options?: RequestOptions
 ): Promise<KnowledgeSnippetListResult> {
-  return get<KnowledgeSnippetListResult>('/knowledge/snippets', params, options)
+  return get<KnowledgeSnippetListResult>(
+    '/knowledge/snippets',
+    {
+      q: params?.q,
+      collectionId: params?.collectionId,
+      tag: params?.tag,
+      language: params?.language,
+      favorite: params?.favorite,
+      sort: params?.sort,
+      page: params?.page,
+      pageSize: params?.pageSize,
+      // 显式 join 成逗号分隔（与 getExamples 的 ids 处理保持一致）
+      ids: params?.ids?.length ? params.ids.join(',') : undefined,
+    },
+    options
+  )
 }
 /**
 * 获取片段详情。
@@ -92,7 +112,29 @@ export function getKnowledgeSnippet(id: string, options?: RequestOptions): Promi
 }
 
 /**
-* 创建片段。
+ * 按 id 列表批量取片段详情，**并保持传入的 id 顺序**。
+ *
+ * 为什么需要这个包装而不是直接调 `listKnowledgeSnippets({ ids })`：
+ *  - **顺序**：后端按自己的规则排序（favorite / lastUsedAt / updatedAt）返回，
+ *    而调用方（「最近浏览」）要的是**访问顺序**，必须按 id 列表回排；
+ *  - **容错**：已删除或无权访问的 id 不会出现在返回里，回排时自然被跳过，
+ *    等价于原先逐条 `catch(() => null)` 再过滤的行为；
+ *  - **收敛**：把「N 次回查」压成 1 次请求。
+ */
+export async function listKnowledgeSnippetsByIds(
+  ids: string[],
+  options?: RequestOptions
+): Promise<KnowledgeSnippet[]> {
+  if (!ids.length) return []
+  const res = await listKnowledgeSnippets({ ids }, options)
+  const byId = new Map((res.items ?? []).map((item) => [item.id, item]))
+  return ids
+    .map((id) => byId.get(id))
+    .filter((item): item is KnowledgeSnippet => item != null)
+}
+
+/**
+ * 创建片段。
 *
 * 注意：切勿提交 placeholderDefs —— 后端由 content 推导（normalizePlaceholderDefs），
 * 且 DTO 未声明该字段，全局 ValidationPipe 的 forbidNonWhitelisted 会直接返回

@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { listKnowledgeSnippets, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
 import { getApiErrorMessage } from '@/api/client'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
@@ -31,14 +31,9 @@ const {
   const used = await listKnowledgeSnippets({ sort: 'lastUsedAt', page: 1, pageSize: 8 })
   const usedItems = (used.items ?? []).filter((s) => s.lastUsedAt)
 
-  // 最近浏览：localStorage 里只存 id，详情按需回查。
-  // 单条回查失败（如片段已被删除）不应让整页报错，故逐条 catch 成 null 后过滤。
-  const ids = recentIds.value
-  const recentItems = ids.length
-    ? (await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))).filter(
-        (x): x is KnowledgeSnippet => x != null
-      )
-    : []
+  // 最近浏览：localStorage 里只存 id，用批量接口一次取回（原先逐条回查，N 次往返）。
+  // listKnowledgeSnippetsByIds 会按 id 顺序回排，并跳过已删除/无权的条目。
+  const recentItems = await listKnowledgeSnippetsByIds(recentIds.value)
 
   return { used: usedItems, recent: recentItems }
 })

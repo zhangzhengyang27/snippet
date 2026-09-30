@@ -7,7 +7,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { listKnowledgeSnippets, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
 import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
 import { useResourceFetch } from '@/composables/useResourceFetch'
@@ -172,8 +172,8 @@ const loadRecent = async () => {
     return
   }
   try {
-    const results = await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))
-    recentSnippets.value = results.filter((x): x is KnowledgeSnippet => x != null)
+    // 批量接口一次取回（原先逐条回查）；按 id 顺序回排，已删除/无权的条目自然跳过
+    recentSnippets.value = await listKnowledgeSnippetsByIds(ids)
   } catch {
     recentSnippets.value = []
   }

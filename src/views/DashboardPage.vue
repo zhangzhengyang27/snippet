@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { listKnowledgeSnippets, getKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { listKnowledgeSnippets, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
 import { getFavorites } from '@/api/favorites'
 import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
@@ -51,13 +51,9 @@ const {
     getExamples({ page: 1, limit: 2 }),
   ])
 
-  // 最近浏览：localStorage 只存 id，详情按需回查；单条失败（片段已删除）跳过即可
-  const ids = recentIds.value.slice(0, 6)
-  const recent = ids.length
-    ? (await Promise.all(ids.map((id) => getKnowledgeSnippet(id).catch(() => null)))).filter(
-        (x): x is KnowledgeSnippet => x != null
-      )
-    : []
+  // 最近浏览：localStorage 只存 id，用批量接口一次取回（原先逐条回查）。
+  // listKnowledgeSnippetsByIds 按 id 顺序回排，已删除/无权的条目自然被跳过。
+  const recent = await listKnowledgeSnippetsByIds(recentIds.value.slice(0, 6))
 
   return {
     snippetTotal: snipRes.total ?? 0,
