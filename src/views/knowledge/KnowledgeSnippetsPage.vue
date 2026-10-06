@@ -358,6 +358,7 @@ const {
   batchMode,
   selectedIds,
   toggleBatchMode,
+  exitBatchMode,
   handleToggleCheck,
   selectAllOnPage,
   clearSelection,
@@ -368,6 +369,17 @@ const {
   batchDeleting,
   handleBatchDelete,
 } = useSnippetBatchOps({ snippets, refresh: refreshAll })
+
+/**
+ * 切到分屏时强制退出批量模式。
+ *
+ * 分屏工具栏不渲染「更多」菜单（导出 / 导入 / 批量选择都在里面），而它正是批量模式的
+ * **唯一出口**；`batchMode` 又与布局无联动、批量操作栏不受布局影响。若不做这一步，
+ * 「独立页开批量 → 切回分屏」会把用户困在批量态：批量栏占着一行，却没有按钮可退出。
+ */
+watch(detailLayout, (next) => {
+  if (next === 'split') exitBatchMode()
+})
 </script>
 
 <template>
@@ -375,7 +387,6 @@ const {
     <SnippetWorkspace :show-detail="detailLayout === 'split'">
       <template #sidebar>
         <SnippetSidebar
-          :snippet-count="total"
           :collection-error="collectionError"
           :loading-collections="loadingCollections"
           :expanded-collection-ids="expandedCollectionIds"
@@ -414,22 +425,25 @@ const {
             :selected-tag="selectedTag"
             :languages="languages"
             :selected-language="selectedLanguage"
-            :favorites-only="favoritesOnly"
             :has-active-filters="hasActiveFilters"
             :compact="detailLayout === 'split'"
             @update:keyword="keyword = $event"
             @update:sort="sort = $event"
             @update:selected-tag="selectedTag = $event"
             @update:selected-language="selectedLanguage = $event"
-            @update:favorites-only="favoritesOnly = $event"
             @clear-filters="clearFilters"
             @create-snippet="handleCreateSnippet"
             @require-login="handleRequireLogin"
             @refresh="refreshAll"
           >
             <template #actions>
-              <!-- 导出 / 导入 / 批量：低频操作收进「更多」菜单（此前独占一行，与工具栏割裂） -->
+              <!-- 导出 / 导入 / 批量：低频操作收进「更多」菜单（此前独占一行，与工具栏割裂）。
+                   分屏下整个菜单不渲染（用户决策 2026-10-06）：分屏工具栏只留「标题 / 搜索 / 新建」，
+                   这三项低频操作到独立页使用。
+                   ⚠️ 该菜单同时是**批量模式的唯一出口**，故下面用 watch 在切到分屏时自动退出批量，
+                   否则批量栏会滞留却无路可退。 -->
               <SnippetMoreMenu
+                v-if="detailLayout !== 'split'"
                 :batch-mode="batchMode"
                 :disable-export="!snippets.length"
                 :importing="importing"

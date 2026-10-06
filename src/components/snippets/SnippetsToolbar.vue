@@ -21,16 +21,19 @@ const props = defineProps<{
   /** 语言筛选选项（当前列表去重后的语言） */
   languages: string[]
   selectedLanguage: string
-  /** 是否仅显示收藏（服务端 favorite 筛选） */
-  favoritesOnly: boolean
   /** 是否存在可清除的筛选条件（控制清除按钮显隐） */
   hasActiveFilters: boolean
   /**
-   * 紧凑模式：三栏窄列表时缩小控件尺寸并允许换行。
+   * 紧凑模式（分屏三栏里的窄列表）。
    *
-   * ⚠️ 曾经这里把搜索 / 排序 / 筛选整组隐藏掉，结果默认的分屏视图没有搜索框，
-   * 3399 条数据只能靠顶栏全局搜索或切到独立页才筛得动。筛选能力不该随布局消失，
-   * compact 现在只影响尺寸。
+   * 用户决策（2026-10-06）：**分屏下整组筛选下拉（标签 / 语言 / 排序）不渲染**，
+   * 工具栏只留「搜索框 + 新建片段」；「更多」菜单（`#actions` 插槽的内容）同属精简范围，
+   * 由调用方在分屏下不注入。理由是窄栏里三个下拉会把工具栏挤到换行，而标签筛选在第 1 栏
+   * 侧栏已有更完整的版本（带计数），语言 / 排序 / 导出 / 导入 / 批量都改到独立页使用。
+   *
+   * ⚠️ 与 2026-09-30 那次改动的区别（别搞混）：那次是把**搜索框一起**隐藏，
+   * 导致默认分屏视图搜不动 3399 条数据，属回归、已回退。本次**只收筛选下拉与更多菜单**，
+   * 搜索框在任何布局下都保留。
    */
   compact?: boolean
 }>()
@@ -40,7 +43,6 @@ const emit = defineEmits<{
   'update:sort': [value: SnippetSortOption]
   'update:selectedTag': [value: string]
   'update:selectedLanguage': [value: string]
-  'update:favoritesOnly': [value: boolean]
   clearFilters: []
   createSnippet: []
   requireLogin: []
@@ -111,35 +113,39 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       新建片段
     </AppButton>
 
-    <!-- 低频操作（导出 / 导入 / 批量）由调用方注入，避免与主操作平铺抢视觉权重 -->
+    <!-- 低频操作（导出 / 导入 / 批量）由调用方注入，避免与主操作平铺抢视觉权重。
+         分屏（compact）下调用方**不注入**本插槽：「更多」菜单只在独立页出现，
+         故分屏工具栏最终只剩「标题 + 搜索 + 新建」。（批量模式随之自动退出，见页面 watch。） -->
     <slot name="actions" />
 
-    <!-- 筛选维度：标签 / 语言 / 排序。窄列表下自然换行到第二行，不再整组隐藏 -->
-    <AppSelect
-      :value="props.selectedTag"
-      class="toolbar-select shrink-0"
-      :class="{ 'toolbar-select--compact': props.compact }"
-      placeholder="全部标签"
-      :options="tagOptions"
-      @update:value="emit('update:selectedTag', String($event ?? ''))"
-    />
+    <!-- 筛选维度：标签 / 语言 / 排序 —— **仅独立页（非 compact）渲染**。
+         分屏下窄栏放不下三个下拉（会换行），且标签筛选与第 1 栏侧栏重复；
+         搜索框必须无条件保留（整组隐藏会让默认分屏视图搜不动数据，属回归）。
+         「清除筛选」不在此列：它是逃生口，只在有筛选时出现。 -->
+    <template v-if="!props.compact">
+      <AppSelect
+        :value="props.selectedTag"
+        class="toolbar-select shrink-0"
+        placeholder="全部标签"
+        :options="tagOptions"
+        @update:value="emit('update:selectedTag', String($event ?? ''))"
+      />
 
-    <AppSelect
-      :value="props.selectedLanguage"
-      class="toolbar-select shrink-0"
-      :class="{ 'toolbar-select--compact': props.compact }"
-      placeholder="全部语言"
-      :options="languageOptions"
-      @update:value="emit('update:selectedLanguage', String($event ?? ''))"
-    />
+      <AppSelect
+        :value="props.selectedLanguage"
+        class="toolbar-select shrink-0"
+        placeholder="全部语言"
+        :options="languageOptions"
+        @update:value="emit('update:selectedLanguage', String($event ?? ''))"
+      />
 
-    <AppSelect
-      :value="props.sort"
-      class="toolbar-select shrink-0"
-      :class="{ 'toolbar-select--compact': props.compact }"
-      :options="props.sortOptions"
-      @update:value="emit('update:sort', $event as SnippetSortOption)"
-    />
+      <AppSelect
+        :value="props.sort"
+        class="toolbar-select shrink-0"
+        :options="props.sortOptions"
+        @update:value="emit('update:sort', $event as SnippetSortOption)"
+      />
+    </template>
 
     <!-- 有筛选时给一键清除的出口：此前 hasActiveFilters / clearFilters 这两个
          prop/emit 一直存在却没有渲染出口，用户只能去侧栏点「所有 Snippet」 -->
@@ -163,13 +169,9 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
   border-color: var(--color-primary);
 }
 
-/* 筛选下拉统一宽度：scoped 未分层规则可确定性压过 EP 的 .el-select{width:128px} */
+/* 筛选下拉统一宽度：scoped 未分层规则可确定性压过 EP 的 .el-select{width:128px}。
+   只在独立页出现（分屏下整组不渲染），故无需紧凑变体宽度。 */
 .toolbar-select {
   width: 148px;
-}
-
-/* 紧凑（三栏窄列表）：收窄但仍可见——隐藏筛选会让默认视图无法搜索/排序 */
-.toolbar-select--compact {
-  width: 104px;
 }
 </style>

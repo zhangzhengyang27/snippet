@@ -24,14 +24,26 @@ export function useSnippetBatchOps(options: UseSnippetBatchOpsOptions) {
   const selectedIds = ref<string[]>([])
 
   /**
-   * 进入 / 退出批量模式。
+   * 退出批量模式并清空已选。
    *
-   * 退出时清空已选：选择是跨页累加的（「全选本页」配合翻页），若不清理，
+   * 清空是必须的：选择是跨页累加的（「全选本页」配合翻页），若不清理，
    * 下次进入批量模式会带着上次的残留选择，用户可能误删自己没看到的条目。
+   *
+   * 独立成函数（而非只在 toggle 里内联）供**分屏自动退出**调用：分屏工具栏不渲染
+   * 「更多」菜单，而它是批量模式的唯一出口，故切到分屏时页面会强制调用本函数。
    */
+  function exitBatchMode() {
+    batchMode.value = false
+    selectedIds.value = []
+  }
+
+  /** 进入 / 退出批量模式 */
   function toggleBatchMode() {
-    batchMode.value = !batchMode.value
-    if (!batchMode.value) selectedIds.value = []
+    if (batchMode.value) {
+      exitBatchMode()
+    } else {
+      batchMode.value = true
+    }
   }
 
   function handleToggleCheck(id: string) {
@@ -112,6 +124,7 @@ export function useSnippetBatchOps(options: UseSnippetBatchOpsOptions) {
     batchMode,
     selectedIds,
     toggleBatchMode,
+    exitBatchMode,
     handleToggleCheck,
     selectAllOnPage,
     clearSelection,

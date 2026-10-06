@@ -2,13 +2,18 @@
 /**
  * SnippetsToolbar 组件测试。
  *
- * 这个工具栏是列表页所有筛选/搜索入口的唯一汇聚点。重点锁三类不变量：
- *  1. **筛选能力不因布局消失**：compact（三栏窄列表）只缩小控件，不再隐藏搜索/排序/筛选
- *     —— 此前 compact 会把这三组整组隐藏，默认视图下 3399 条数据无从搜起
- *  2. 搜索框的 prefix 图标必须挂在带 `group` 的容器里
+ * 这个工具栏是列表页的搜索 / 筛选入口。重点锁几类不变量：
+ *  1. **搜索框在任何布局下都必须渲染**：曾有一版 compact 把搜索/排序/筛选整组隐藏，
+ *     默认分屏视图搜不动 3399 条数据，属回归、已回退。
+ *  2. **分屏（compact）下整组筛选下拉（标签/语言/排序）不渲染**（2026-10-06 用户决策）：
+ *     窄栏放不下、且标签筛选与第 1 栏侧栏重复；只有独立页才出现。
+ *     ⚠️ 与不变量 1 是两件事：收掉的是筛选下拉，**不是**搜索框。
+ *  3. 「清除筛选」是逃生口，**不受 compact 影响**：分屏隐藏了下拉后语言/排序别处没有
+ *     入口，若连清除钮也藏掉就会卡在「看不见的筛选无法解除」死角。
+ *  4. 搜索框的 prefix 图标必须挂在带 `group` 的容器里
  *     —— 图标靠 `group-focus-within:text-primary` 变色；少一个类不会报错、
- *        也不会挂测试，只是交互静默失效（这正是本次改动真实踩过的坑）
- *  3. 「新建」按登录态分流（直接新建 / 提示去登录），不能一律 createSnippet
+ *        也不会挂测试，只是交互静默失效（这正是改动中真实踩过的坑）
+ *  5. 「新建」按登录态分流（直接新建 / 提示去登录），不能一律 createSnippet
  */
 import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
@@ -42,7 +47,6 @@ function mountToolbar(props: Record<string, unknown> = {}) {
       selectedTag: '',
       languages: ['javascript'],
       selectedLanguage: '',
-      favoritesOnly: false,
       hasActiveFilters: false,
       ...props,
     },
@@ -53,29 +57,28 @@ function mountToolbar(props: Record<string, unknown> = {}) {
   })
 }
 
-/** 工具栏上出现的下拉：showFilters 时含标签/语言，非 compact 时含排序 */
+/** 工具栏上的筛选下拉（标签 / 语言 / 排序）。分屏（compact）下应恒为 0 个。 */
 const selects = (wrapper: ToolbarWrapper) => wrapper.findAllComponents(AppSelect)
 
 describe('SnippetsToolbar', () => {
-  describe('控件显隐（搜索与筛选在任何布局下都可达）', () => {
+  describe('控件显隐（搜索任何布局都可达；筛选下拉仅独立页）', () => {
     it('非 compact：搜索框 + 标签/语言/排序三个下拉全渲染', () => {
       const wrapper = mountToolbar({ compact: false })
       expect(wrapper.findAllComponents(AppInput)).toHaveLength(1)
       expect(selects(wrapper)).toHaveLength(3)
     })
 
-    it('compact：搜索与筛选仍然渲染（compact 只影响尺寸，不再整组隐藏）', () => {
-      // 回归锁：compact 曾经把搜索/排序/筛选全部隐藏，导致默认分屏视图无法搜索。
+    it('compact（分屏）：搜索框与新建仍渲染，但筛选下拉整组隐藏', () => {
+      // 回归锁 1：搜索框绝不能被隐藏 —— 曾有一版把搜索/排序/筛选整组隐藏，
+      //   默认分屏视图搜不动 3399 条数据，属回归、已回退。
+      // 回归锁 2：筛选下拉必须为 0 —— 分屏只留搜索是 2026-10-06 的用户决策。
+      //   与锁 1 是两件事：收掉的是筛选下拉，不是搜索框。
       const wrapper = mountToolbar({ compact: true })
       expect(wrapper.findAllComponents(AppInput)).toHaveLength(1)
-      expect(selects(wrapper)).toHaveLength(3)
+      expect(selects(wrapper)).toHaveLength(0)
+      expect(wrapper.html()).not.toContain('toolbar-select')
       expect(wrapper.text()).toContain('新建片段')
       expect(wrapper.text()).toContain('12')
-    })
-
-    it('compact：下拉带紧凑尺寸类（宽度收窄而非消失）', () => {
-      const wrapper = mountToolbar({ compact: true })
-      expect(wrapper.html()).toContain('toolbar-select--compact')
     })
 
     it('筛选下拉带上「全部 xx」占位，避免空值显示成空白框', () => {
@@ -99,6 +102,18 @@ describe('SnippetsToolbar', () => {
     it('无激活筛选时不出现「清除筛选」', () => {
       const wrapper = mountToolbar({ hasActiveFilters: false })
       expect(wrapper.text()).not.toContain('清除筛选')
+    })
+
+    it('compact 下它仍出现（逃生口不受布局影响）', async () => {
+      // 分屏隐藏了三组筛选下拉，而语言 / 排序别处没有入口；若连清除钮也藏掉，
+      // 用户会卡在「看不见的筛选无法解除」的死角（切独立页才能自救）。
+      const wrapper = mountToolbar({ compact: true, hasActiveFilters: true })
+      const clearBtn = wrapper
+        .findAllComponents(AppButton)
+        .find((b) => b.text().includes('清除筛选'))
+      expect(clearBtn).toBeTruthy()
+      await clearBtn!.trigger('click')
+      expect(wrapper.emitted('clearFilters')).toHaveLength(1)
     })
   })
 

@@ -22,7 +22,6 @@ import type { KnowledgeSnippetCollection } from '@/types/knowledge-snippet'
 import type { KnowledgeSnippetTagItem } from '@/types/knowledge-snippet'
 
 const props = defineProps<{
-  snippetCount: number
   collectionError: string
   loadingCollections: boolean
   expandedCollectionIds: Set<string>
@@ -130,7 +129,6 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
         >
           <AppIcon icon="material-symbols:folder-copy" :size="15" class="snippet-sidebar__item-icon" />
           <span class="snippet-sidebar__item-label">所有 Snippet</span>
-          <span class="snippet-sidebar__item-count">{{ props.snippetCount }}</span>
         </button>
 
         <button
@@ -533,23 +531,6 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.snippet-sidebar__item-count {
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--sb-text-faint);
-  background: rgb(var(--color-text-rgb) / 0.06);
-  padding: 2px 7px;
-  border-radius: var(--radius-sm);
-}
-
-.snippet-sidebar__item.is-active .snippet-sidebar__item-count {
-  color: var(--sb-accent);
-  background: rgb(var(--color-primary-rgb) / 0.18);
-  box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / 0.3);
 }
 
 /* ─── 未登录引导 ──────────────────────────────────────────────────────── */
