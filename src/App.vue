@@ -28,7 +28,7 @@ const isAuthPage = computed(() => route.name === 'login')
 // 应用启动即校验 cookie 会话（登录态/用户菜单依赖它；早于任何页面的数据请求）
 useAuthStore().initialize()
 
-// 全局快捷键：G H（代码块）/ G E（示例库）/ C（新建片段）
+// 全局快捷键：G D（概览）/ G H（代码块）/ G F（收藏夹）/ G R（最近）/ C（新建片段）
 // 采用 "g" 前缀序列，避免与单键冲突；输入态与组合态下不触发
 let pendingG = false
 let gTimer: number | null = null
@@ -48,9 +48,6 @@ const onGlobalKeydown = (e: KeyboardEvent) => {
     } else if (key === 'h') {
       e.preventDefault()
       router.push('/snippets')
-    } else if (key === 'e') {
-      e.preventDefault()
-      router.push('/example')
     } else if (key === 'f') {
       e.preventDefault()
       router.push('/favorites')
@@ -93,7 +90,9 @@ onBeforeUnmount(() => {
 
         <!-- 常规页面：横向顶栏 + 内容 -->
         <div v-else class="app-shell">
-          <AppHeader @open-command="openCommandPalette" />
+          <!-- AppHeader 不声明任何 emit（此前这里绑过一个不存在的 @open-command，
+               属于死绑定已移除）；命令面板入口走 window 事件与 CommandPalette 自身快捷键 -->
+          <AppHeader />
           <main class="app-main">
             <router-view v-slot="{ Component }">
               <transition name="fade" mode="out-in">

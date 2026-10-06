@@ -1,6 +1,6 @@
 /** 封装片段列表 State 相关组合式状态与交互逻辑。 */
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, effectScope, onBeforeUnmount, ref, watch } from 'vue'
 import { getApiErrorMessage } from '@/api/client'
 import { listKnowledgeSnippets } from '@/api/knowledge-snippets'
 import type { KnowledgeSnippet, SnippetSortOption } from '@/types/knowledge-snippet'
@@ -176,8 +176,14 @@ const loadSnippets = async (append = false) => {
       return
     }
 
+    // 当前选中项已不在结果集中（首次进入 / 换筛选 / 翻页 / 删除后）→ 清空选中，
+    // 由详情面板展示空态。
+    //
+    // 此前这里写的是「自动选中第一条」（`selectedSnippetId = items[0].id`）：用户
+    // 什么都没点，右侧详情就被强制展开、列表被压到 360px，等于替用户做了决定；
+    // 且每次换筛选都会静默跳到第一条，正在看的上下文被冲掉。改为清空更符合直觉。
     if (!result.items.some((item) => item.id === selectedSnippetId.value)) {
-      selectedSnippetId.value = result.items[0]?.id || ''
+      selectedSnippetId.value = ''
     }
   } catch (error) {
     // 丢弃过期响应的错误
@@ -214,26 +220,41 @@ const setPageSize = (next: number) => {
  * 加载下一页并追加到列表（移动端无限滚动使用）。
  * 已到末页或正在加载时忽略。
  */
-/** 追加加载标志：防止 watch(page) 在 loadMore 期间触发覆盖式加载 */
-let appendingMore = false
-
+/**
+ * 追加加载标志：防止 watch(page) 在 loadMore 期间触发覆盖式加载。
+ *
+ * 同时对外暴露：页面的 URL 同步需要据此判断本次 page 变化是「用户点分页」还是
+ * 「滚动自动追加」——后者必须走 replace，否则每追加一页就往浏览器历史里塞一条记录，
+ * 滚 170 页后后退键彻底失效（详见页面 syncToUrl 注释）。
+ */
+export const isAppendingMore = ref(false)
 const loadMore = async () => {
   if (loadingSnippets.value) return
   if (page.value >= totalPages.value) return
   // 达到追加上限：停止继续堆 DOM，交给分页
   if (snippets.value.length >= snippetMaxAppendedItems) return
-  appendingMore = true
+  isAppendingMore.value = true
   try {
     page.value += 1
     await loadSnippets(true)
   } finally {
-    appendingMore = false
+    isAppendingMore.value = false
   }
 }
 
 // watch / 生命周期必须在 setup 上下文注册，故放入函数内；
 // 用模块级标志保证只注册一次（状态为单例，重复注册会多触发无效监听）
 let watchersRegistered = false
+/**
+ * watcher 的宿主 scope（detached）。
+ *
+ * 必须独立于任何组件实例：这些 watch 是模块级单例状态的加载触发器，
+ * 生命周期与「页面存在与否」无关。此前直接在首次调用组件的 setup 里注册，
+ * 组件卸载时 Vue 会连 watcher 一起销毁，而 watchersRegistered 标志仍为 true、
+ * 不会补注册——切换导航离开再回到 /snippets 后，集合/标签/搜索/排序/页码的
+ * 变化全部不再触发加载（URL 会同步、列表纹丝不动）。
+ */
+const watcherScope = effectScope(true)
 // 单例状态被多个组件共享（列表页、命令面板等），组件卸载时不能直接清掉全局
 // 定时器，否则会中断其他使用者的待执行刷新；用消费计数保证仅最后一个使用者
 // 卸载时才清理
@@ -242,34 +263,36 @@ export const useSnippetListState = () => {
   consumerCount += 1
   if (!watchersRegistered) {
     watchersRegistered = true
-    watch(
-      () => [
-        selectedCollectionId.value,
-        selectedTag.value,
-        selectedLanguage.value,
-        favoritesOnly.value,
-        sort.value,
-      ],
-      () => {
-        page.value = 1
-        void loadSnippets()
-      }
-    )
-    watch(
-      () => keyword.value,
-      () => {
-        page.value = 1
-        scheduleLoadSnippets()
-      }
-    )
-    watch(
-      () => page.value,
-      () => {
-        // 追加模式（loadMore）已自行加载，跳过覆盖式加载
-        if (appendingMore) return
-        void loadSnippets()
-      }
-    )
+    watcherScope.run(() => {
+      watch(
+        () => [
+          selectedCollectionId.value,
+          selectedTag.value,
+          selectedLanguage.value,
+          favoritesOnly.value,
+          sort.value,
+        ],
+        () => {
+          page.value = 1
+          void loadSnippets()
+        }
+      )
+      watch(
+        () => keyword.value,
+        () => {
+          page.value = 1
+          scheduleLoadSnippets()
+        }
+      )
+      watch(
+        () => page.value,
+        () => {
+          // 追加模式（loadMore）已自行加载，跳过覆盖式加载
+          if (isAppendingMore.value) return
+          void loadSnippets()
+        }
+      )
+    })
   }
   onBeforeUnmount(() => {
     consumerCount -= 1

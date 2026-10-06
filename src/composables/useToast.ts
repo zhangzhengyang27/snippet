@@ -21,6 +21,14 @@ export interface ToastOptions {
  *   3. `app.use(ElementPlus)` 已改为按需引入，`$message` 全局属性本身也不再存在。
  * 留着它会是一个「永远取不到值」的陷阱。
  */
+/**
+ * ElMessage 距顶部的偏移。
+ *
+ * EP 默认值会把消息顶在页面最上方，正好压住固定头部的导航项（切换主题、复制失败等
+ * 提示会把「收藏夹 / 最近」盖掉）。头部高 64px，这里留出 80px 让它落在头部下方。
+ */
+const TOAST_TOP_OFFSET = 80
+
 function show(
   severity: 'success' | 'info' | 'warn' | 'error',
   message: string,
@@ -30,6 +38,7 @@ function show(
     type: severity === 'warn' ? 'warning' : severity,
     message,
     duration: (opts?.duration ?? 3) * 1000,
+    offset: TOAST_TOP_OFFSET,
   })
 }
 

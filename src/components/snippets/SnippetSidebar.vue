@@ -147,6 +147,12 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           />
           <span class="snippet-sidebar__item-label">仅看收藏</span>
         </button>
+
+        <!-- 未登录引导：收藏 / 标签 / 新建集合三项都因 isLoggedIn=false 隐藏，
+             不给说明的话侧栏下半部就是一片空白，用户不知道那些能力存在 -->
+        <p v-if="!props.isLoggedIn" class="snippet-sidebar__hint">
+          登录后可收藏片段、按标签筛选，并新建自己的集合
+        </p>
       </div>
     </section>
 
@@ -544,6 +550,14 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
   color: var(--sb-accent);
   background: rgb(var(--color-primary-rgb) / 0.18);
   box-shadow: inset 0 0 0 1px rgb(var(--color-primary-rgb) / 0.3);
+}
+
+/* ─── 未登录引导 ──────────────────────────────────────────────────────── */
+.snippet-sidebar__hint {
+  margin: 4px 10px 2px;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--sb-text-faint);
 }
 
 /* ─── 错误提示 ──────────────────────────────────────────────────────────── */

@@ -54,7 +54,7 @@ async function handleClearRecent() {
 </script>
 
 <template>
-  <div class="recent">
+  <div class="recent page-content">
     <PageHeader title="最近使用" description="快速回访最近浏览或最近使用过的代码片段。">
       <template #actions>
         <AppButton v-if="recentSnippets.length" variant="glass" size="small" @click="handleClearRecent">

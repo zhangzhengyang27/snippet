@@ -19,19 +19,8 @@ const routes: RouteRecordRaw[] = [
     path: '/snippets/:id',
     name: 'snippet-detail',
     component: () => import('@/views/SnippetDetailPage.vue'),
-    meta: { title: '片段详情' },
-  },
-  {
-    path: '/example',
-    name: 'example-library',
-    component: () => import('@/views/ExampleLibraryPage.vue'),
-    meta: { title: '示例库' },
-  },
-  {
-    path: '/example/:id',
-    name: 'example-detail',
-    component: () => import('@/views/ExampleDetailPage.vue'),
-    meta: { title: '示例详情' },
+    // 站点导航用的是「代码块」，详情页标题统一到同一叫法（此前是「片段详情」）
+    meta: { title: '代码块详情' },
   },
   {
     path: '/favorites',
@@ -50,6 +39,14 @@ const routes: RouteRecordRaw[] = [
     name: 'about',
     component: () => import('@/views/AboutPage.vue'),
     meta: { title: '关于与帮助' },
+  },
+  {
+    // 用户菜单「个人中心」的目标路由。此前菜单指向 /profile 但路由表缺失，
+    // 点击会被下方 catch-all 重定向回首页（已修复的断链入口）。
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfilePage.vue'),
+    meta: { title: '个人中心' },
   },
   {
     path: '/login',

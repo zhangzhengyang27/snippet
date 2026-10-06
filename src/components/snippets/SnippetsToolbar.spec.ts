@@ -2,10 +2,9 @@
 /**
  * SnippetsToolbar 组件测试。
  *
- * 这个工具栏是列表页所有筛选/搜索入口的唯一汇聚点，「哪些控件该出现」由
- * compact / showFilters 两个开关交叉决定，纯函数单测完全覆盖不到。
- * 重点锁三类不变量：
- *  1. compact 模式必须只留「标题计数 + 新建」，不能漏出排序/搜索/筛选
+ * 这个工具栏是列表页所有筛选/搜索入口的唯一汇聚点。重点锁三类不变量：
+ *  1. **筛选能力不因布局消失**：compact（三栏窄列表）只缩小控件，不再隐藏搜索/排序/筛选
+ *     —— 此前 compact 会把这三组整组隐藏，默认视图下 3399 条数据无从搜起
  *  2. 搜索框的 prefix 图标必须挂在带 `group` 的容器里
  *     —— 图标靠 `group-focus-within:text-primary` 变色；少一个类不会报错、
  *        也不会挂测试，只是交互静默失效（这正是本次改动真实踩过的坑）
@@ -58,34 +57,48 @@ function mountToolbar(props: Record<string, unknown> = {}) {
 const selects = (wrapper: ToolbarWrapper) => wrapper.findAllComponents(AppSelect)
 
 describe('SnippetsToolbar', () => {
-  describe('控件显隐（compact / showFilters 交叉）', () => {
-    it('非 compact：渲染搜索框 + 排序，不渲染标签/语言筛选', () => {
-      const wrapper = mountToolbar({ compact: false, showFilters: false })
+  describe('控件显隐（搜索与筛选在任何布局下都可达）', () => {
+    it('非 compact：搜索框 + 标签/语言/排序三个下拉全渲染', () => {
+      const wrapper = mountToolbar({ compact: false })
       expect(wrapper.findAllComponents(AppInput)).toHaveLength(1)
-      expect(selects(wrapper)).toHaveLength(1)
+      expect(selects(wrapper)).toHaveLength(3)
     })
 
-    it('compact：只留标题计数与「新建」，排序/搜索/筛选全部不渲染', () => {
-      // compact 与 showFilters 在唯一调用点由 detailLayout 单个值派生
-      // （page → showFilters / split → compact），天然互斥；组件自身并不强制这一点，
-      // 故这里按真实可达的组合断言，不构造 compact+showFilters 同时为真的伪状态。
-      const wrapper = mountToolbar({ compact: true, showFilters: false })
-      expect(wrapper.findAllComponents(AppInput)).toHaveLength(0)
-      expect(selects(wrapper)).toHaveLength(0)
+    it('compact：搜索与筛选仍然渲染（compact 只影响尺寸，不再整组隐藏）', () => {
+      // 回归锁：compact 曾经把搜索/排序/筛选全部隐藏，导致默认分屏视图无法搜索。
+      const wrapper = mountToolbar({ compact: true })
+      expect(wrapper.findAllComponents(AppInput)).toHaveLength(1)
+      expect(selects(wrapper)).toHaveLength(3)
       expect(wrapper.text()).toContain('新建片段')
       expect(wrapper.text()).toContain('12')
     })
 
-    it('showFilters：追加标签 + 语言两个筛选下拉，共 3 个', () => {
-      const wrapper = mountToolbar({ compact: false, showFilters: true })
-      expect(selects(wrapper)).toHaveLength(3)
+    it('compact：下拉带紧凑尺寸类（宽度收窄而非消失）', () => {
+      const wrapper = mountToolbar({ compact: true })
+      expect(wrapper.html()).toContain('toolbar-select--compact')
     })
 
     it('筛选下拉带上「全部 xx」占位，避免空值显示成空白框', () => {
-      const wrapper = mountToolbar({ compact: false, showFilters: true })
+      const wrapper = mountToolbar({ compact: false })
       const placeholders = selects(wrapper).map((s) => s.props('placeholder'))
       expect(placeholders).toContain('全部标签')
       expect(placeholders).toContain('全部语言')
+    })
+
+    it('有激活筛选时出现「清除筛选」并上抛 clearFilters', async () => {
+      const wrapper = mountToolbar({ hasActiveFilters: true })
+      // AppButton 在测试里被 stub，title 属于 fallthrough attr 读不到，按文案定位
+      const clearBtn = wrapper
+        .findAllComponents(AppButton)
+        .find((b) => b.text().includes('清除筛选'))
+      expect(clearBtn).toBeTruthy()
+      await clearBtn!.trigger('click')
+      expect(wrapper.emitted('clearFilters')).toHaveLength(1)
+    })
+
+    it('无激活筛选时不出现「清除筛选」', () => {
+      const wrapper = mountToolbar({ hasActiveFilters: false })
+      expect(wrapper.text()).not.toContain('清除筛选')
     })
   })
 
@@ -105,7 +118,7 @@ describe('SnippetsToolbar', () => {
     it('搜索框透传 placeholder 与 allow-clear', () => {
       const wrapper = mountToolbar({ compact: false })
       const input = wrapper.findComponent(AppInput)
-      expect(input.props('placeholder')).toBe('搜索片段')
+      expect(input.props('placeholder')).toBe('搜索代码块')
       expect(input.props('allowClear')).toBe(true)
     })
   })

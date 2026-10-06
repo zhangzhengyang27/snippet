@@ -97,7 +97,7 @@ export function listKnowledgeSnippets(
       sort: params?.sort,
       page: params?.page,
       pageSize: params?.pageSize,
-      // 显式 join 成逗号分隔（与 getExamples 的 ids 处理保持一致）
+      // 显式 join 成逗号分隔（后端按 `ids` 参数解析）
       ids: params?.ids?.length ? params.ids.join(',') : undefined,
     },
     options

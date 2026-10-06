@@ -172,7 +172,7 @@ const devices: DeviceOption[] = [
         <!-- iframe -->
         <iframe
           ref="iframeRef"
-          title="示例实时预览"
+          title="代码块实时预览"
           class="device-iframe"
           :srcdoc="srcDoc"
           :sandbox="sandboxAttr"

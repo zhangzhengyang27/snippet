@@ -2,8 +2,8 @@
  * 键盘事件工具。
  *
  * 供全局快捷键在触发前判断事件目标是否处于输入态
- * （使用点：App.vue、AppHeader.vue、useListShortcuts.ts、ExampleDetailPage.vue；
- * 同时经 sfc-modules 注册为 '@/utils/keyboard' 别名模块，供示例 SFC 引用）。
+ * （使用点：App.vue、AppHeader.vue、useListShortcuts.ts；
+ * 同时经 sfc-modules 注册为 '@/utils/keyboard' 别名模块，供 SFC 引用）。
  */
 
 /**

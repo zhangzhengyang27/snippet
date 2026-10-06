@@ -52,7 +52,7 @@ const toastMeta = computed(() => {
   >
     <div
       v-if="props.show && props.message"
-      class="fixed right-6 top-6 z-[240] min-w-60 max-w-95 rounded-lg border px-4 py-3.5 shadow-xl backdrop-blur-md"
+      class="fixed right-6 top-[calc(var(--header-height,64px)+0.75rem)] z-[240] min-w-60 max-w-95 rounded-lg border px-4 py-3.5 shadow-xl backdrop-blur-md"
       :class="toastMeta.shellClass"
     >
       <div class="flex items-start gap-3">

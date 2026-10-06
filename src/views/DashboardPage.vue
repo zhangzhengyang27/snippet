@@ -1,16 +1,13 @@
 <script setup lang="ts">
 /**
  * 概览页 · Bento 布局（布局设计稿 public/design-dashboard.html 的 Vue 实现）：
- * 问候行 → 三张统计卡 → 宽窄双栏（最近浏览 | 快捷开始 + 探索示例库）。
+ * 问候行 → 两张统计卡 → 宽窄双栏（最近浏览 | 快捷开始 + 最近收藏）。
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listKnowledgeSnippets, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
-import { getFavorites } from '@/api/favorites'
-import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
-import type { CodeExample } from '@/types'
 import { useAuthStore } from '@/stores/authStore'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import { useResourceFetch } from '@/composables/useResourceFetch'
@@ -23,21 +20,19 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { recent: recentIds } = useRecentSnippets()
 
-/** 概览页聚合数据（一次请求拿齐，避免 4 个独立的 loading/error 状态） */
+/** 概览页聚合数据（一次请求拿齐，避免多个独立的 loading/error 状态） */
 interface DashboardData {
   snippetTotal: number
   favoriteTotal: number
-  exampleTotal: number
-  exploreExamples: CodeExample[]
+  favoriteSnippets: KnowledgeSnippet[]
   recentSnippets: KnowledgeSnippet[]
 }
 
 /**
  * 概览页数据统一走 useResourceFetch，三态由 EmptyState 表达。
  *
- * 此前统计块用 `catch {}` 静默降级为 0 —— 但 0 是一个**合法数值**，
- * 断网时用户会看到「你有 0 个片段」，被误读成数据丢了。
- * 现在失败态把数字显示为「—」（未知），与真实的 0 区分开。
+ * 统计块失败时把数字显示为「—」（未知），与真实的 0 区分开 —— 否则断网时
+ * 用户会看到「你有 0 个片段」，被误读成数据丢了。
  */
 const {
   data: dash,
@@ -45,30 +40,28 @@ const {
   error,
   refresh: reload,
 } = useResourceFetch<DashboardData>(async () => {
-  const [snipRes, favRes, exRes] = await Promise.all([
+  // 收藏数走片段列表的 favorite 过滤（按用户）；未登录时后端返回空集，无需分支。
+  const [snipRes, favRes] = await Promise.all([
     listKnowledgeSnippets({ page: 1, pageSize: 1 }),
-    authStore.isLoggedIn ? getFavorites() : Promise.resolve([]),
-    getExamples({ page: 1, limit: 2 }),
+    listKnowledgeSnippets({ favorite: true, page: 1, pageSize: 4 }),
   ])
 
-  // 最近浏览：localStorage 只存 id，用批量接口一次取回（原先逐条回查）。
+  // 最近浏览：localStorage 只存 id，用批量接口一次取回（逐条回查会打 N 次）。
   // listKnowledgeSnippetsByIds 按 id 顺序回排，已删除/无权的条目自然被跳过。
   const recent = await listKnowledgeSnippetsByIds(recentIds.value.slice(0, 6))
 
   return {
     snippetTotal: snipRes.total ?? 0,
-    favoriteTotal: Array.isArray(favRes) ? favRes.length : 0,
-    exampleTotal: exRes.pagination?.total ?? 0,
-    exploreExamples: exRes.data?.slice(0, 2) ?? [],
+    favoriteTotal: favRes.total ?? 0,
+    favoriteSnippets: favRes.items ?? [],
     recentSnippets: recent,
   }
 })
 
 const snippetTotal = computed(() => dash.value?.snippetTotal ?? 0)
 const favoriteTotal = computed(() => dash.value?.favoriteTotal ?? 0)
-const exampleTotal = computed(() => dash.value?.exampleTotal ?? 0)
+const favoriteSnippets = computed(() => dash.value?.favoriteSnippets ?? [])
 const recentSnippets = computed(() => dash.value?.recentSnippets ?? [])
-const exploreExamples = computed(() => dash.value?.exploreExamples ?? [])
 
 const username = computed(() => authStore.user?.username ?? '')
 const greeting = computed(() => {
@@ -85,8 +78,8 @@ const stats = computed(() => [
     key: 'snippets',
     icon: 'material-symbols:code-blocks',
     num: snippetTotal.value.toLocaleString(),
-    label: '代码片段',
-    sub: '116 个集合',
+    label: '代码块',
+    sub: '含公共与私有',
     to: '/snippets',
     tone: 'indigo',
   },
@@ -95,18 +88,9 @@ const stats = computed(() => [
     icon: 'material-symbols:favorite',
     num: favoriteTotal.value.toLocaleString(),
     label: '收藏夹',
-    sub: authStore.isLoggedIn ? '收藏内容聚合' : '登录后可同步',
+    sub: authStore.isLoggedIn ? '按账号同步' : '登录后可同步',
     to: '/favorites',
     tone: 'green',
-  },
-  {
-    key: 'examples',
-    icon: 'material-symbols:web',
-    num: exampleTotal.value.toLocaleString(),
-    label: '示例库',
-    sub: '可在线编辑',
-    to: '/example',
-    tone: 'cyan',
   },
 ] as const)
 
@@ -134,7 +118,6 @@ const quickActions = [
 const langTag = (s: KnowledgeSnippet) => s.language || 'text'
 
 const goSnippet = (id: string) => router.push(`/snippets?focus=${encodeURIComponent(id)}`)
-const goExample = (id: string) => router.push(`/example/${encodeURIComponent(id)}`)
 const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-command-palette'))
 </script>
 
@@ -148,8 +131,8 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
       <div>
         <h1 class="dash__hello">👋 {{ greeting }}，{{ username }}</h1>
         <p class="dash__date">
-          {{ dateLabel }} · 你有 <b>{{ snippetTotal.toLocaleString() }}</b> 个片段和
-          <b>{{ exampleTotal.toLocaleString() }}</b> 个示例在这里
+          {{ dateLabel }} · 你有 <b>{{ snippetTotal.toLocaleString() }}</b> 个代码块，收藏了
+          <b>{{ favoriteTotal.toLocaleString() }}</b> 个
         </p>
       </div>
       <div class="dash__greet-actions">
@@ -212,7 +195,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
           v-else-if="!recentSnippets.length"
           compact
           title="暂无浏览记录"
-          description="浏览代码片段后，最近内容会显示在这里。"
+          description="浏览代码块后，最近内容会显示在这里。"
         />
         <div v-else class="recent-list">
           <button
@@ -230,7 +213,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
         </div>
       </section>
 
-      <!-- 窄栏：快捷开始 + 探索 -->
+      <!-- 窄栏：快捷开始 + 最近收藏 -->
       <div class="dash__rail">
         <section class="bento-card">
           <div class="bento-card__head">
@@ -253,25 +236,29 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
         <section class="bento-card">
           <div class="bento-card__head">
             <h2 class="bento-card__title">
-              <AppIcon icon="material-symbols:grid-view" :size="15" />
-              探索示例库
+              <AppIcon icon="material-symbols:star" :size="15" />
+              最近收藏
+              <span v-if="favoriteSnippets.length" class="bento-card__cnt">{{ favoriteTotal }}</span>
             </h2>
-            <router-link to="/example" class="bento-card__link">全部 →</router-link>
+            <router-link to="/favorites" class="bento-card__link">全部 →</router-link>
           </div>
-          <div class="explore-list">
+
+          <p v-if="!authStore.isLoggedIn" class="mini-hint">登录后可在这里看到你收藏的代码块。</p>
+          <p v-else-if="!loading && !error && !favoriteSnippets.length" class="mini-hint">
+            还没有收藏，打开任意代码块点星标即可收藏。
+          </p>
+          <div v-else class="mini-list">
             <button
-              v-for="ex in exploreExamples"
-              :key="ex.id"
+              v-for="s in favoriteSnippets"
+              :key="s.id"
               type="button"
-              class="explore-item"
-              @click="goExample(ex.id)"
+              class="mini-item"
+              @click="goSnippet(s.id)"
             >
-              <span class="explore-item__thumb">
-                <AppIcon icon="material-symbols:brush" :size="18" />
-              </span>
+              <span class="mini-item__thumb mono">{{ langTag(s) }}</span>
               <span>
-                <span class="explore-item__title">{{ ex.title }}</span>
-                <span class="explore-item__desc">{{ ex.category }} · 在线可编辑</span>
+                <span class="mini-item__title">{{ s.name }}</span>
+                <span class="mini-item__desc">{{ s.description || '无描述' }}</span>
               </span>
             </button>
           </div>
@@ -350,7 +337,7 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 /* ─── 统计卡 ─── */
 .dash__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -402,13 +389,6 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   --stat-icon-bg: rgb(52 211 153 / 0.12);
   --stat-icon-fg: rgb(52 211 153);
   --stat-icon-border: rgb(52 211 153 / 0.3);
-}
-
-.stat-card--cyan {
-  --stat-glow: rgb(56 189 248 / 0.16);
-  --stat-icon-bg: rgb(56 189 248 / 0.12);
-  --stat-icon-fg: rgb(56 189 248);
-  --stat-icon-border: rgb(56 189 248 / 0.3);
 }
 
 .stat-card__icon {
@@ -620,15 +600,23 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   margin-top: 2px;
 }
 
-/* ─── 探索示例 ─── */
-.explore-list {
+/* ─── 最近收藏 ─── */
+.mini-hint {
+  margin: 0;
+  padding: 18px 18px 20px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgb(var(--color-text-secondary-rgb) / 0.9);
+}
+
+.mini-list {
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.explore-item {
+.mini-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -643,12 +631,12 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-.explore-item:hover {
+.mini-item:hover {
   border-color: rgb(var(--color-primary-rgb) / 0.4);
   transform: translateY(-2px);
 }
 
-.explore-item__thumb {
+.mini-item__thumb {
   width: 52px;
   height: 42px;
   border-radius: 8px;
@@ -656,13 +644,14 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 11px;
+  font-weight: 600;
   background: linear-gradient(135deg, rgb(var(--color-primary-rgb) / 0.22), rgb(56 189 248 / 0.12));
   border: 1px solid rgb(var(--color-border-rgb) / 0.5);
   color: rgb(var(--color-primary-rgb));
 }
 
-.explore-item__title {
+.mini-item__title {
   display: block;
   font-size: 12.5px;
   font-weight: 600;
@@ -670,10 +659,10 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 230px;
+  max-width: 210px;
 }
 
-.explore-item__desc {
+.mini-item__desc {
   display: block;
   font-size: 11px;
   color: rgb(var(--color-text-secondary-rgb));
@@ -681,8 +670,6 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 230px;
+  max-width: 210px;
 }
-
-/* ─── 响应式 ─── */
 </style>

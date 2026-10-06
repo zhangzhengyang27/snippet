@@ -1,4 +1,3 @@
-import type { CodeExample } from '@/types'
 import { escapeHtml } from '@/utils/escape'
 
 export { escapeHtml }
@@ -8,38 +7,6 @@ export interface Snippet {
   css?: string
   js?: string
   html?: string
-}
-
-/**
- * 检测并去除完全重复的 JS 块。
- * 部分导入的示例数据会被重复拼接，导致 top-level const/let 重复声明而报错。
- */
-function deduplicateRepeatedJs(js: string): string {
-  const trimmed = js.trim()
-  if (!trimmed) return js
-
-  if (trimmed.length % 2 === 0) {
-    const half = trimmed.length / 2
-    const first = trimmed.slice(0, half)
-    const second = trimmed.slice(half)
-    if (first === second) return first
-  }
-
-  const statements = trimmed
-    .split(/\n(?=(?:const|let|var|function|class|import|export)\s)/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-
-  if (statements.length >= 2 && statements.length % 2 === 0) {
-    const mid = statements.length / 2
-    const firstHalf = statements.slice(0, mid)
-    const secondHalf = statements.slice(mid)
-    if (firstHalf.every((s, i) => s === secondHalf[i])) {
-      return firstHalf.join('\n\n')
-    }
-  }
-
-  return js
 }
 
 /**
@@ -73,8 +40,60 @@ interface SandboxResourceResponse {
   body?: string
 }
 
-function isAllowedResource(url: string): boolean {
-  return SANDBOX_ALLOWED_PREFIXES.some((prefix) => url.startsWith(prefix))
+/** 单次代理响应的体积上限（5MB）：超过即拒绝，避免 base64 后撑爆内存与消息通道。 */
+const SANDBOX_MAX_RESOURCE_BYTES = 5 * 1024 * 1024
+
+/**
+ * 拒绝代理的文档类内容类型：它们能携带可渲染/可执行内容，回传给沙箱既无用途，
+ * 又是钓鱼与注入的现成素材。
+ */
+const SANDBOX_BLOCKED_CONTENT_TYPES =
+  /^\s*(text\/html|application\/xhtml\+xml|application\/xml|text\/xml)\b/i
+
+/**
+ * 当前站点的 origin。浏览器里即 window.location.origin；
+ * 非浏览器环境（单元测试 / 预渲染）退化为本地占位值，仅用于解析相对路径。
+ */
+function currentOrigin(): string {
+  return typeof window !== 'undefined' && window.location
+    ? window.location.origin
+    : 'http://localhost'
+}
+
+/**
+ * 判定资源 URL 是否为「白名单内的同源资源」，是则返回**规范化后**的可请求路径。
+ *
+ * 必须规范化后再比较，不能直接 `url.startsWith(prefix)`：
+ * `/shared-assets/../api/knowledge/snippets` 满足前缀检查，但 fetch 解析时会折叠
+ * `..` 打到真实接口 —— 预览 iframe 里的片段代码可借父窗口代理、以当前登录用户的
+ * 身份读取同源数据（见审查报告 A2）。
+ *
+ * `new URL()` 会按 WHATWG 规范折叠路径段，字面 `..` 与编码形式 `%2e%2e` 都会被
+ * 折叠（`/a/../b` 与 `/a/%2e%2e/b` 均得 `/b`），因此「规范化后仍命中白名单前缀」
+ * 即是充分判据；下面的显式 `..` / `%2e` 检查是纵深防御，防止将来改动 base 解析。
+ *
+ * 导出以便单元测试直接覆盖 —— 生产调用方只有 createSandboxResourceProxy。
+ */
+export function resolveAllowedResource(rawUrl: string): string | null {
+  if (typeof rawUrl !== 'string' || rawUrl === '') return null
+
+  const origin = currentOrigin()
+
+  let resolved: URL
+  try {
+    resolved = new URL(rawUrl, origin)
+  } catch {
+    return null
+  }
+
+  // 仅允许同源（同时拦掉绝对 URL 与协议相对 URL）
+  if (resolved.origin !== origin) return null
+
+  const { pathname } = resolved
+  if (/\.\.|%2e/i.test(pathname)) return null
+  if (!SANDBOX_ALLOWED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null
+
+  return `${pathname}${resolved.search}`
 }
 
 /**
@@ -89,8 +108,12 @@ function buildSandboxBootstrap(): string {
 <script>
 (function () {
   var ALLOWED = ${allowedPrefixesJson};
+  // 必须是 "/" 开头的站内相对路径：拒绝绝对 URL、协议相对 URL（//evil.com）与
+  // 编码的点号穿越（%2e%2e）。父窗口代理侧还有一层 URL 规范化校验，这里是纵深防御。
   function isAllowed(u) {
-    if (/^https?:\\/\\//i.test(u)) return false;
+    if (typeof u !== 'string' || u.charAt(0) !== '/') return false;
+    if (u.indexOf('//') === 0) return false;
+    if (/\\.\\.|%2e/i.test(u)) return false;
     return ALLOWED.some(function (p) { return u.indexOf(p) === 0; });
   }
   var pending = {};
@@ -142,7 +165,7 @@ function buildSandboxBootstrap(): string {
 
 /**
  * 内容安全策略（注入到 srcdoc / 新标签页文档）。
- * - 仅允许自身与 data:/blob: 内联资源（示例代码需内联执行）
+ * - 仅允许自身与 data:/blob: 内联资源（片段代码需内联执行）
  * - 禁止任何外部网络连接（connect-src 'none'），阻断数据外泄
  * - 禁止表单提交目标跳转（form-action 'none'）
  * - sandbox 指令强制文档运行在 opaque origin 下：即使在**新标签页顶层**打开
@@ -163,134 +186,6 @@ function buildCspMeta(): string {
 }
 
 /**
- * 将 CodeExample 的 html/css/js 组合成完整的、严格隔离的 HTML 文档字符串。
- * 用于 iframe 的 srcdoc 属性。
- *
- * 安全模型（相较旧版的关键改进）：
- * - iframe 不再携带 allow-same-origin，与父窗口完全隔离，消除沙箱逃逸。
- * - 移除 <base href=origin>，同源资源改由父窗口 postMessage 代理加载（白名单）。
- * - 注入 CSP meta，禁止外部网络连接与表单外跳。
- *
- * @param example - 示例代码
- * @param snippet - 可选的 snippet，其 css/html/js 会覆盖/合并到示例中
- */
-export function buildSrcDoc(example: CodeExample, snippet?: Snippet): string {
-  const baseCss = example.css ?? ''
-  const baseJs = example.js ?? ''
-
-  const css = snippet?.css ? `${baseCss}\n${snippet.css}` : baseCss
-  const html = snippet?.html ?? example.html
-  const js = snippet?.js ? `${baseJs}\n${snippet.js}` : baseJs
-
-  const useExampleStage = example.topicSlug === 'html5'
-  const stagedHtml = useExampleStage ? `<div class="example-stage">${html}</div>` : html
-  const exampleStageCss = useExampleStage
-    ? `.example-stage {
-      width: 100%;
-      min-height: 100vh;
-      height: 100vh;
-      overflow: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .example-stage > * {
-      flex-shrink: 0;
-    }`
-    : ''
-
-  const safeJs = deduplicateRepeatedJs(js).replace(/<\/script/gi, '<\\/script')
-
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  ${buildCspMeta()}
-  <title>${escapeHtml(example.title)}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      min-height: 100vh;
-      padding: 0;
-    }
-    .demo-layout {
-      display: flex;
-      height: 100vh;
-      gap: 0;
-    }
-    .snippet-panel {
-      width: 320px;
-      flex-shrink: 0;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow-y: auto;
-      border-right: 1px solid #ddd;
-      background: #fafafa;
-    }
-    .snippet-btn {
-      padding: 10px 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 13px;
-      color: #333;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.2s;
-      line-height: 1.4;
-    }
-    .snippet-btn:hover {
-      border-color: #8083ff;
-      background: #f0f0ff;
-    }
-    .snippet-btn.active {
-      border-color: #8083ff;
-      background: #e8e8ff;
-      color: #571bc1;
-      font-weight: 600;
-    }
-    .preview-panel {
-      flex: 1;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      overflow: auto;
-    }
-    .preview-panel > section,
-    .preview-panel > div:not(.snippet-panel):not(.demo-layout) {
-      flex: 1;
-      width: 100%;
-      min-height: 0;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    ${exampleStageCss}
-    ${css}
-  </style>
-  ${buildSandboxBootstrap()}
-</head>
-<body>
-  ${stagedHtml}
-  ${safeJs ? '<script>' + safeJs + '</' + 'script>' : ''}
-</body>
-</html>`
-}
-
-/**
  * 将自包含 HTML 知识片段组装成可直接运行的完整文档字符串（不做沙箱隔离）。
  *
  * 输入说明：
@@ -305,7 +200,7 @@ export function buildSrcDoc(example: CodeExample, snippet?: Snippet): string {
  *  - 否则：套一层标准壳。
  *
  * 注意：本函数仅生成"内容本身"，不注入 CSP / 沙箱引导脚本，
- * 用于在新标签页（blob URL）直接打开给用户看，保持与示例库一致的效果。
+ * 用于在新标签页（blob URL）直接打开给用户看。
  *
  * @param html   主 HTML 文件源码（snippet.content）
  * @param files  同片段的其他文件（js/css 等），用于解析 src 引用
@@ -422,21 +317,12 @@ export function openSnippetPreviewWindow(
 }
 
 /**
- * 检测示例内容是否引用了需要父窗口代理的同源资源（白名单前缀）。
- * 该值仅用于提示日志/调试，不再影响 sandbox 属性（现在永远严格隔离）。
- */
-export function hasTrustedAssetReference(example: CodeExample): boolean {
-  const combined = (example.html ?? '') + (example.css ?? '') + (example.js ?? '')
-  return SANDBOX_ALLOWED_PREFIXES.some((prefix) => combined.includes(prefix))
-}
-
-/**
  * 返回严格的 iframe sandbox 属性列表。
  *
  * 安全说明：
  * - 一律不携带 allow-same-origin，iframe 与父窗口完全隔离，彻底消除沙箱逃逸风险。
- * - 示例中需加载的同源资源（/shared-assets/、/static-sites/ 等）改由父窗口
- *   通过 postMessage 代理抓取后回传（见 buildSandboxBootstrap / usePreview 的监听）。
+ * - 片段中需加载的同源资源（/shared-assets/、/static-sites/ 等）改由父窗口
+ *   通过 postMessage 代理抓取后回传（见 buildSandboxBootstrap / DeviceFrame 的监听）。
  * - CSP meta 已禁止任何外部网络连接与表单外跳，进一步收敛攻击面。
  */
 export function getSandboxAttributes(): string[] {
@@ -469,6 +355,20 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  * @param iframe - 目标 iframe 元素（用于定向回传）
  */
 export function createSandboxResourceProxy(iframe: HTMLIFrameElement): () => void {
+  /** 回传失败响应。id 必须原样带回，否则沙箱内的 pending 回调永不释放。 */
+  const postFailure = (id: string, status: number): void => {
+    iframe.contentWindow?.postMessage(
+      {
+        __sfc_sandbox__: SANDBOX_MSG_TYPE,
+        kind: 'response',
+        id,
+        ok: false,
+        status,
+      } satisfies SandboxResourceResponse,
+      '*'
+    )
+  }
+
   const handler = async (event: MessageEvent) => {
     if (event.source !== iframe.contentWindow) {
       return
@@ -477,24 +377,27 @@ export function createSandboxResourceProxy(iframe: HTMLIFrameElement): () => voi
     if (!data || data.__sfc_sandbox__ !== SANDBOX_MSG_TYPE || data.kind !== 'request') {
       return
     }
-    if (!isAllowedResource(data.url)) {
-      iframe.contentWindow?.postMessage(
-        {
-          __sfc_sandbox__: SANDBOX_MSG_TYPE,
-          kind: 'response',
-          id: data.id,
-          ok: false,
-          status: 403,
-        } satisfies SandboxResourceResponse,
-        '*'
-      )
+
+    // 规范化后的安全路径（同源 + 白名单前缀 + 无 `..`）；不通过则直接拒绝
+    const allowedPath = resolveAllowedResource(data.url)
+    if (!allowedPath) {
+      postFailure(data.id, 403)
       return
     }
 
     try {
-      const res = await fetch(data.url, { credentials: 'same-origin' })
+      // 用规范化后的路径请求，杜绝 `..` 折叠后打到白名单之外的接口
+      const res = await fetch(allowedPath, { credentials: 'same-origin' })
       const contentType = res.headers.get('content-type') ?? 'application/octet-stream'
+      if (SANDBOX_BLOCKED_CONTENT_TYPES.test(contentType)) {
+        postFailure(data.id, 403)
+        return
+      }
       const buffer = await res.arrayBuffer()
+      if (buffer.byteLength > SANDBOX_MAX_RESOURCE_BYTES) {
+        postFailure(data.id, 413)
+        return
+      }
       const body = arrayBufferToBase64(buffer)
       iframe.contentWindow?.postMessage(
         {
@@ -509,16 +412,7 @@ export function createSandboxResourceProxy(iframe: HTMLIFrameElement): () => voi
         '*'
       )
     } catch {
-      iframe.contentWindow?.postMessage(
-        {
-          __sfc_sandbox__: SANDBOX_MSG_TYPE,
-          kind: 'response',
-          id: data.id,
-          ok: false,
-          status: 500,
-        } satisfies SandboxResourceResponse,
-        '*'
-      )
+      postFailure(data.id, 500)
     }
   }
 

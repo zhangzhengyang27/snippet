@@ -608,6 +608,29 @@
   }
 }
 
+/* ─── 页面内容限宽居中统一口径 ────────────────────────────────────────────
+   详情页代码区、个人中心、收藏夹、最近使用共用同一条内容列宽，
+   避免「同站不同宽」——新增居中页面时直接用 .page-content，不要各写一套。 */
+:root {
+  --content-max-width: 1180px;
+  --content-padding: 24px;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --content-padding: 12px;
+  }
+}
+
+.page-content {
+  width: 100%;
+  /* border-box 下容器宽度含左右 padding，故把 padding 补进上限，
+     保证内容净宽仍等于 --content-max-width */
+  max-width: calc(var(--content-max-width) + 2 * var(--content-padding));
+  margin-inline: auto;
+  padding-inline: var(--content-padding);
+}
+
 /* ─── Element Plus 全局对齐（须在 EP 样式之后加载以生效） ─── */
 /* el-select 默认 128px 定宽与 block 化：回归 inline-flex + 由调用方控制宽度 */
 .el-select {

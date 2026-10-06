@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
      *
      * 登出与会话失效都必须调用，否则下一个登录用户会看到上一个用户的数据。
      * 这些缓存是模块级单例（不随组件卸载清理），且都是带用户上下文的接口结果：
-     * - 收藏的示例（`useFavorites`）
+     * - 收藏的代码块（`useFavorites`）
      * - 片段列表 / 筛选 / 总数 / 选中项（`useSnippetListState`）
      *
      * 新增此类缓存时请一并加到这里 —— 散落在各处的 `clearXxx()` 很容易漏。

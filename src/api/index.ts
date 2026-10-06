@@ -5,6 +5,5 @@
 
 export * from './client'
 export * from './auth'
-export * from './examples'
 export * from './favorites'
 export * from './knowledge-snippets'

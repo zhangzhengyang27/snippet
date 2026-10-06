@@ -10,6 +10,7 @@ import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { formatDateTime } from '@/utils/date-format'
+import { languageLabel } from '@/utils/snippet-languages'
 
 interface Props {
   /** 面板是否处于激活状态（移动端 Bottom Sheet 展开态） */
@@ -71,16 +72,57 @@ function openPreviewWindow() {
       <div class="snippet-detail-drawer__head">
         <div class="snippet-detail-drawer__head-main">
           <div class="snippet-detail-drawer__title-row">
-            <el-tag size="small" effect="plain" class="snippet-detail-drawer__lang">{{ snippet.language }}</el-tag>
-            <h2 class="snippet-detail-drawer__name">{{ snippet.name }}</h2>
-            <button
-              type="button"
-              class="snippet-detail-drawer__close"
-              aria-label="关闭详情"
-              @click="emit('close')"
-            >
-              <AppIcon icon="material-symbols:close" :size="16" />
-            </button>
+            <span class="snippet-detail-drawer__lang">{{ languageLabel(snippet.language) }}</span>
+            <h2 class="snippet-detail-drawer__name" :title="snippet.name">{{ snippet.name }}</h2>
+            <!--
+              操作组：收藏 / 编辑 / 删除。
+              这三个 emit 此前一直存在、父组件也绑了 handler，但模板里没有任何触发点，
+              导致默认分屏视图下片段完全无法编辑（只能切到独立页）。与 SnippetDetailPage
+              保持一致：收藏对所有片段开放，编辑/删除只对自有（非公共）片段开放。
+            -->
+            <div class="snippet-detail-drawer__actions">
+              <button
+                type="button"
+                class="snippet-detail-drawer__action"
+                :class="{ 'is-active': snippet.favorite }"
+                :title="snippet.favorite ? '取消收藏' : '收藏'"
+                :aria-label="snippet.favorite ? '取消收藏' : '收藏'"
+                @click="emit('toggle-favorite', snippet)"
+              >
+                <AppIcon
+                  :icon="snippet.favorite ? 'material-symbols:star' : 'material-symbols:star-outline'"
+                  :size="15"
+                />
+              </button>
+              <button
+                v-if="!snippet.isPublic"
+                type="button"
+                class="snippet-detail-drawer__action"
+                title="编辑"
+                aria-label="编辑"
+                @click="emit('edit', snippet)"
+              >
+                <AppIcon icon="material-symbols:edit" :size="15" />
+              </button>
+              <button
+                v-if="!snippet.isPublic"
+                type="button"
+                class="snippet-detail-drawer__action snippet-detail-drawer__action--danger"
+                title="删除"
+                aria-label="删除"
+                @click="emit('delete', snippet)"
+              >
+                <AppIcon icon="material-symbols:delete" :size="15" />
+              </button>
+              <button
+                type="button"
+                class="snippet-detail-drawer__close"
+                aria-label="关闭详情"
+                @click="emit('close')"
+              >
+                <AppIcon icon="material-symbols:close" :size="16" />
+              </button>
+            </div>
           </div>
           <p v-if="snippet.description" class="snippet-detail-drawer__desc">
             {{ snippet.description }}
@@ -211,11 +253,52 @@ function openPreviewWindow() {
   font-weight: 600;
 }
 
+/* 操作组：收藏 / 编辑 / 删除 / 关闭 */
+.snippet-detail-drawer__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.snippet-detail-drawer__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgb(var(--color-text-secondary-rgb));
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.snippet-detail-drawer__action:hover {
+  background: rgb(var(--color-surface-glass-rgb) / 0.6);
+  color: rgb(var(--color-text-rgb));
+}
+
+.snippet-detail-drawer__action.is-active {
+  color: rgb(var(--color-warning-rgb));
+}
+
+.snippet-detail-drawer__action--danger:hover {
+  background: rgb(var(--color-error-rgb) / 0.12);
+  color: rgb(var(--color-error-rgb));
+}
+
 .snippet-detail-drawer__close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
   border: none;
   border-radius: 8px;
   background: transparent;

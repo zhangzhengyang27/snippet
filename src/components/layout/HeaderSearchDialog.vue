@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 顶栏搜索对话框。
+ * 顶栏搜索对话框（搜索**代码块**）。
  *
  * 从 `AppHeader.vue` 拆出：它自带完整状态（关键词 / 结果 / 防抖 / 竞态保护 /
  * 键盘激活）与全部样式，与顶栏其余部分（导航、用户菜单、主题切换）没有耦合。
@@ -9,31 +9,21 @@
  * 两者此前都监听 ⌘K，导致一次按键打开两个搜索框 —— 已修正，见 AppHeader。
  */
 import { computed, ref, watch } from 'vue'
-import { getExamples } from '@/api'
+import { listKnowledgeSnippets } from '@/api/knowledge-snippets'
 import { useResourceFetch } from '@/composables/useResourceFetch'
 import AppIcon from '@/components/common/AppIcon.vue'
-import type { CodeExample } from '@/types'
+import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
 
-/** 搜索结果只需展示字段，剥掉正文以减小响应式开销 */
-type SearchResult = Omit<CodeExample, 'html' | 'css' | 'js'>
+/** 结果只需展示字段，不必持有完整片段（含 content）以减小响应式开销 */
+type SearchResult = Pick<KnowledgeSnippet, 'id' | 'name' | 'description' | 'language' | 'tags'>
 
-function toSearchResult(e: CodeExample): SearchResult {
+function toSearchResult(s: KnowledgeSnippet): SearchResult {
   return {
-    id: e.id,
-    title: e.title,
-    description: e.description,
-    category: e.category,
-    categorySlug: e.categorySlug,
-    topicSlug: e.topicSlug,
-    tags: e.tags,
-    language: e.language,
-    sourceFile: e.sourceFile,
-    sourceLine: e.sourceLine,
-    difficulty: e.difficulty,
-    isInteractive: e.isInteractive,
-    snippets: e.snippets,
-    createdAt: e.createdAt,
-    updatedAt: e.updatedAt,
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    language: s.language,
+    tags: s.tags ?? [],
   }
 }
 
@@ -65,10 +55,10 @@ const {
     const q = searchQuery.value.trim()
     if (!q) return []
     try {
-      const response = await getExamples({ search: q, page: 1, limit: 8 }, { signal })
-      return response.data.map(toSearchResult)
+      const response = await listKnowledgeSnippets({ q, page: 1, pageSize: 8 }, { signal })
+      return (response.items ?? []).map(toSearchResult)
     } catch {
-      // 搜索失败展示空结果（与本组件拆分前的行为一致；本组件没有错误展示位）。
+      // 搜索失败展示空结果（本组件没有错误展示位）。
       // 取消产生的 AbortError 也走这里，但 useResourceFetch 会因 requestId 过期
       // 而丢弃这次返回值，不会覆盖更新的结果。
       return []
@@ -134,7 +124,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
   <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -->
   <div v-if="props.open" class="app-header__search-overlay" @click.self="emit('close')">
     <div class="app-header__search-dialog">
-      <div class="app-header__search-title">搜索示例</div>
+      <div class="app-header__search-title">搜索代码块</div>
       <!-- autofocus：这是用户主动按 `/` 或点击搜索按钮才打开的对话框，聚焦输入框是正确 UX；
            该规则针对的是页面加载即抢焦点的情况，不适用于此处。
            用区块禁用而非 next-line —— 违规报告在 autofocus 属性那一行，而 HTML 注释无法插入标签内部。 -->
@@ -142,28 +132,30 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
       <input
         v-model="searchQuery"
         class="app-header__search-input"
-        placeholder="搜索示例、标签、教程…"
-        aria-label="搜索示例、标签、教程"
+        placeholder="搜索代码块、标签、集合…"
+        aria-label="搜索代码块、标签、集合"
         autofocus
         @keydown.escape="emit('close')"
       />
       <!-- eslint-enable vuejs-accessibility/no-autofocus -->
       <div class="app-header__search-results">
         <div v-if="searchLoading">搜索中…</div>
-        <div v-else-if="limitedResults.length === 0 && searchQuery.trim()">未找到匹配的示例</div>
+        <div v-else-if="limitedResults.length === 0 && searchQuery.trim()">未找到匹配的代码块</div>
         <div
-          v-for="example in limitedResults"
-          :key="example.id"
+          v-for="item in limitedResults"
+          :key="item.id"
           class="app-header__search-item"
           tabindex="0"
           role="button"
-          @click="handleSelect(example.id)"
-          @keydown="handleItemKeydown(example.id, $event)"
+          @click="handleSelect(item.id)"
+          @keydown="handleItemKeydown(item.id, $event)"
         >
           <div class="search-result__content">
-            <span class="search-result__title">{{ example.title }}</span>
-            <span class="search-result__desc">{{ example.description }}</span>
-            <span class="search-result__category">{{ example.category }}</span>
+            <span class="search-result__title">{{ item.name }}</span>
+            <span class="search-result__desc">{{ item.description || '无描述' }}</span>
+            <span class="search-result__category">
+              {{ item.language }}<template v-if="item.tags.length"> · {{ item.tags.slice(0, 3).join(' / ') }}</template>
+            </span>
           </div>
           <AppIcon icon="lucide:arrow-right" :size="14" class="ml-auto opacity-50" />
         </div>
@@ -235,7 +227,7 @@ function handleItemKeydown(id: string, e: KeyboardEvent) {
   padding: 0 8px 10px;
 }
 
-/* 「搜索中…」「未找到匹配的示例」等纯文本提示 */
+/* 「搜索中…」「未找到匹配的代码块」等纯文本提示 */
 .app-header__search-results > div:not(.app-header__search-item) {
   padding: 10px 8px;
   font-size: var(--text-xs);

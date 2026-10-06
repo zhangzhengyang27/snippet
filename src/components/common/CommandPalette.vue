@@ -2,17 +2,15 @@
 /**
  * 命令面板（⌘K / Ctrl+K 全局唤起）：
  *  - 空关键字：展示操作入口与最近浏览片段
- *  - 输入关键字：并行搜索代码片段与示例（防抖 200ms），支持语言过滤
+ *  - 输入关键字：搜索代码片段（防抖 200ms），支持语言过滤
  *  - ↑/↓ 选择、回车跳转、Esc 关闭；「查看全部」项直达完整搜索结果页
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { listKnowledgeSnippets, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
-import { getExamples } from '@/api/examples'
 import { getApiErrorMessage } from '@/api/client'
 import { useResourceFetch } from '@/composables/useResourceFetch'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
-import type { CodeExample } from '@/types'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import { codeBlockLanguages } from '@/types/code-block'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -24,27 +22,22 @@ type CommandItem =
   | { type: 'action'; label: string; icon: string; run: () => void }
   | { type: 'snippet'; snippet: KnowledgeSnippet }
   | { type: 'recent'; snippet: KnowledgeSnippet }
-  | { type: 'example'; example: CodeExample }
-  | { type: 'all'; target: 'snippet' | 'example'; count: number }
+  | { type: 'all'; count: number }
 
 const open = ref(false)
 const keyword = ref('')
 const selectedLanguage = ref('')
 const activeIndex = ref(0)
 
-/** 搜索聚合结果：一次请求同时拿片段与示例，避免两组独立的 loading/error 状态 */
+/** 搜索结果：片段命中 + 是否还有更多（供「查看全部」入口判断） */
 interface SearchBundle {
   snippets: KnowledgeSnippet[]
-  examples: CodeExample[]
   hasMoreSnippets: boolean
-  hasMoreExamples: boolean
 }
 
 const EMPTY_BUNDLE: SearchBundle = {
   snippets: [],
-  examples: [],
   hasMoreSnippets: false,
-  hasMoreExamples: false,
 }
 
 /**
@@ -62,30 +55,22 @@ const {
     const q = keyword.value.trim()
     if (!q) return EMPTY_BUNDLE
 
-    const [snipRes, exRes] = await Promise.all([
-      listKnowledgeSnippets(
-        { q, page: 1, pageSize: 8, language: selectedLanguage.value || undefined },
-        { signal }
-      ),
-      getExamples({ search: q, limit: 8 }, { signal }),
-    ])
+    const snipRes = await listKnowledgeSnippets(
+      { q, page: 1, pageSize: 8, language: selectedLanguage.value || undefined },
+      { signal }
+    )
 
     const snippets = snipRes.items ?? []
-    const examples = exRes.data ?? []
     return {
       snippets,
-      examples,
       hasMoreSnippets: (snipRes.total ?? 0) > snippets.length,
-      hasMoreExamples: (exRes.pagination?.total ?? 0) > examples.length,
     }
   },
   { immediate: false }
 )
 
 const snippetHits = computed(() => searchBundle.value?.snippets ?? [])
-const exampleHits = computed(() => searchBundle.value?.examples ?? [])
 const hasMoreSnippets = computed(() => searchBundle.value?.hasMoreSnippets ?? false)
-const hasMoreExamples = computed(() => searchBundle.value?.hasMoreExamples ?? false)
 const errorMsg = computed(() =>
   searchError.value ? getApiErrorMessage(searchError.value, '搜索失败') : ''
 )
@@ -99,30 +84,14 @@ const actionItems = computed<CommandItem[]>(() => [
     icon: 'material-symbols:add-circle',
     run: () => router.push('/snippets?new=1'),
   },
-  {
-    type: 'action',
-    label: '打开示例库',
-    icon: 'material-symbols:web',
-    run: () => router.push('/example'),
-  },
 ])
 
 const snippetItems = computed<CommandItem[]>(() =>
   snippetHits.value.map((snippet) => ({ type: 'snippet', snippet }))
 )
 
-const exampleItems = computed<CommandItem[]>(() =>
-  exampleHits.value.map((example) => ({ type: 'example', example }))
-)
-
 const allSnippetItem = computed<CommandItem | null>(() =>
-  hasMoreSnippets.value
-    ? { type: 'all', target: 'snippet', count: snippetHits.value.length }
-    : null
-)
-
-const allExampleItem = computed<CommandItem | null>(() =>
-  hasMoreExamples.value ? { type: 'all', target: 'example', count: exampleHits.value.length } : null
+  hasMoreSnippets.value ? { type: 'all', count: snippetHits.value.length } : null
 )
 
 const recentItems = computed<CommandItem[]>(() =>
@@ -137,8 +106,6 @@ const flatItems = computed<CommandItem[]>(() => {
   } else {
     items.push(...snippetItems.value)
     if (allSnippetItem.value) items.push(allSnippetItem.value)
-    items.push(...exampleItems.value)
-    if (allExampleItem.value) items.push(allExampleItem.value)
   }
   return items
 })
@@ -154,10 +121,6 @@ const grouped = computed(() => {
       groups.push({ key: 'snippet', title: '代码片段', items: snippetItems.value })
     if (allSnippetItem.value)
       groups.push({ key: 'all-snippet', title: '', items: [allSnippetItem.value] })
-    if (exampleItems.value.length)
-      groups.push({ key: 'example', title: '示例', items: exampleItems.value })
-    if (allExampleItem.value)
-      groups.push({ key: 'all-example', title: '', items: [allExampleItem.value] })
   }
   return groups
 })
@@ -230,16 +193,10 @@ const execute = (item?: CommandItem) => {
     item.run()
   } else if (item.type === 'snippet' || item.type === 'recent') {
     router.push(`/snippets?focus=${encodeURIComponent(item.snippet.id)}`)
-  } else if (item.type === 'example') {
-    router.push(`/example/${encodeURIComponent(item.example.id)}`)
   } else if (item.type === 'all') {
-    if (item.target === 'snippet') {
-      const params = new URLSearchParams({ q: keyword.value.trim() })
-      if (selectedLanguage.value) params.set('language', selectedLanguage.value)
-      router.push(`/snippets?${params.toString()}`)
-    } else {
-      router.push(`/example?search=${encodeURIComponent(keyword.value.trim())}`)
-    }
+    const params = new URLSearchParams({ q: keyword.value.trim() })
+    if (selectedLanguage.value) params.set('language', selectedLanguage.value)
+    router.push(`/snippets?${params.toString()}`)
   }
   close()
 }
@@ -264,13 +221,11 @@ const close = () => {
 const itemLabel = (item: CommandItem) => {
   if (item.type === 'action') return item.label
   if (item.type === 'snippet' || item.type === 'recent') return item.snippet.name
-  if (item.type === 'all') return `查看全部${item.target === 'snippet' ? '代码片段' : '示例'}结果`
-  return item.example.title
+  return '查看全部代码片段结果'
 }
 const itemSub = (item: CommandItem) => {
   if (item.type === 'snippet' || item.type === 'recent')
     return item.snippet.description || item.snippet.language
-  if (item.type === 'example') return item.example.description || item.example.language
   if (item.type === 'all') return `共 ${item.count} 条以上匹配`
   return ''
 }
@@ -278,7 +233,6 @@ const itemSub = (item: CommandItem) => {
 const itemIcon = (item: CommandItem) => {
   if (item.type === 'action') return item.icon
   if (item.type === 'snippet' || item.type === 'recent') return 'material-symbols:code-blocks'
-  if (item.type === 'example') return 'material-symbols:web'
   return 'material-symbols:arrow-forward'
 }
 
@@ -307,8 +261,8 @@ defineExpose({ open: openPalette, close })
               v-model="keyword"
               type="text"
               class="cmdk-input"
-              placeholder="搜索代码片段与示例…"
-              aria-label="搜索代码片段与示例"
+              placeholder="搜索代码片段…"
+              aria-label="搜索代码片段"
             />
             <select v-model="selectedLanguage" class="cmdk__lang" aria-label="按语言过滤">
               <option value="">全部语言</option>

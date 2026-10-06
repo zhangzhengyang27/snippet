@@ -15,8 +15,11 @@ const error = ref<string | null>(null)
 
 const isDev = import.meta.env.DEV
 // 后端启动时会创建默认管理员账号 admin / admin123（可通过 ADMIN_DEFAULT_PASSWORD 覆盖）
-const testUsername = import.meta.env.VITE_TEST_USERNAME ?? 'admin'
-const testPassword = import.meta.env.VITE_TEST_PASSWORD ?? 'admin123'
+// 默认口令只在开发态参与运算：生产构建中 DEV 恒为 false，三元分支会被常量折叠为空串，
+// 产物里不会残留明文口令（见审查报告 A4 ③）。
+const testUsername = isDev ? (import.meta.env.VITE_TEST_USERNAME ?? 'admin') : ''
+const testPassword = isDev ? (import.meta.env.VITE_TEST_PASSWORD ?? 'admin123') : ''
+const canUseTestAccount = isDev && testUsername !== '' && testPassword !== ''
 
 function loginWithTestAccount() {
   username.value = testUsername
@@ -124,7 +127,7 @@ async function handleSubmit() {
         </form>
 
         <button
-          v-if="isDev"
+          v-if="canUseTestAccount"
           type="button"
           class="login-test-btn"
           :disabled="loading"

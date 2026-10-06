@@ -9,23 +9,18 @@ import { useCopy } from '@/composables/useCopy'
 import HeaderSearchDialog from './HeaderSearchDialog.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 
-interface NavChild {
-  label: string
-  href?: string
-  active?: boolean
-  isGroupTitle?: boolean
-}
-
 interface NavLink {
   label: string
-  href?: string
+  href: string
   active?: boolean
-  children?: NavChild[]
 }
 
 defineProps<{
   links?: NavLink[]
 }>()
+
+/** 用户菜单触发按钮 + 面板的公共根节点（display:contents 容器），用于点击外部关闭判定 */
+const userMenuRoot = ref<HTMLElement | null>(null)
 
 const route = useRoute()
 const router = useRouter()
@@ -59,9 +54,10 @@ function closeSearch() {
   searchOpen.value = false
 }
 
-/** 子组件选中某条搜索结果 → 跳转示例详情（关闭由子组件的 close 事件负责） */
-function handleSearchSelect(exampleId: string) {
-  router.push({ name: 'example-detail', params: { id: exampleId } })
+/** 子组件选中某条搜索结果 → 跳转到该代码块（关闭由子组件的 close 事件负责） */
+function handleSearchSelect(snippetId: string) {
+  // 与全局命令面板保持一致：回到列表并聚焦该条，而非直接跳详情页
+  router.push({ path: '/snippets', query: { focus: snippetId } })
 }
 
 function handleKeyDown(e: KeyboardEvent) {
@@ -80,17 +76,22 @@ function handleKeyDown(e: KeyboardEvent) {
       closeSearch()
       return
     }
+    if (userMenuOpen.value) {
+      userMenuOpen.value = false
+    }
   }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('keydown', handleKeyDown)
+  document.addEventListener('pointerdown', handleDocPointerDown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', handleKeyDown)
+  document.removeEventListener('pointerdown', handleDocPointerDown)
 })
 
 watch(
@@ -106,11 +107,6 @@ const defaultLinks = computed<NavLink[]>(() => [
     label: '代码块',
     href: '/snippets',
     active: route.path.startsWith('/snippets'),
-  },
-  {
-    label: '示例库',
-    href: '/example',
-    active: route.path === '/example' || route.path.startsWith('/example/'),
   },
   {
     label: '收藏夹',
@@ -130,8 +126,7 @@ const defaultLinks = computed<NavLink[]>(() => [
 ])
 
 const scrolled = ref(false)
-const activeDropdown = ref<string | null>(null)
-let dropdownCloseTimer: ReturnType<typeof setTimeout> | null = null
+
 function goToLogin() {
   router.push({ name: 'login' })
 }
@@ -155,42 +150,18 @@ function handleToggleTheme() {
   toast.success(theme.value === 'dark' ? '已切换至深色模式' : '已切换至浅色模式')
 }
 
-function openDropdown(label: string) {
-  activeDropdown.value = label
-  if (dropdownCloseTimer) {
-    clearTimeout(dropdownCloseTimer)
-    dropdownCloseTimer = null
-  }
-}
-
-function _scheduleCloseDropdown() {
-  if (dropdownCloseTimer) {
-    clearTimeout(dropdownCloseTimer)
-  }
-  dropdownCloseTimer = setTimeout(() => {
-    activeDropdown.value = null
-  }, 150)
-}
-
-/** 立即关闭（不防抖）。用于点击切换与 Esc。 */
-function closeDropdownNow() {
-  if (dropdownCloseTimer) {
-    clearTimeout(dropdownCloseTimer)
-    dropdownCloseTimer = null
-  }
-  activeDropdown.value = null
-}
-
 /**
- * 点击/键盘切换下拉。
+ * 点击用户菜单外部关闭。
  *
- * 此前下拉只有 `@mouseenter` 一条路径，**键盘用户根本无法打开**——这是真实缺陷，
- * 不是 lint 洁癖。补上标准的 disclosure 模式：点击切换 + Esc 关闭 + aria-expanded。
- * 悬停仍然保留，作为鼠标用户的渐进增强。
+ * 此前菜单只靠路由变化关闭（watch route.path）——打开后点页面空白处、
+ * 再点搜索按钮等任何操作都不会收起，菜单像「粘」在页面上。
+ * display:contents 的容器不生成盒子，但 DOM contains 判定不受影响，可放心用。
  */
-function toggleDropdown(label: string) {
-  if (activeDropdown.value === label) closeDropdownNow()
-  else openDropdown(label)
+function handleDocPointerDown(e: MouseEvent) {
+  if (!userMenuOpen.value) return
+  const target = e.target as Node | null
+  if (target && userMenuRoot.value?.contains(target)) return
+  userMenuOpen.value = false
 }
 
 function handleScroll() {
@@ -209,77 +180,21 @@ function handleScroll() {
         </router-link>
 
         <nav class="app-header__nav" aria-label="主导航">
-          <template v-for="link in links ?? defaultLinks" :key="link.label">
-            <!-- 下拉菜单：用原生按钮 + 弹出层实现 -->
-            <div v-if="link.children && link.children.length" style="display: contents">
-              <button
-                type="button"
-                class="app-header__nav-link app-header__nav-link--dropdown"
-                :class="{ 'app-header__nav-link--active': link.active }"
-                aria-haspopup="true"
-                :aria-expanded="activeDropdown === link.label"
-                @click="toggleDropdown(link.label)"
-                @keydown.escape="closeDropdownNow()"
-                @mouseenter="openDropdown(link.label)"
-                @mouseleave="_scheduleCloseDropdown()"
-                @focus="openDropdown(link.label)"
-                @blur="_scheduleCloseDropdown()"
-              >
-                {{ link.label }}
-                <AppIcon
-                  icon="lucide:chevron-down"
-                  :size="14"
-                  class="app-header__nav-dropdown-icon"
-                  :class="{
-                    'app-header__nav-dropdown-icon--open': activeDropdown === link.label,
-                  }"
-                />
-              </button>
-              <!-- 弹出层容器：只负责「鼠标/焦点在菜单内时保持展开」，
-                   本身不是交互控件（真正的交互元素是里面的链接）。
-                   故定点禁用，而非给它加 role/tabindex 伪造交互语义。 -->
-              <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
-              <div
-                v-if="activeDropdown === link.label"
-                class="app-header__dropdown-menu-content"
-                @mouseenter="openDropdown(link.label)"
-                @mouseleave="_scheduleCloseDropdown()"
-                @focusin="openDropdown(link.label)"
-                @focusout="_scheduleCloseDropdown()"
-              >
-                <template v-for="child in link.children" :key="child.label">
-                  <div
-                    v-if="child.isGroupTitle"
-                    class="app-header__dropdown-group-title"
-                  >
-                    {{ child.label }}
-                  </div>
-                  <router-link
-                    v-else
-                    :to="child.href!"
-                    class="app-header__dropdown-item"
-                    :class="{ 'app-header__dropdown-item--active': child.active }"
-                  >
-                    {{ child.label }}
-                  </router-link>
-                </template>
-              </div>
-            </div>
-            <router-link
-              v-else
-              :to="link.href!"
-              active-class=""
-              exact-active-class=""
-              class="app-header__nav-link"
-              :class="{ 'app-header__nav-link--active': link.active }"
-            >
-              {{ link.label }}
-            </router-link>
-          </template>
+          <router-link
+            v-for="link in links ?? defaultLinks"
+            :key="link.label"
+            :to="link.href"
+            active-class=""
+            exact-active-class=""
+            class="app-header__nav-link"
+            :class="{ 'app-header__nav-link--active': link.active }"
+          >
+            {{ link.label }}
+          </router-link>
         </nav>
 
         <div class="app-header__actions">
-          <el-tooltip content="搜索 (⌘K)" placement="bottom">
+          <el-tooltip content="搜索 (/)" placement="bottom">
             <el-button
               size="small"
               class="app-header__icon-btn"
@@ -304,7 +219,7 @@ function handleScroll() {
 
           <template v-if="isLoggedIn && currentUser">
             <!-- 用户菜单：原生实现 -->
-            <div style="display: contents">
+            <div ref="userMenuRoot" style="display: contents">
               <button
                 type="button"
                 class="app-header__user-trigger"
@@ -509,57 +424,6 @@ function handleScroll() {
   color: rgb(var(--color-primary-rgb));
   background: rgb(var(--color-primary-rgb) / 0.14);
 }
-.app-header__nav-link--dropdown {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  font: inherit;
-  cursor: pointer;
-}
-.app-header__nav-dropdown-icon { transition: transform 0.2s ease; }
-.app-header__nav-dropdown-icon--open { transform: rotate(180deg); }
-.app-header__dropdown-menu-content {
-  position: absolute;
-  min-width: 180px;
-  padding: 8px;
-  border-radius: var(--radius-md);
-  background: rgb(var(--color-surface-rgb));
-  border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
-  box-shadow: 0 16px 40px rgb(var(--color-shadow-rgb) / 0.2);
-  z-index: 110;
-}
-.app-header__dropdown-item {
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: rgb(var(--color-text-secondary-rgb));
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  transition: color 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
-}
-.app-header__dropdown-item:hover {
-  color: rgb(var(--color-text-rgb));
-  background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
-}
-.app-header__dropdown-item--active {
-  color: rgb(var(--color-primary-rgb)) !important;
-  background: rgb(var(--color-primary-rgb) / 0.1) !important;
-}
-.app-header__dropdown-group-title {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: rgb(var(--color-text-secondary-rgb) / 0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 10px 12px 4px;
-  margin-top: 6px;
-  border-top: 1px solid rgb(var(--color-border-glass-rgb) / 0.06);
-}
-.app-header__dropdown-group-title:first-child { margin-top: 0; border-top: none; }
 .app-header__actions {
   display: flex;
   align-items: center;
@@ -816,6 +680,42 @@ function handleScroll() {
 .user-panel__logout:hover {
   background: rgb(var(--color-accent-rose-rgb) / 0.08);
   border-color: rgb(var(--color-accent-rose-rgb) / 0.2);
+}
+
+/* ─── 窄屏：压缩留白与间距，避免顶栏横向溢出 ────────────────────────────
+   实测 560px 视口下内容宽 635px（溢出 75px）：inner 的 gap 32 + padding 24×2
+   与 nav-link 的横向 padding 是主要来源；用户名 text 在最窄处也保不住。 */
+@media (max-width: 640px) {
+  .app-header__inner {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .app-header__nav {
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-header__nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-header__nav-link {
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  .app-header__user-name {
+    display: none;
+  }
+}
+
+/* 极窄屏：品牌文字也让位，只留 logo 与导航 */
+@media (max-width: 480px) {
+  .app-header__brand-text {
+    display: none;
+  }
 }
 
 </style>

@@ -141,10 +141,10 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
         />
       </label>
       <div class="snippet-card__header">
-        <span class="snippet-card__title">
-          {{ props.snippet.name }}
+        <span class="snippet-card__title" :title="props.snippet.name">
+          {{ displayName }}
         </span>
-        <span class="snippet-card__actions">
+        <span class="snippet-card__actions" role="group" aria-label="片段操作">
           <button
             v-if="props.snippet.favorite"
             type="button"
@@ -162,13 +162,14 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
         {{ props.snippet.description || '暂无描述' }}
       </p>
       <div class="snippet-card__footer">
-        <el-tag size="small" effect="plain" class="snippet-card__lang">
+        <!-- 语言 chip：自绘（此前用 el-tag，默认蓝与品牌紫/玻璃风格不统一） -->
+        <span class="snippet-card__lang">
           <i
             class="snippet-card__lang-dot"
             :style="{ background: languageColor(props.snippet.language) }"
           />
           {{ languageLabel(props.snippet.language) }}
-        </el-tag>
+        </span>
         <el-tag
           v-if="snippetDifficulty"
           class="snippet-diff-badge"
@@ -285,8 +286,10 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
   transition: opacity var(--card-transition);
 }
 
+/* 键盘焦点进入卡片内的按钮时也要显形：hover-only 在键盘/触屏路径下不可达 */
 .snippet-card:hover .snippet-card__actions,
-.snippet-card.is-selected .snippet-card__actions {
+.snippet-card.is-selected .snippet-card__actions,
+.snippet-card:focus-within .snippet-card__actions {
   opacity: 1;
 }
 

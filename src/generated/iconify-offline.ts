@@ -3,7 +3,7 @@
  * 本文件由 scripts/build-iconify-offline.mjs 自动生成，请勿手工编辑。
  * 重新生成：npm run icons:build
  *
- * 作用：把项目实际用到的 84 个 Iconify 图标在构建期注入本地图标存储，
+ * 作用：把项目实际用到的 91 个 Iconify 图标在构建期注入本地图标存储，
  * 使 <Icon> 解析完全离线——不再依赖 api.iconify.design，也不再有图标闪烁。
  * 若新增图标后忘记重新生成，npm run icons:check 会失败。
  */
@@ -47,10 +47,12 @@ export const ICON_NAMES: string[] = [
   "material-symbols:delete",
   "material-symbols:description",
   "material-symbols:dns",
+  "material-symbols:download",
   "material-symbols:drive-file-move",
   "material-symbols:edit",
   "material-symbols:edit-note",
   "material-symbols:error",
+  "material-symbols:error-outline",
   "material-symbols:favorite",
   "material-symbols:file-download",
   "material-symbols:file-upload",
@@ -58,12 +60,14 @@ export const ICON_NAMES: string[] = [
   "material-symbols:folder",
   "material-symbols:folder-copy",
   "material-symbols:folder-open",
+  "material-symbols:format-list-numbered",
   "material-symbols:fullscreen",
   "material-symbols:fullscreen-exit",
   "material-symbols:grid-view",
   "material-symbols:history",
   "material-symbols:home",
   "material-symbols:info",
+  "material-symbols:info-outline",
   "material-symbols:keyboard",
   "material-symbols:keyboard-command-key",
   "material-symbols:label",
@@ -71,6 +75,7 @@ export const ICON_NAMES: string[] = [
   "material-symbols:lightbulb",
   "material-symbols:list-alt",
   "material-symbols:monitor",
+  "material-symbols:more-horiz",
   "material-symbols:note-add",
   "material-symbols:open-in-full",
   "material-symbols:open-in-new",
@@ -91,12 +96,14 @@ export const ICON_NAMES: string[] = [
   "material-symbols:smartphone",
   "material-symbols:star",
   "material-symbols:star-outline",
+  "material-symbols:sync",
   "material-symbols:tablet",
   "material-symbols:verified-user",
   "material-symbols:view-agenda",
   "material-symbols:view-column",
   "material-symbols:visibility",
   "material-symbols:web",
+  "material-symbols:wrap-text",
 ]
 
 // lucide — 10 个图标
@@ -138,7 +145,7 @@ addCollection({
  "width": 24
 } as Collection)
 
-// material-symbols — 74 个图标
+// material-symbols — 80 个图标
 addCollection({
  "aliases": {
   "file-download": {
@@ -240,6 +247,9 @@ addCollection({
   "error": {
    "body": "<path fill=\"currentColor\" d=\"M12.713 16.713Q13 16.425 13 16t-.288-.712T12 15t-.712.288T11 16t.288.713T12 17t.713-.288M11 13h2V7h-2zm1 9q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22\"/>"
   },
+  "error-outline": {
+   "body": "<path fill=\"currentColor\" d=\"M12.713 16.713Q13 16.425 13 16t-.288-.712T12 15t-.712.288T11 16t.288.713T12 17t.713-.288M11 13h2V7h-2zm1 9q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8\"/>"
+  },
   "favorite": {
    "body": "<path fill=\"currentColor\" d=\"m12 21l-1.45-1.3q-2.525-2.275-4.175-3.925T3.75 12.812T2.388 10.4T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.3 0 2.475.55T12 4.75q.85-1 2.025-1.55t2.475-.55q2.35 0 3.925 1.575T22 8.15q0 1.15-.387 2.25t-1.363 2.412t-2.625 2.963T13.45 19.7z\"/>"
   },
@@ -254,6 +264,9 @@ addCollection({
   },
   "folder-open": {
    "body": "<path fill=\"currentColor\" d=\"M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h6l2 2h8q.825 0 1.413.588T22 8H4v10l2.4-8h17.1l-2.575 8.575q-.2.65-.737 1.038T19 20z\"/>"
+  },
+  "format-list-numbered": {
+   "body": "<path fill=\"currentColor\" d=\"M3 22v-1.5h2.5v-.75H4v-1.5h1.5v-.75H3V16h3q.425 0 .713.288T7 17v1q0 .425-.288.713T6 19q.425 0 .713.288T7 20v1q0 .425-.288.713T6 22zm0-7v-2.75q0-.425.288-.712T4 11.25h1.5v-.75H3V9h3q.425 0 .713.288T7 10v1.75q0 .425-.288.713T6 12.75H4.5v.75H7V15zm1.5-7V3.5H3V2h3v6zM9 19v-2h12v2zm0-6v-2h12v2zm0-6V5h12v2z\"/>"
   },
   "fullscreen": {
    "body": "<path fill=\"currentColor\" d=\"M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z\"/>"
@@ -272,6 +285,9 @@ addCollection({
   },
   "info": {
    "body": "<path fill=\"currentColor\" d=\"M11 17h2v-6h-2zm1.713-8.287Q13 8.425 13 8t-.288-.712T12 7t-.712.288T11 8t.288.713T12 9t.713-.288M12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22\"/>"
+  },
+  "info-outline": {
+   "body": "<path fill=\"currentColor\" d=\"M11 17h2v-6h-2zm1.713-8.287Q13 8.425 13 8t-.288-.712T12 7t-.712.288T11 8t.288.713T12 9t.713-.288M12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8\"/>"
   },
   "keyboard": {
    "body": "<path fill=\"currentColor\" d=\"M4 19q-.825 0-1.412-.587T2 17V7q0-.825.588-1.412T4 5h16q.825 0 1.413.588T22 7v10q0 .825-.587 1.413T20 19zm4-3h8v-2H8zm-3-3h2v-2H5zm3 0h2v-2H8zm3 0h2v-2h-2zm3 0h2v-2h-2zm3 0h2v-2h-2zM5 10h2V8H5zm3 0h2V8H8zm3 0h2V8h-2zm3 0h2V8h-2zm3 0h2V8h-2z\"/>"
@@ -296,6 +312,9 @@ addCollection({
   },
   "monitor": {
    "body": "<path fill=\"currentColor\" d=\"M6 21v-2l1-1H4q-.825 0-1.412-.587T2 16V5q0-.825.588-1.412T4 3h16q.825 0 1.413.588T22 5v11q0 .825-.587 1.413T20 18h-3l1 1v2z\"/>"
+  },
+  "more-horiz": {
+   "body": "<path fill=\"currentColor\" d=\"M6 14q-.825 0-1.412-.587T4 12t.588-1.412T6 10t1.413.588T8 12t-.587 1.413T6 14m6 0q-.825 0-1.412-.587T10 12t.588-1.412T12 10t1.413.588T14 12t-.587 1.413T12 14m6 0q-.825 0-1.412-.587T16 12t.588-1.412T18 10t1.413.588T20 12t-.587 1.413T18 14\"/>"
   },
   "note-add": {
    "body": "<path fill=\"currentColor\" d=\"M11 18h2v-3h3v-2h-3v-3h-2v3H8v2h3zm-5 4q-.825 0-1.412-.587T4 20V4q0-.825.588-1.412T6 2h8l6 6v12q0 .825-.587 1.413T18 22zm7-13h5l-5-5z\"/>"
@@ -354,6 +373,9 @@ addCollection({
   "star-outline": {
    "body": "<path fill=\"currentColor\" d=\"m8.85 16.825l3.15-1.9l3.15 1.925l-.825-3.6l2.775-2.4l-3.65-.325l-1.45-3.4l-1.45 3.375l-3.65.325l2.775 2.425zM5.825 21l1.625-7.025L2 9.25l7.2-.625L12 2l2.8 6.625l7.2.625l-5.45 4.725L18.175 21L12 17.275zM12 12.25\"/>"
   },
+  "sync": {
+   "body": "<path fill=\"currentColor\" d=\"M4 20v-2h2.75l-.4-.35q-1.225-1.225-1.787-2.662T4 12.05q0-2.775 1.663-4.937T10 4.25v2.1Q8.2 7 7.1 8.563T6 12.05q0 1.125.425 2.188T7.75 16.2l.25.25V14h2v6zm10-.25v-2.1q1.8-.65 2.9-2.212T18 11.95q0-1.125-.425-2.187T16.25 7.8L16 7.55V10h-2V4h6v2h-2.75l.4.35q1.225 1.225 1.788 2.663T20 11.95q0 2.775-1.662 4.938T14 19.75\"/>"
+  },
   "tablet": {
    "body": "<path fill=\"currentColor\" d=\"M3 20q-.825 0-1.412-.587T1 18V6q0-.825.588-1.412T3 4h18q.825 0 1.413.588T23 6v12q0 .825-.587 1.413T21 20zm3-2h12V6H6z\"/>"
   },
@@ -374,6 +396,9 @@ addCollection({
   },
   "web": {
    "body": "<path fill=\"currentColor\" d=\"M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm0-2h10.5v-3.5H4zm12.5 0H20V9h-3.5zM4 12.5h10.5V9H4z\"/>"
+  },
+  "wrap-text": {
+   "body": "<path fill=\"currentColor\" d=\"M14.7 20.7L11 17l3.7-3.7l1.4 1.45L14.85 16h2.4q.725 0 1.238-.513T19 14.25t-.513-1.237t-1.237-.513H4v-2h13.25q1.575 0 2.663 1.088T21 14.25t-1.088 2.663T17.25 18h-2.4l1.25 1.25zM4 18v-2h5v2zM4 7V5h16v2z\"/>"
   }
  },
  "prefix": "material-symbols",

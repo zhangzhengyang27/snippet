@@ -11,6 +11,7 @@ import SnippetPlaceholderInspector from '@/components/snippets/SnippetPlaceholde
 import SnippetTagInput from '@/components/snippets/SnippetTagInput.vue'
 import {
   useSnippetEditorForm,
+  SNIPPET_DESCRIPTION_LIMITS,
   type SnippetEditorSubmitPayload,
 } from '@/composables/useSnippetEditorForm'
 import { codeBlockLanguages, codeBlockThemes, snippetDifficultyOptions } from '@/types/code-block'
@@ -35,6 +36,9 @@ const {
   validationMessage,
   collectionOptions,
   placeholderState,
+  descriptionLength,
+  descriptionIssue,
+  descriptionPlaceholder,
   validate,
   buildSubmitPayload,
 } = useSnippetEditorForm({
@@ -118,12 +122,24 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 
           <label class="snippet-editor-dialog__field snippet-editor-dialog__field--top">
             <span class="snippet-editor-dialog__label">描述</span>
-            <AppInput
-              :value="form.description"
-              :rows="2"
-              placeholder="一句话描述片段适用场景。"
-              @update:value="Object.assign(form, { description: String($event ?? '') })"
-            />
+            <div class="snippet-editor-dialog__description">
+              <AppInput
+                :value="form.description"
+                :rows="2"
+                :placeholder="descriptionPlaceholder"
+                @update:value="Object.assign(form, { description: String($event ?? '') })"
+              />
+              <!-- 实时校验：合格显示字数，不合格直接把原因写在字段下面（别让用户点保存才吃 400） -->
+              <p
+                class="snippet-editor-dialog__hint"
+                :class="{ 'snippet-editor-dialog__hint--error': Boolean(descriptionIssue) }"
+              >
+                {{
+                  descriptionIssue ||
+                  `${descriptionLength} / ${SNIPPET_DESCRIPTION_LIMITS.min}-${SNIPPET_DESCRIPTION_LIMITS.max} 字`
+                }}
+              </p>
+            </div>
           </label>
 
           <label class="snippet-editor-dialog__field">
@@ -353,6 +369,26 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 .snippet-editor-dialog__error > svg {
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+/* ─── 描述字段（必填 + 实时字数/校验提示） ─────────────────────────────── */
+.snippet-editor-dialog__description {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.snippet-editor-dialog__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: rgb(var(--color-text-secondary-rgb) / 0.7);
+}
+
+.snippet-editor-dialog__hint--error {
+  color: rgb(var(--color-error-rgb));
 }
 
 /* ─── 底部 ──────────────────────────────────────────────────────────────── */

@@ -25,9 +25,13 @@ const props = defineProps<{
   favoritesOnly: boolean
   /** 是否存在可清除的筛选条件（控制清除按钮显隐） */
   hasActiveFilters: boolean
-  /** 是否展示标签/语言筛选下拉（独立页卡片布局时展示；三栏列表布局时隐藏） */
-  showFilters?: boolean
-  /** 紧凑模式：三栏窄列表时隐藏排序/搜索/收藏/刷新，仅保留标题计数 + 新建 */
+  /**
+   * 紧凑模式：三栏窄列表时缩小控件尺寸并允许换行。
+   *
+   * ⚠️ 曾经这里把搜索 / 排序 / 筛选整组隐藏掉，结果默认的分屏视图没有搜索框，
+   * 3399 条数据只能靠顶栏全局搜索或切到独立页才筛得动。筛选能力不该随布局消失，
+   * compact 现在只影响尺寸。
+   */
   compact?: boolean
 }>()
 
@@ -70,42 +74,23 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
         class="text-brand drop-shadow-[0_0_12px_rgb(113_112_255/0.45)]"
       />
       <h2 class="font-heading text-[1.375rem] font-bold tracking-[-0.02em] text-(--color-text)">
-        片段列表
+        代码块
       </h2>
       <span class="text-code-sm text-(--color-text-tertiary)">{{ props.total }}</span>
+      <AppIcon
+        v-if="props.loading"
+        icon="material-symbols:sync"
+        :size="13"
+        class="animate-spin text-(--color-text-tertiary)"
+        aria-label="加载中"
+      />
     </div>
 
-    <div class="flex-1" />
-
-    <!-- 右侧：标签 / 语言筛选（仅独立页卡片布局时展示）+ 排序 + 搜索 + 操作按钮 -->
-    <AppSelect
-      v-if="props.showFilters"
-      :value="props.selectedTag"
-      class="toolbar-select shrink-0"
-      placeholder="全部标签"
-      :options="tagOptions"
-      @update:value="emit('update:selectedTag', String($event ?? ''))"
-    />
-
-    <AppSelect
-      v-if="props.showFilters"
-      :value="props.selectedLanguage"
-      class="toolbar-select shrink-0"
-      placeholder="全部语言"
-      :options="languageOptions"
-      @update:value="emit('update:selectedLanguage', String($event ?? ''))"
-    />
-
-    <AppSelect
-      v-if="!props.compact"
-      :value="props.sort"
-      class="toolbar-select shrink-0"
-      :options="props.sortOptions"
-      @update:value="emit('update:sort', $event as SnippetSortOption)"
-    />
-
     <!-- group 是必需的：图标靠 group-focus-within 变色，少一个类整段交互就静默失效 -->
-    <div v-if="!props.compact" class="group relative min-w-48 flex-1">
+    <div
+      class="group relative min-w-32 flex-1 basis-40"
+      :class="props.compact ? '' : 'min-w-40'"
+    >
       <AppIcon
         icon="material-symbols:search"
         :size="14"
@@ -114,18 +99,61 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       <AppInput
         :value="props.keyword"
         type="text"
-        placeholder="搜索片段"
+        placeholder="搜索代码块"
         class="w-full pl-8"
         allow-clear
         @update:value="emit('update:keyword', String($event ?? ''))"
       />
     </div>
 
-    <AppButton variant="glass" class="h-8" @click="handleCreateClick">
+    <AppButton variant="glass" class="h-8 shrink-0" @click="handleCreateClick">
       <AppIcon icon="material-symbols:add" :size="14" />
       新建片段
     </AppButton>
 
+    <!-- 低频操作（导出 / 导入 / 批量）由调用方注入，避免与主操作平铺抢视觉权重 -->
+    <slot name="actions" />
+
+    <!-- 筛选维度：标签 / 语言 / 排序。窄列表下自然换行到第二行，不再整组隐藏 -->
+    <AppSelect
+      :value="props.selectedTag"
+      class="toolbar-select shrink-0"
+      :class="{ 'toolbar-select--compact': props.compact }"
+      placeholder="全部标签"
+      :options="tagOptions"
+      @update:value="emit('update:selectedTag', String($event ?? ''))"
+    />
+
+    <AppSelect
+      :value="props.selectedLanguage"
+      class="toolbar-select shrink-0"
+      :class="{ 'toolbar-select--compact': props.compact }"
+      placeholder="全部语言"
+      :options="languageOptions"
+      @update:value="emit('update:selectedLanguage', String($event ?? ''))"
+    />
+
+    <AppSelect
+      :value="props.sort"
+      class="toolbar-select shrink-0"
+      :class="{ 'toolbar-select--compact': props.compact }"
+      :options="props.sortOptions"
+      @update:value="emit('update:sort', $event as SnippetSortOption)"
+    />
+
+    <!-- 有筛选时给一键清除的出口：此前 hasActiveFilters / clearFilters 这两个
+         prop/emit 一直存在却没有渲染出口，用户只能去侧栏点「所有 Snippet」 -->
+    <AppButton
+      v-if="props.hasActiveFilters"
+      variant="text"
+      size="small"
+      class="shrink-0"
+      title="清除筛选"
+      @click="emit('clearFilters')"
+    >
+      <AppIcon icon="material-symbols:filter-alt-off" :size="14" />
+      清除筛选
+    </AppButton>
   </div>
 </template>
 
@@ -138,5 +166,10 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
 /* 筛选下拉统一宽度：scoped 未分层规则可确定性压过 EP 的 .el-select{width:128px} */
 .toolbar-select {
   width: 148px;
+}
+
+/* 紧凑（三栏窄列表）：收窄但仍可见——隐藏筛选会让默认视图无法搜索/排序 */
+.toolbar-select--compact {
+  width: 104px;
 }
 </style>

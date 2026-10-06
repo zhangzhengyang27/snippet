@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** 页面组件，负责知识片段页面展示与交互流程（两栏布局 + 详情/编辑弹窗）。 */
+/** 页面组件，负责代码片段页面展示与交互流程（三栏布局：集合侧栏 | 列表 | 详情 + 各类弹窗）。 */
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
@@ -9,6 +9,7 @@ import AppModal from '@/components/common/AppModal.vue'
 import SnippetCollectionDialog from '@/components/snippets/SnippetCollectionDialog.vue'
 import SnippetEditorDialog from '@/components/snippets/SnippetEditorDialog.vue'
 import SnippetListPanel from '@/components/snippets/SnippetListPanel.vue'
+import SnippetMoreMenu from '@/components/snippets/SnippetMoreMenu.vue'
 import SnippetSidebar from '@/components/snippets/SnippetSidebar.vue'
 import SnippetWorkspace from '@/components/snippets/SnippetWorkspace.vue'
 import SnippetDetailPane from '@/components/snippets/SnippetDetailPane.vue'
@@ -16,6 +17,7 @@ import SnippetsToolbar from '@/components/snippets/SnippetsToolbar.vue'
 import StatusToast from '@/components/snippets/StatusToast.vue'
 import { useToast } from '@/composables/useToast'
 import { snippetSortOptions } from '@/composables/useSnippetListState'
+import { isAppendingMore } from '@/composables/useSnippetListState'
 import { useKnowledgeSnippetsPage } from '@/composables/useKnowledgeSnippetsPage'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import { useSnippetImportExport } from '@/composables/useSnippetImportExport'
@@ -111,9 +113,6 @@ const hasActiveFilters = computed(
 )
 
 
-/** 移动端：侧边栏抽屉开合 */
-
-
 /** 详情展示模式：page（独立详情页） | split（主从三栏分屏），持久化到本地 */
 type DetailLayout = 'page' | 'split'
 const detailLayout = ref<DetailLayout>(
@@ -134,10 +133,14 @@ const detailPaneActive = computed(
 const detailSnippet = computed(() => selectedSnippet.value)
 
 /** 列表项点击：page 模式跳转独立详情页，split 模式常驻右侧面板 */
+/** 下一次选中变化跳过 URL 同步：page 模式点击后随即 push 到详情页，
+ *  此时再 replace 回 /snippets?focus= 会把用户从详情页拽回来 */
+let skipFocusSync = false
 const handleSelectSnippet = (id: string) => {
   selectedSnippetId.value = id
   pushRecent(id)
   if (detailLayout.value === 'page') {
+    skipFocusSync = true
     router.push(`/snippets/${encodeURIComponent(id)}`)
   }
 }
@@ -204,11 +207,10 @@ function buildUrlQuery(): Record<string, string> {
   const query: Record<string, string> = { ...(route.query as Record<string, string>) }
   delete query['tag']
   delete query['lang']
-  // new/edit/focus 是一次性深链参数：进入页面时由 route.query watcher 消费，
+  // new/edit 是一次性深链参数：进入页面时由 route.query watcher 消费，
   // 后续任何 query 同步都要剔除，否则关掉弹窗后一次筛选变化就会把弹窗重新打开
   delete query['new']
   delete query['edit']
-  delete query['focus']
   const setOrDel = (key: string, val: string | null | undefined) => {
     if (val) query[key] = val
     else delete query[key]
@@ -216,6 +218,8 @@ function buildUrlQuery(): Record<string, string> {
   setOrDel('q', keyword.value.trim() || null)
   setOrDel('collection', selectedCollectionId.value || null)
   setOrDel('sort', sort.value === 'default' ? null : sort.value)
+  // focus = 当前查看的片段，随选中状态走（刷新/分享可恢复）
+  setOrDel('focus', selectedSnippetId.value || null)
   if (favoritesOnly.value) query['fav'] = '1'
   else delete query['fav']
   if (page.value > 1) query['page'] = String(page.value)
@@ -223,10 +227,20 @@ function buildUrlQuery(): Record<string, string> {
   return query
 }
 
-/** 真正执行 URL 更新的函数，供即时 watcher 与防抖后的关键词更新共用 */
-function syncToUrl() {
+/**
+ * 真正执行 URL 更新的函数，供即时 watcher 与防抖后的关键词更新共用。
+ *
+ * 何时 push / 何时 replace 的判定（这条踩过坑）：
+ * - **push**：用户显式操作的结果（切集合、收藏筛选、排序、点分页）——保留在历史里，
+ *   后退键能一步步撤销，这是「筛选可逆」的价值所在。
+ * - **replace**：滚动导致的自动追加翻页。此前它和点分页共用 push，滚一页塞一条历史，
+ *   3399 条滚到底能灌进 ~169 条记录，后退键直接作废。追加不是用户的翻页意图，不配占历史。
+ * - **replace**：关键词输入。逐次按键（哪怕 300ms 防抖）产生的中间态也不该堆在历史里。
+ */
+function syncToUrl(mode: 'push' | 'replace' = 'push') {
   if (isApplyingFromUrl) return
-  void router.push({ path: '/snippets', query: buildUrlQuery() })
+  const target = { path: '/snippets', query: buildUrlQuery() }
+  void (mode === 'replace' ? router.replace(target) : router.push(target))
 }
 
 /** 非关键词维度：集合 / 收藏 / 排序 / 页码，变化即同步（无防抖，保证操作反馈即时） */
@@ -237,10 +251,10 @@ watch(
     sort.value,
     page.value,
   ],
-  () => syncToUrl()
+  () => syncToUrl(isAppendingMore.value ? 'replace' : 'push')
 )
 
-/** 关键词：300ms 防抖后同步，避免每次按键都触发 router.push */
+/** 关键词：300ms 防抖后同步，避免每次按键都触发路由写入；用 replace 不占历史栈 */
 watch(
   () => keyword.value,
   () => {
@@ -248,10 +262,20 @@ watch(
     if (keywordTimer) clearTimeout(keywordTimer)
     keywordTimer = setTimeout(() => {
       keywordTimer = null
-      void router.push({ path: '/snippets', query: buildUrlQuery() })
+      syncToUrl('replace')
     }, 300)
   }
 )
+
+/** 选中项 → URL 的 focus 参数（replace，不占历史）：刷新 / 分享能回到当前查看的片段。
+ *  此前选中态只存在于内存，刷新后回到列表首项，正在看的上下文丢失。 */
+watch(selectedSnippetId, () => {
+  if (skipFocusSync) {
+    skipFocusSync = false
+    return
+  }
+  syncToUrl('replace')
+})
 
 /** URL query → 筛选状态：进入页面或用户手动改 URL / 后退时恢复视图。
  * 仅恢复会写入 URL 的维度（collection/q/fav/sort/page）；
@@ -292,13 +316,14 @@ watch(
     } else if (q.new === '1') {
       openCreateSnippetDialog()
     }
-    // 一次性深链参数消费后立即从地址栏剔除（router.replace 不占历史栈），
-    // 否则它们会一直留在 URL，后续任何 query 变化都会经本 watcher 重新触发弹窗/选中
-    if (q.edit || q.new || q.focus) {
+    // edit/new 是一次性深链参数：消费后立即从地址栏剔除（router.replace 不占历史栈），
+    // 否则它们会一直留在 URL，后续任何 query 变化都会经本 watcher 重新打开弹窗。
+    // focus 不同——它是「当前查看的片段」的持久态，由下方 watch(selectedSnippetId) 维护，
+    // 剔掉它会导致刷新后丢失选中。
+    if (q.edit || q.new) {
       const cleaned = { ...q }
       delete cleaned['edit']
       delete cleaned['new']
-      delete cleaned['focus']
       void router.replace({ path: '/snippets', query: cleaned })
     }
   },
@@ -391,7 +416,6 @@ const {
             :selected-language="selectedLanguage"
             :favorites-only="favoritesOnly"
             :has-active-filters="hasActiveFilters"
-            :show-filters="detailLayout === 'page'"
             :compact="detailLayout === 'split'"
             @update:keyword="keyword = $event"
             @update:sort="sort = $event"
@@ -402,54 +426,30 @@ const {
             @create-snippet="handleCreateSnippet"
             @require-login="handleRequireLogin"
             @refresh="refreshAll"
-          />
-
-          <!-- 数据管理：导出 / 导入 / 批量 -->
-          <div class="data-actions">
-            <AppButton
-              variant="text"
-              size="small"
-              :disabled="!snippets.length"
-              @click="exportOpen = true"
-            >
-              <AppIcon icon="material-symbols:file-download" :size="14" />
-              导出
-            </AppButton>
-            <AppButton
-              variant="text"
-              size="small"
-              :disabled="importing"
-              @click="importFileInput?.click()"
-            >
-              <AppIcon icon="material-symbols:file-upload" :size="14" />
-              {{
-                importing && importProgress
-                  ? `导入中 ${importProgress.done}/${importProgress.total}`
-                  : '导入'
-              }}
-            </AppButton>
-            <!--
-              批量模式开关。
-              此前 batchMode 全仓没有任何赋值点，导致「多选 → 批量打标签 / 批量删除」
-              整条链路不可达（v-if 恒假、勾选框永不显示、selectedIds 恒空）——
-              是数据恢复事故的遗留缺口（见 _RESTORE-REPORT.md）。
-              退出批量模式后若列表为空，按钮仍可点（用于退出），故 disabled 取反。
-            -->
-            <AppButton
-              variant="text"
-              size="small"
-              :class="{ 'is-active': batchMode }"
-              :disabled="!snippets.length && !batchMode"
-              :aria-pressed="batchMode"
-              @click="toggleBatchMode"
-            >
-              <AppIcon
-                :icon="batchMode ? 'material-symbols:close' : 'material-symbols:checklist'"
-                :size="14"
+          >
+            <template #actions>
+              <!-- 导出 / 导入 / 批量：低频操作收进「更多」菜单（此前独占一行，与工具栏割裂） -->
+              <SnippetMoreMenu
+                :batch-mode="batchMode"
+                :disable-export="!snippets.length"
+                :importing="importing"
+                :import-progress="importProgress"
+                @export="exportOpen = true"
+                @import="importFileInput?.click()"
+                @toggle-batch="toggleBatchMode"
               />
-              {{ batchMode ? '退出批量' : '批量' }}
-            </AppButton>
-          </div>
+            </template>
+          </SnippetsToolbar>
+
+          <!-- 导入文件输入（隐藏） -->
+          <input
+            ref="importFileInput"
+            type="file"
+            accept="application/json,.json"
+            class="hidden"
+            aria-label="选择要导入的 JSON 文件"
+            @change="handleImportFile"
+          />
 
           <!-- 批量操作栏 -->
           <div v-if="batchMode" class="batch-bar">
@@ -478,16 +478,6 @@ const {
               删除
             </AppButton>
           </div>
-
-          <!-- 导入文件输入（隐藏） -->
-          <input
-            ref="importFileInput"
-            type="file"
-            accept="application/json,.json"
-            class="hidden"
-            aria-label="选择要导入的 JSON 文件"
-            @change="handleImportFile"
-          />
 
           <!-- 列表面板：无外层包裹，直接展示 -->
           <SnippetListPanel
@@ -621,19 +611,6 @@ const {
   flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
-}
-
-.data-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-/* 批量模式开关的激活态：与普通文字按钮区分开 */
-.data-actions .is-active {
-  color: var(--color-primary);
-  font-weight: 600;
 }
 
 .batch-bar {

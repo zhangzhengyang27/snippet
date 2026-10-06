@@ -151,8 +151,29 @@ describe('SnippetListPanel · 分页门控', () => {
     expect(wrapper.findComponent(Pagination).exists()).toBe(false)
   })
 
-  it('多于一页时渲染分页', () => {
-    const wrapper = mountPanel({ snippets: [makeSnippet('a')], total: 40, totalPages: 2 })
+  it('卡片视图：多于一页时渲染分页', () => {
+    const wrapper = mountPanel({
+      snippets: [makeSnippet('a')],
+      total: 40,
+      totalPages: 2,
+      viewMode: 'grid',
+    })
+    expect(wrapper.findComponent(Pagination).exists()).toBe(true)
+  })
+
+  it('条状视图：走滚动追加，未达上限时不渲染分页（两套翻页不并存）', () => {
+    const wrapper = mountPanel({
+      snippets: [makeSnippet('a')],
+      total: 40,
+      totalPages: 2,
+      viewMode: 'list',
+    })
+    expect(wrapper.findComponent(Pagination).exists()).toBe(false)
+  })
+
+  it('条状视图：追加到 DOM 保护上限后放出分页兜底', () => {
+    const snippets = Array.from({ length: 200 }, (_, i) => makeSnippet(`s${i}`))
+    const wrapper = mountPanel({ snippets, total: 3399, totalPages: 170, viewMode: 'list' })
     expect(wrapper.findComponent(Pagination).exists()).toBe(true)
   })
 })

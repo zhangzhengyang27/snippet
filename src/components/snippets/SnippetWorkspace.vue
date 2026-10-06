@@ -10,8 +10,12 @@ const props = withDefaults(
 </script>
 
 <template>
+  <!-- 高度严格等于「视口 - 固定头部」，min-h-0 让内部列表面板自己滚动。
+       此前这里带 min-h-160（640px）：窄/矮视口下 640 + 头部 64 超出一屏，整页被迫
+       滚动，三栏外壳被切掉一截（底部列表与分页够不着）。头部本来就是 fixed，
+       不需要靠最小高度去顶开布局。 -->
   <section
-    class="relative flex h-[calc(100vh-var(--header-height))] min-h-160 overflow-hidden bg-(--color-bg)"
+    class="relative flex h-[calc(100vh-var(--header-height))] min-h-0 overflow-hidden bg-(--color-bg)"
   >
     <!-- 品牌氛围光晕（克制，青蓝 radial） -->
     <div
