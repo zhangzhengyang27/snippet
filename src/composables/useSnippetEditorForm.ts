@@ -62,7 +62,7 @@ const flattenCollections = (
 
 /**
  * 描述字段的长度口径，**与后端语义闸门 `snippet-metadata.util.ts` 保持一致**：
- * 后端硬拦 <20 / >400 与「描述 == 标题」。前端提前拦同样口径，避免用户点保存才吃 400。
+ * 后端硬拦 <20 / >400 与「描述只是在复述标题」。前端提前拦同样口径，避免用户点保存才吃 400。
  *
  * `suggest` 是给 UI 的软引导区间（实际数据里 30–90 字占 87.1%），不阻塞提交。
  */
@@ -73,8 +73,42 @@ export const SNIPPET_DESCRIPTION_LIMITS = {
   suggestMax: 90,
 } as const
 
+/** 与后端 `SNIPPET_METADATA_RULES.descriptionNameResidueMinLength` 同值，改一处必须同步另一处。 */
+export const SNIPPET_DESCRIPTION_NAME_RESIDUE_MIN = 10
+
+/**
+ * 语义比对用的归一化：转小写 + 去掉所有标点、空白与符号，只保留英文字母、数字与 CJK 汉字。
+ *
+ * 后端 `normalizeSnippetMetadataText` 的镜像实现。没有它，用户把标题里的空格换成 `/`
+ * 再补个句号就能在前端过检、却在提交时被后端 400 拦下（历史上有 112 条数据正是这样进来的）。
+ */
+export const normalizeSnippetMetadataText = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '')
+
+/** 与后端 `SNIPPET_METADATA_RULES.nameMaxLength` 同值。 */
+export const SNIPPET_NAME_MAX_LENGTH = 30
+
 /** 描述输入框的 placeholder 文案，抽成常量供 UI 直接复用，避免两处写歪。 */
 export const SNIPPET_DESCRIPTION_PLACEHOLDER = `必填 ${SNIPPET_DESCRIPTION_LIMITS.min}-${SNIPPET_DESCRIPTION_LIMITS.max} 字：说清这段代码干什么、用在什么场景，别只把标题再抄一遍`
+
+/**
+ * 返回标题的具体问题文案，合格返回空串。
+ *
+ * 只镜像「非空 + 字数上限」两条：阈值稳定、复制成本低。后端还有一条
+ * 「标题尾部不得残留语言标签（如 xxx（JavaScript））」—— 那份语言名单是后端筛过的 38 项配置，
+ * 复制到前端只会两边腐烂，所以保持后端单点；写标题时不要在末尾贴语言后缀即可。
+ */
+export const describeNameIssue = (name: string): string => {
+  const title = name.trim()
+
+  if (!title) {
+    return '片段名称不能为空'
+  }
+  if (title.length > SNIPPET_NAME_MAX_LENGTH) {
+    return `名称 ${title.length} 字，超过 ${SNIPPET_NAME_MAX_LENGTH} 字上限：写成短语式主题词，说明挪到描述里`
+  }
+  return ''
+}
 
 /** 返回描述的具体问题文案，合格返回空串；validate 与字段级提示共用。 */
 export const describeDescriptionIssue = (
@@ -93,8 +127,23 @@ export const describeDescriptionIssue = (
   if (desc.length > SNIPPET_DESCRIPTION_LIMITS.max) {
     return `描述 ${desc.length} 字，超过 ${SNIPPET_DESCRIPTION_LIMITS.max} 字上限，请精炼`
   }
-  if (title && (desc === title || desc === `${title}。`)) {
-    return '描述与标题完全相同（或只多个句号），等于没写'
+  // 与标题的比对走归一化（大小写 / 标点 / 空白全部忽略），与后端完全同口径。
+  // 分两级提示：一字不改 → 说「完全相同」；只重复标题或加了几字尾巴 → 说「只是在复述」。
+  if (title) {
+    const normalizedTitle = normalizeSnippetMetadataText(title)
+    const normalizedDesc = normalizeSnippetMetadataText(desc)
+    if (normalizedTitle) {
+      const residue = normalizedDesc.split(normalizedTitle).join('')
+      if (normalizedDesc === normalizedTitle) {
+        return '描述与标题完全相同（换个标点也算），等于没写'
+      }
+      if (
+        normalizedDesc.includes(normalizedTitle) &&
+        residue.length < SNIPPET_DESCRIPTION_NAME_RESIDUE_MIN
+      ) {
+        return `描述只是在重复标题：去掉标题后只剩 ${residue.length} 个字，至少要写出 ${SNIPPET_DESCRIPTION_NAME_RESIDUE_MIN} 个字的新信息`
+      }
+    }
   }
   return ''
 }
@@ -189,6 +238,11 @@ export function useSnippetEditorForm(options: {
 
   const descriptionLength = computed(() => form.description.trim().length)
 
+  const nameLength = computed(() => form.name.trim().length)
+
+  /** 名称字段的实时校验结果（空串代表合格），只做提示，不阻塞输入。 */
+  const nameIssue = computed(() => describeNameIssue(form.name))
+
   /** 描述字段的实时校验结果（空串代表合格），只做提示，不阻塞输入。 */
   const descriptionIssue = computed(() =>
     describeDescriptionIssue(form.name, form.description)
@@ -203,7 +257,10 @@ export function useSnippetEditorForm(options: {
       nextState.description = snippet.description || ''
       nextState.collectionId = snippet.collectionId
       nextState.language = snippet.language
-      nextState.content = snippet.content
+      // 编辑入口（详情面板 / 深链）都必须传入**已带正文**的片段：
+      // 列表接口为瘦身不回传 content，此处 `?? ''` 只是防御 —— 若真拿到 undefined，
+      // 保存会把正文覆盖成空。见 KnowledgeSnippetsPage 的按需取正文逻辑。
+      nextState.content = snippet.content ?? ''
       nextState.title = snippet.displayAttrs.title || ''
       nextState.theme = snippet.displayAttrs.theme
       nextState.lineNumbers = snippet.displayAttrs.lineNumbers
@@ -231,8 +288,9 @@ export function useSnippetEditorForm(options: {
   )
 
   const validate = () => {
-    if (!form.name.trim()) {
-      validationMessage.value = '片段名称不能为空。'
+    // 名称必填 + 长度上限：与后端 snippet-metadata 闸门同口径，前端先拦，别让用户吃 400
+    if (nameIssue.value) {
+      validationMessage.value = nameIssue.value
       return false
     }
 
@@ -292,6 +350,9 @@ export function useSnippetEditorForm(options: {
     descriptionLength,
     descriptionIssue,
     descriptionPlaceholder: SNIPPET_DESCRIPTION_PLACEHOLDER,
+    nameLength,
+    nameIssue,
+    nameMaxLength: SNIPPET_NAME_MAX_LENGTH,
     applySnippet,
     validate,
     buildSubmitPayload,

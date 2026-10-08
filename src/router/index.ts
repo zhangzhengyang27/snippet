@@ -10,16 +10,33 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '概览' },
   },
   {
+    // 个人工作区：只展示当前用户自己的代码块。未登录 / 还没有代码块时走空态引导。
+    // scope=mine 由页面读取并透传给列表、集合树接口。
     path: '/snippets',
     name: 'snippets',
     component: () => import('@/views/knowledge/KnowledgeSnippetsPage.vue'),
-    meta: { title: '代码块' },
+    meta: { title: '代码块', scope: 'mine' },
+  },
+  {
+    // 公共代码块库：只读浏览 + 「复制到我的代码块」。
+    // 与 /snippets 复用同一页面组件，靠 meta.scope 切到只读语义（scope=public）。
+    path: '/library',
+    name: 'library',
+    component: () => import('@/views/knowledge/KnowledgeSnippetsPage.vue'),
+    meta: { title: '公共代码块库', scope: 'public' },
   },
   {
     path: '/snippets/:id',
     name: 'snippet-detail',
     component: () => import('@/views/SnippetDetailPage.vue'),
     // 站点导航用的是「代码块」，详情页标题统一到同一叫法（此前是「片段详情」）
+    meta: { title: '代码块详情' },
+  },
+  {
+    // 公共库里的详情留在 /library 前缀下，URL 与导航高亮才不会跳回个人工作区
+    path: '/library/:id',
+    name: 'library-detail',
+    component: () => import('@/views/SnippetDetailPage.vue'),
     meta: { title: '代码块详情' },
   },
   {
@@ -49,10 +66,25 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '个人中心' },
   },
   {
+    // 内容审核台（公共代码块库的发布审核）。入口只对管理员显示，
+    // 页面内另做角色校验、后端 RolesGuard 兜底 —— 这里不挂路由守卫，
+    // 与项目既有约定一致（认证态由 API 的 401 处理器驱动）。
+    path: '/admin/review',
+    name: 'admin-review',
+    component: () => import('@/views/AdminReviewPage.vue'),
+    meta: { title: '内容审核' },
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginPage.vue'),
     meta: { title: '登录' },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterPage.vue'),
+    meta: { title: '注册' },
   },
   {
     path: '/:pathMatch(.*)*',

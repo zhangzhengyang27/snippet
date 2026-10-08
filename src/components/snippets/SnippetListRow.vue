@@ -22,11 +22,14 @@ const props = defineProps<{
   variant?: 'grid' | 'list'
   checkable?: boolean
   checked?: boolean
+  /** 是否展示「复制到我的代码块」入口（仅公共代码块库用；个人工作区里无意义） */
+  copyToMine?: boolean
 }>()
 
 const emit = defineEmits<{
   select: [id: string]
   copy: [id: string]
+  copyToMine: [id: string]
   toggleCheck: [id: string]
 }>()
 
@@ -34,6 +37,10 @@ const handleSelect = () => emit('select', props.snippet.id)
 const handleCopy = (e: MouseEvent) => {
   e.stopPropagation()
   emit('copy', props.snippet.id)
+}
+const handleCopyToMine = (e: MouseEvent) => {
+  e.stopPropagation()
+  emit('copyToMine', props.snippet.id)
 }
 const handleToggleCheck = (e: MouseEvent) => {
   e.stopPropagation()
@@ -50,6 +57,30 @@ function handleKeydown(e: KeyboardEvent) {
 /** 「3 天前 / 昨天 / 2026-08-18」——实现已收口到 @/utils/date-format 的 formatRelativeDay */
 
 const langHex = computed(() => languageColor(props.snippet.language))
+
+/**
+ * 发布流程徽标（仅个人工作区，见模板中的 `!props.copyToMine`）。
+ * 返回 null 表示不出徽标。
+ */
+const publicationBadge = computed<{ text: string; tone: string; title: string } | null>(() => {
+  const status = props.snippet.moderationStatus ?? 'none'
+
+  if (status === 'pending') {
+    return { text: '审核中', tone: 'pending', title: '已提交发布申请，等待管理员审核' }
+  }
+
+  if (status === 'rejected') {
+    return {
+      text: '未通过',
+      tone: 'rejected',
+      title: props.snippet.moderationNote
+        ? `发布未通过：${props.snippet.moderationNote}`
+        : '发布未通过，可修改后重新提交',
+    }
+  }
+
+  return null
+})
 
 /** 移除标题末尾的「（JS）/（HTML）」语言后缀，语言信息由色点与左侧栏体现 */
 const displayName = computed(() => {
@@ -127,6 +158,15 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
         <button type="button" class="snippet-list__action" title="复制代码" @click="handleCopy">
           <AppIcon icon="material-symbols:content-copy" :size="13" />
         </button>
+        <button
+          v-if="props.copyToMine"
+          type="button"
+          class="snippet-list__action snippet-list__action--copy-to-mine"
+          title="复制到我的代码块"
+          @click="handleCopyToMine"
+        >
+          <AppIcon icon="material-symbols:library-add" :size="13" />
+        </button>
       </span>
     </template>
 
@@ -155,6 +195,15 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
           </button>
           <button type="button" class="snippet-card__action" title="复制代码" @click="handleCopy">
             <AppIcon icon="material-symbols:content-copy" :size="14" />
+          </button>
+          <button
+            v-if="props.copyToMine"
+            type="button"
+            class="snippet-card__action snippet-card__action--copy-to-mine"
+            title="复制到我的代码块"
+            @click="handleCopyToMine"
+          >
+            <AppIcon icon="material-symbols:library-add" :size="14" />
           </button>
         </span>
       </div>
@@ -191,6 +240,19 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
           +{{ props.snippet.tags.length - 2 }}
         </span>
         <span class="snippet-card__date">{{ formatRelativeDay(props.snippet.updatedAt) }}</span>
+        <!--
+          发布流程徽标（仅个人工作区）。
+          只给「审核中 / 未通过」出徽标：none 是常态（绝大多数片段都是私有），
+          approved 已由下面的「公共」徽标表达 —— 每个片段都挂徽标只会让列表变吵。
+        -->
+        <span
+          v-if="!props.copyToMine && publicationBadge"
+          class="snippet-card__badge"
+          :class="`is-${publicationBadge.tone}`"
+          :title="publicationBadge.title"
+        >
+          {{ publicationBadge.text }}
+        </span>
         <span
           v-if="props.snippet.isPublic"
           class="snippet-card__badge"
@@ -397,6 +459,23 @@ const difficultyText = computed(() => snippetDifficultyLabel(snippetDifficulty.v
   border-radius: 50%;
   background: var(--color-primary);
   vertical-align: middle;
+}
+
+/* 发布流程徽标配色：审核中=警示黄，未通过=错误红 */
+.snippet-card__badge.is-pending {
+  color: var(--color-warning);
+}
+
+.snippet-card__badge.is-pending::before {
+  background: var(--color-warning);
+}
+
+.snippet-card__badge.is-rejected {
+  color: var(--color-error);
+}
+
+.snippet-card__badge.is-rejected::before {
+  background: var(--color-error);
 }
 
 .snippet-card__favorite {

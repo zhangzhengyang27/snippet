@@ -36,6 +36,9 @@ const {
   validationMessage,
   collectionOptions,
   placeholderState,
+  nameLength,
+  nameIssue,
+  nameMaxLength,
   descriptionLength,
   descriptionIssue,
   descriptionPlaceholder,
@@ -105,6 +108,13 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
                 placeholder="例如：Vue 数据加载状态"
                 @update:value="Object.assign(form, { name: String($event ?? '') })"
               />
+              <!-- 实时校验：合格显示字数，超长把原因写在字段下面（后端 30 字上限会 400） -->
+              <p
+                class="snippet-editor-dialog__hint"
+                :class="{ 'snippet-editor-dialog__hint--error': Boolean(nameIssue) }"
+              >
+                {{ nameIssue || `${nameLength} / ${nameMaxLength} 字` }}
+              </p>
             </label>
 
             <label class="snippet-editor-dialog__field">

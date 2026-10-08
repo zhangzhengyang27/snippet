@@ -442,13 +442,11 @@
     margin-bottom: 48px;
   }
 
-  .stat-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 16px;
-    text-align: center;
-  }
+  /* ⚠️ 这里曾有一条 `.stat-card { flex-direction: column; align-items: center }`，
+     属于旧统计组件（`.stats-section` / `.stat-value` / `.stat-label`，全仓已无引用），
+     但它与 DashboardPage.vue 的 scoped `.stat-card` 撞名：scoped 规则没声明 flex-direction，
+     于是被这条压成了「纵向居中」，与设计稿（横向：图标在左、数字标签在右）不一致。
+     规则已删除，勿再加回 —— 概览页已在 scoped 内显式声明 flex-direction 自防御。 */
 
   .stat-value {
     font-family: 'JetBrains Mono', ui-monospace, monospace;

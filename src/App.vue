@@ -96,7 +96,10 @@ onBeforeUnmount(() => {
           <main class="app-main">
             <router-view v-slot="{ Component }">
               <transition name="fade" mode="out-in">
-                <component :is="Component" />
+                <!-- key 用 path：/snippets ↔ /library 复用同一页面组件，不加 key 的话
+                     Vue Router 不会重建实例，页面里按 route.meta 决定的 scope 就永远不会变。
+                     用 path（而非 fullPath）是刻意的 —— 筛选/页码走 query，不能触发重建。 -->
+                <component :is="Component" :key="$route.path" />
               </transition>
             </router-view>
           </main>

@@ -32,11 +32,14 @@ import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import { useResourceFetch } from '@/composables/useResourceFetch'
 import { getApiErrorMessage } from '@/api/client'
 import {
+  copyKnowledgeSnippet,
   getKnowledgeSnippet,
   deleteKnowledgeSnippet,
   listKnowledgeSnippetCollections,
   listKnowledgeSnippets,
+  submitSnippetPublication,
   updateKnowledgeSnippet,
+  withdrawSnippetPublication,
 } from '@/api/knowledge-snippets'
 import type {
   KnowledgeSnippet,
@@ -135,13 +138,137 @@ watch(
 /** 收藏按用户，走 favorites 接口；busy 由 composable 统一维护，避免重复点击 */
 const { busy: favoriteBusy, toggleFavorite: toggleFavoriteApi } = useFavorites()
 
+/**
+ * 本详情页的来源列表路径。
+ *
+ * `/library/:id`（公共代码块库）与 `/snippets/:id`（个人工作区）复用本组件，
+ * 返回 / 面包屑 / 相关片段跳转都必须跟随来源，否则从公共库点进详情后
+ * 一按返回就被送回个人工作区（导航高亮也会跟着错位）。
+ */
+const listPath = computed(() => (route.path.startsWith('/library') ? '/library' : '/snippets'))
+const listLabel = computed(() => (listPath.value === '/library' ? '公共代码块库' : '代码块'))
+
+/**
+ * 是否处于公共代码块库视图。
+ *
+ * ⚠️ 不能再用 `snippet.isPublic` 当「只读」判据：作者**自己发布的**片段
+ * isPublic 也是 true，但它出现在 `/snippets/:id` 时应仍然可编辑、可下架。
+ * 只读与否取决于**从哪个列表进来**（视图语义），而不是片段自身的公开状态。
+ */
+const isPublicView = computed(() => listPath.value === '/library')
+
+/** 发布流程状态（缺省视为私有未提交） */
+const publicationStatus = computed(() => snippet.value?.moderationStatus ?? 'none')
+const publicationBusy = ref(false)
+
+/** 发布按钮的图标 / 文案随状态变化：未提交 → 审核中 → 已发布 / 未通过 */
+const publicationActionIcon = computed(() => {
+  switch (publicationStatus.value) {
+    case 'pending':
+      return 'material-symbols:hourglass-top'
+    case 'approved':
+      return 'material-symbols:public'
+    case 'rejected':
+      return 'material-symbols:error-outline'
+    default:
+      return 'material-symbols:cloud-upload'
+  }
+})
+
+const publicationActionTitle = computed(() => {
+  switch (publicationStatus.value) {
+    case 'pending':
+      return '审核中，点击撤回发布申请'
+    case 'approved':
+      return '已发布到公共代码块库，点击下架'
+    case 'rejected':
+      return '审核未通过，点击重新提交'
+    default:
+      return '发布到公共代码块库'
+  }
+})
+
+/** 信息抽屉里的审核状态标签 */
+const publicationStatusLabel = computed(() => {
+  switch (publicationStatus.value) {
+    case 'pending':
+      return '审核中'
+    case 'approved':
+      return '已发布'
+    case 'rejected':
+      return '审核未通过'
+    default:
+      return '未发布'
+  }
+})
+
+/** 可见性文案：把「公开与否」和「审核流程状态」合成一句人话 */
+const visibilityText = computed(() => {
+  const current = snippet.value
+  if (!current) return ''
+
+  if (current.isPublic) return '公共（只读）'
+
+  switch (current.moderationStatus) {
+    case 'pending':
+      return '私有 · 审核中'
+    case 'rejected':
+      return current.moderationNote
+        ? `私有 · 审核未通过（${current.moderationNote}）`
+        : '私有 · 审核未通过'
+    default:
+      return '私有'
+  }
+})
+
+/**
+ * 发布 / 撤回二合一：未提交与未通过都走「提交」，审核中与已发布都走「取消发布」。
+ */
+async function handlePublicationAction() {
+  const current = snippet.value
+  if (!current) return
+
+  const previousStatus = publicationStatus.value
+  publicationBusy.value = true
+
+  try {
+    if (previousStatus === 'none' || previousStatus === 'rejected') {
+      snippet.value = await submitSnippetPublication(current.id)
+      toast.success('已提交审核，通过后将出现在公共代码块库')
+    } else {
+      snippet.value = await withdrawSnippetPublication(current.id)
+      toast.success(previousStatus === 'approved' ? '已从公共代码块库下架' : '已撤回发布申请')
+    }
+  } catch (err) {
+    toast.error(getApiErrorMessage(err, '发布操作失败'))
+  } finally {
+    publicationBusy.value = false
+  }
+}
+
+/** 公共片段的写操作只有一个：复制一份进自己的代码块库 */
+const copyToMineBusy = ref(false)
+async function copyToMine() {
+  const current = snippet.value
+  if (!current) return
+  copyToMineBusy.value = true
+  try {
+    await copyKnowledgeSnippet(current.id)
+    toast.success(`已复制「${current.name}」到我的代码块`)
+  } catch (err) {
+    toast.error(getApiErrorMessage(err, '复制到我的代码块失败'))
+  } finally {
+    copyToMineBusy.value = false
+  }
+}
+
 function goBack() {
   if (window.history.length > 1) router.back()
-  else router.push('/snippets')
+  else router.push(listPath.value)
 }
 
 function goList() {
-  router.push('/snippets')
+  router.push(listPath.value)
 }
 
 /**
@@ -177,7 +304,7 @@ function buildFullText(): string {
   if (hasFiles.value) {
     return snippetFiles.value.map((file) => `// ${file.name}\n${file.code ?? ''}`).join('\n\n')
   }
-  return s.content
+  return s.content ?? ''
 }
 
 async function copyAllCode() {
@@ -293,7 +420,7 @@ async function confirmDelete() {
     await deleteKnowledgeSnippet(s.id)
     deleteOpen.value = false
     toast.success('片段已删除')
-    router.replace('/snippets')
+    router.replace(listPath.value)
   } catch (err) {
     toast.error(getApiErrorMessage(err, '删除失败'))
   } finally {
@@ -348,7 +475,7 @@ watch(
 
 function openRelated(id: string) {
   infoOpen.value = false
-  router.push(`/snippets/${encodeURIComponent(id)}`)
+  router.push(`${listPath.value}/${encodeURIComponent(id)}`)
 }
 </script>
 
@@ -361,7 +488,7 @@ function openRelated(id: string) {
           <button class="sd-icon-btn" type="button" title="返回" aria-label="返回" @click="goBack">
             <AppIcon icon="material-symbols:arrow-back" :size="18" />
           </button>
-          <button class="sd-crumb__link" type="button" @click="goList">代码块</button>
+          <button class="sd-crumb__link" type="button" @click="goList">{{ listLabel }}</button>
           <AppIcon icon="material-symbols:chevron-right" :size="14" class="sd-crumb__sep" />
           <span class="sd-crumb__current" :title="snippet?.name ?? ''">
             {{ snippet?.name ?? '详情' }}
@@ -390,8 +517,33 @@ function openRelated(id: string) {
               :size="17"
             />
           </button>
+          <!-- 公共库视图：唯一可用的写操作是复制一份进自己的代码块库 -->
           <button
-            v-if="!snippet.isPublic"
+            v-if="isPublicView"
+            class="sd-icon-btn"
+            type="button"
+            title="复制到我的代码块"
+            aria-label="复制到我的代码块"
+            :disabled="copyToMineBusy"
+            @click="copyToMine"
+          >
+            <AppIcon icon="material-symbols:library-add" :size="17" />
+          </button>
+          <!-- 个人工作区：发布 / 撤回二合一（图标与提示随审核状态变化） -->
+          <button
+            v-if="!isPublicView"
+            class="sd-icon-btn"
+            type="button"
+            :class="{ 'is-on': publicationStatus === 'approved' }"
+            :title="publicationActionTitle"
+            :aria-label="publicationActionTitle"
+            :disabled="publicationBusy"
+            @click="handlePublicationAction"
+          >
+            <AppIcon :icon="publicationActionIcon" :size="17" />
+          </button>
+          <button
+            v-if="!isPublicView"
             class="sd-icon-btn"
             type="button"
             title="编辑"
@@ -401,7 +553,7 @@ function openRelated(id: string) {
             <AppIcon icon="material-symbols:edit" :size="17" />
           </button>
           <button
-            v-if="!snippet.isPublic"
+            v-if="!isPublicView"
             class="sd-icon-btn"
             type="button"
             title="版本历史"
@@ -421,7 +573,7 @@ function openRelated(id: string) {
             <AppIcon icon="material-symbols:open-in-new" :size="17" />
           </button>
           <button
-            v-if="!snippet.isPublic"
+            v-if="!isPublicView"
             class="sd-icon-btn is-danger"
             type="button"
             title="删除"
@@ -618,6 +770,13 @@ function openRelated(id: string) {
               {{ difficultyText }}
             </span>
             <span class="sd-chip">{{ snippet.isPublic ? '公共' : '私有' }}</span>
+            <span
+              v-if="!isPublicView && publicationStatus !== 'none'"
+              class="sd-chip"
+              :class="`is-${publicationStatus}`"
+            >
+              {{ publicationStatusLabel }}
+            </span>
           </div>
         </div>
 
@@ -631,7 +790,7 @@ function openRelated(id: string) {
               </div>
               <div class="sd-meta__row">
                 <dt>可见性</dt>
-                <dd>{{ snippet.isPublic ? '公共（只读）' : '私有' }}</dd>
+                <dd>{{ visibilityText }}</dd>
               </div>
             </dl>
           </section>
@@ -715,9 +874,9 @@ function openRelated(id: string) {
       @submit="handleEditorSubmit"
     />
 
-    <!-- 版本历史（仅自有片段） -->
+    <!-- 版本历史（仅自有片段；判据是视图而非 isPublic —— 作者自己发布的片段仍归本人） -->
     <SnippetVersionDialog
-      v-if="snippet && !snippet.isPublic"
+      v-if="snippet && !isPublicView"
       v-model:open="versionOpen"
       :snippet="snippet"
       @rolled-back="loadSnippet()"
@@ -1149,6 +1308,22 @@ function openRelated(id: string) {
   color: rgb(var(--color-text-secondary-rgb));
   font-size: 0.6875rem;
   font-weight: 500;
+}
+
+/* 发布流程状态标签（仅个人工作区出现）：四态各一套语义色 */
+.sd-chip.is-pending {
+  background: rgb(var(--color-warning-rgb) / 0.14);
+  color: rgb(var(--color-warning-rgb));
+}
+
+.sd-chip.is-approved {
+  background: rgb(var(--color-success-rgb) / 0.14);
+  color: rgb(var(--color-success-rgb));
+}
+
+.sd-chip.is-rejected {
+  background: rgb(var(--color-error-rgb) / 0.14);
+  color: rgb(var(--color-error-rgb));
 }
 
 .sd-info__body {

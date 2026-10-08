@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { login, checkMe } from '@/api/auth'
+import { getApiErrorMessage } from '@/api/client'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from '@/composables/useToast'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -12,6 +14,16 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+/**
+ * 登录成功后的回跳目标。
+ * 会话失效时 authStore 的 401 处理器会跳到 `/login?redirect=<原页面>`，
+ * 此前本页无视该参数、一律跳概览，等于把回跳链路断在最后一跳。
+ */
+const redirectTarget = computed(() => {
+  const raw = route.query.redirect
+  return typeof raw === 'string' && raw.startsWith('/') ? raw : null
+})
 
 const isDev = import.meta.env.DEV
 // 后端启动时会创建默认管理员账号 admin / admin123（可通过 ADMIN_DEFAULT_PASSWORD 覆盖）
@@ -33,7 +45,7 @@ onMounted(async () => {
     const result = await checkMe()
     if (result.user) {
       authStore.setAuth(result.user)
-      router.replace({ name: 'dashboard' })
+      router.replace(redirectTarget.value ?? { name: 'dashboard' })
     }
   } catch {
     // 无会话或网络错误，保持登录页
@@ -42,7 +54,7 @@ onMounted(async () => {
 
 async function handleSubmit() {
   if (!username.value.trim() || !password.value) {
-    error.value = '请输入用户名和密码'
+    error.value = '请输入用户名/邮箱和密码'
     return
   }
 
@@ -55,13 +67,10 @@ async function handleSubmit() {
     })
     authStore.setAuth(result.user)
     toast.success('登录成功')
-    router.push({ name: 'dashboard' })
+    router.push(redirectTarget.value ?? { name: 'dashboard' })
   } catch (e) {
-    if (e instanceof Error && e.message.includes('401')) {
-      error.value = '用户名或密码错误'
-    } else {
-      error.value = e instanceof Error ? e.message : '登录失败，请重试'
-    }
+    // 统一取后端可读文案（401「用户名或密码错误」、429「登录尝试次数过多…」等）
+    error.value = getApiErrorMessage(e, '登录失败，请重试')
   } finally {
     loading.value = false
   }
@@ -77,8 +86,8 @@ async function handleSubmit() {
         <div class="login-brand__logo"><span class="login-brand__gem">◆</span> Snippet</div>
         <h2 class="login-brand__title">知识片段，<br />随手可得。</h2>
         <p class="login-brand__desc">
-          3,000+ 条代码片段与 392 个可在线编辑的示例，<br />
-          集合树、标签、命令面板与全文搜索，一站管理。
+          3,000+ 条代码片段，集合树、标签、命令面板<br />
+          与全文搜索，一站管理你的知识库。
         </p>
         <ul class="login-brand__points">
           <li>◆ 集合树与多文件片段</li>
@@ -96,14 +105,14 @@ async function handleSubmit() {
 
         <form class="login-form" @submit.prevent="handleSubmit">
           <div class="login-field">
-            <label for="username" class="login-label">用户名</label>
+            <label for="username" class="login-label">用户名或邮箱</label>
             <input
               id="username"
               v-model="username"
               type="text"
               autocomplete="username"
               class="login-input"
-              placeholder="请输入用户名"
+              placeholder="请输入用户名或邮箱"
             />
           </div>
 
@@ -135,6 +144,13 @@ async function handleSubmit() {
         >
           测试账号一键登录
         </button>
+
+        <p class="login-alt">
+          还没有账号？
+          <router-link :to="{ name: 'register', query: route.query }" class="login-alt__link">
+            立即注册
+          </router-link>
+        </p>
 
         <router-link :to="{ name: 'dashboard' }" class="login-back"> ← 返回首页 </router-link>
       </div>
@@ -371,9 +387,26 @@ async function handleSubmit() {
   cursor: not-allowed;
 }
 
+.login-alt {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+.login-alt__link {
+  color: rgb(var(--color-primary-rgb));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-alt__link:hover {
+  text-decoration: underline;
+}
+
 .login-back {
   display: block;
-  margin-top: 24px;
+  margin-top: 20px;
   text-align: center;
   font-size: var(--text-sm);
   color: rgb(var(--color-text-secondary-rgb));

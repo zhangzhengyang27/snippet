@@ -35,6 +35,13 @@ const props = defineProps<{
   favoritesOnly: boolean
   /** 是否已登录：未登录时隐藏新建集合、仅看收藏、标签等个人功能 */
   isLoggedIn: boolean
+  /**
+   * 只读浏览模式（公共代码块库 `/library`）。
+   *
+   * 公共集合不属于当前用户：隐藏「新建集合」、隐藏标签面板（标签是个人私有数据，
+   * 用我的标签筛公共片段必然空结果）、禁用集合拖拽。
+   */
+  readonly?: boolean
   /** 详情视图模式：page（独立页） | split（分屏） */
   detailLayout: 'page' | 'split'
 }>()
@@ -128,7 +135,9 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           @click="selectAll"
         >
           <AppIcon icon="material-symbols:folder-copy" :size="15" class="snippet-sidebar__item-icon" />
-          <span class="snippet-sidebar__item-label">所有 Snippet</span>
+          <span class="snippet-sidebar__item-label">
+            {{ props.readonly ? '全部公共代码块' : '所有 Snippet' }}
+          </span>
         </button>
 
         <button
@@ -147,8 +156,9 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
         </button>
 
         <!-- 未登录引导：收藏 / 标签 / 新建集合三项都因 isLoggedIn=false 隐藏，
-             不给说明的话侧栏下半部就是一片空白，用户不知道那些能力存在 -->
-        <p v-if="!props.isLoggedIn" class="snippet-sidebar__hint">
+             不给说明的话侧栏下半部就是一片空白，用户不知道那些能力存在。
+             公共代码块库里这些个人能力本就不适用，不显示引导。 -->
+        <p v-if="!props.isLoggedIn && !props.readonly" class="snippet-sidebar__hint">
           登录后可收藏片段、按标签筛选，并新建自己的集合
         </p>
       </div>
@@ -160,7 +170,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
         <AppIcon icon="material-symbols:folder" :size="14" class="snippet-sidebar__header-icon" />
         <span class="snippet-sidebar__header-title">文件夹</span>
         <button
-          v-if="props.isLoggedIn"
+          v-if="props.isLoggedIn && !props.readonly"
           type="button"
           class="snippet-sidebar__header-action"
           title="新建集合"
@@ -191,6 +201,7 @@ const onRootMove = (evt: { to: HTMLElement; related?: HTMLElement | null }) => {
           :group="{ name: 'collections' }"
           item-key="id"
           :animation="180"
+          :disabled="!!props.readonly"
           ghost-class="collection-row--ghost"
           :draggable="'.collection-row:not(.is-public)'"
           class="snippet-sidebar__list"

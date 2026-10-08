@@ -170,6 +170,47 @@ describe('SnippetListRow · 卡片变体', () => {
     expect(wrapper.find('.snippet-card__badge').exists()).toBe(false)
   })
 
+  // ── 发布流程徽标（个人工作区；公共库上下文不显示，见最后一条） ──
+
+  it('审核中的片段显示「审核中」徽标', () => {
+    const wrapper = mountRow({
+      variant: 'grid',
+      snippet: makeSnippet({ moderationStatus: 'pending' }),
+    })
+    const badges = wrapper.findAll('.snippet-card__badge')
+    expect(badges).toHaveLength(1)
+    expect(badges[0].text()).toBe('审核中')
+    expect(badges[0].classes()).toContain('is-pending')
+  })
+
+  it('审核未通过的片段显示「未通过」徽标并带上原因', () => {
+    const wrapper = mountRow({
+      variant: 'grid',
+      snippet: makeSnippet({ moderationStatus: 'rejected', moderationNote: '描述与标题重复' }),
+    })
+    const badge = wrapper.find('.snippet-card__badge')
+    expect(badge.text()).toBe('未通过')
+    expect(badge.classes()).toContain('is-rejected')
+    expect(badge.attributes('title')).toContain('描述与标题重复')
+  })
+
+  it('未提交审核的私有片段不显示发布徽标（每个片段都挂徽标只会让列表变吵）', () => {
+    const wrapper = mountRow({
+      variant: 'grid',
+      snippet: makeSnippet({ moderationStatus: 'none' }),
+    })
+    expect(wrapper.find('.snippet-card__badge').exists()).toBe(false)
+  })
+
+  it('公共库上下文（copyToMine）不显示发布流程徽标', () => {
+    const wrapper = mountRow({
+      variant: 'grid',
+      copyToMine: true,
+      snippet: makeSnippet({ moderationStatus: 'pending' }),
+    })
+    expect(wrapper.find('.snippet-card__badge').exists()).toBe(false)
+  })
+
   it('标签最多显示 2 个，其余折叠为 +N', () => {
     const wrapper = mountRow({
       variant: 'grid',

@@ -2,8 +2,12 @@
 
 import { computed, effectScope, onBeforeUnmount, ref, watch } from 'vue'
 import { getApiErrorMessage } from '@/api/client'
-import { listKnowledgeSnippets } from '@/api/knowledge-snippets'
-import type { KnowledgeSnippet, SnippetSortOption } from '@/types/knowledge-snippet'
+import { getKnowledgeSnippet, listKnowledgeSnippets } from '@/api/knowledge-snippets'
+import type {
+  KnowledgeSnippet,
+  SnippetScope,
+  SnippetSortOption,
+} from '@/types/knowledge-snippet'
 import { normalizeSnippetLanguage } from '@/types/code-block'
 import { renderEnhancedCodeBlockHtml } from '@/utils/enhancedCodeBlock'
 
@@ -65,6 +69,32 @@ const pendingSelectSnippetId = ref('')
  * languages 为当前结果集中出现的语言集合，仅用于下拉选项展示。
  */
 const selectedLanguage = ref('')
+
+/**
+ * 数据作用域（模块级单例状态的一部分）。
+ *
+ * 个人工作区 `/snippets` 传 `mine`、公共代码块库 `/library` 传 `public`。
+ * 默认 `all` 保持「个人 + 公共」旧语义 —— 收藏夹 / 最近浏览 / 命令面板等
+ * 复用本状态的地方不显式设置，因此不会回归。
+ */
+const scope = ref<SnippetScope>('all')
+
+/**
+ * 设置数据作用域，并清掉跨库不成立的上下文。
+ *
+ * 为什么必须清：`selectedSnippetId` 是模块级单例，若不重置，从个人工作区切到
+ * 公共库时右侧详情面板会继续展示上一个「我的片段」——它甚至可能不在公共库里。
+ * 集合筛选同理（个人集合 id 拿到公共库查询必然查不到）。
+ * 关键词 / 语言 / 标签由页面按 URL 恢复，不在这里动。
+ */
+const setScope = (next: SnippetScope) => {
+  if (scope.value === next) return
+  scope.value = next
+  selectedSnippetId.value = ''
+  pendingSelectSnippetId.value = ''
+  selectedCollectionId.value = null
+  selectedTag.value = ''
+}
 const languages = computed(() =>
   Array.from(
     new Set(snippets.value.map((s) => normalizeSnippetLanguage(s.language)).filter(Boolean))
@@ -97,6 +127,9 @@ export function resetSnippetListState() {
   selectedSnippetId.value = ''
   pendingSelectSnippetId.value = ''
   snippetError.value = ''
+  // 正文缓存随列表一起作废：避免跨账号 / 跨作用域残留上一位用户的私有正文
+  snippetContentCache.clear()
+  snippetContentInflight.clear()
   clearFilters()
 }
 const listTimer = ref<number | null>(null)
@@ -121,6 +154,54 @@ export const getSnippetPreviewContent = (snippet: KnowledgeSnippet): string => {
     return files[0].code ?? ''
   }
   return snippet.content ?? ''
+}
+
+/**
+ * 已按需取回的正文缓存（id → content）。
+ *
+ * 列表接口为瘦身（P0-3）**不回传 `content`**，仅在真正需要正文时（选中预览 /
+ * 复制 / 编辑 / 导出）才回查详情；缓存避免「每次重新点同一行都再发一次请求」。
+ */
+const snippetContentCache = new Map<string, string>()
+
+/** 进行中的正文请求：同一 id 并发只发一次（预览与复制可能同时触发）。 */
+const snippetContentInflight = new Map<string, Promise<string | null>>()
+
+/**
+ * 确保某片段的 `content` 已就绪（列表接口不带正文）。
+ *
+ * 命中顺序：列表项已带正文 → 缓存 → 回查详情接口。取到后**回填到列表项**，
+ * 让依赖 `snippet.content` 的预览 / 编辑弹窗 / 复制自动拿到正文。
+ * 失败返回 `null`（调用方自行降级，不抛异常 —— 正文取不到不该炸掉整个列表）。
+ */
+export async function ensureSnippetContent(id: string): Promise<string | null> {
+  const item = snippets.value.find((entry) => entry.id === id)
+  if (item && item.content !== undefined) return item.content
+
+  const cached = snippetContentCache.get(id)
+  if (cached !== undefined) {
+    if (item) item.content = cached
+    return cached
+  }
+
+  const inflight = snippetContentInflight.get(id)
+  if (inflight) return inflight
+
+  const task = getKnowledgeSnippet(id)
+    .then((full) => {
+      const content = full.content ?? ''
+      snippetContentCache.set(id, content)
+      const target = snippets.value.find((entry) => entry.id === id)
+      if (target) target.content = content
+      return content
+    })
+    .catch(() => null)
+    .finally(() => {
+      snippetContentInflight.delete(id)
+    })
+
+  snippetContentInflight.set(id, task)
+  return task
 }
 
 const selectedSnippetPreviewHtml = computed(() => {
@@ -151,6 +232,7 @@ const loadSnippets = async (append = false) => {
         : undefined,
       favorite: favoritesOnly.value ? true : undefined,
       sort: sort.value,
+      scope: scope.value,
       page: page.value,
       pageSize: pageSize.value,
     })
@@ -264,6 +346,15 @@ export const useSnippetListState = () => {
   if (!watchersRegistered) {
     watchersRegistered = true
     watcherScope.run(() => {
+      // 作用域切换（个人工作区 ↔ 公共代码块库）必须重新拉一次：
+      // 单例状态不会因路由切换而重置，若只听筛选维度，切过去会继续显示上一个库的数据。
+      watch(
+        () => scope.value,
+        () => {
+          page.value = 1
+          void loadSnippets()
+        }
+      )
       watch(
         () => [
           selectedCollectionId.value,
@@ -308,6 +399,8 @@ export const useSnippetListState = () => {
     selectedTag,
     favoritesOnly,
     sort,
+    scope,
+    setScope,
     page,
     pageSize,
     total,

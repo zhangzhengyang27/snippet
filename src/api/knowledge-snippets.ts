@@ -8,6 +8,9 @@ import type {
  KnowledgeSnippetCollectionReorderItem,
  KnowledgeSnippetListResult,
  KnowledgeSnippetTagListResult,
+ ModerationQueueItem,
+ SnippetModerationStatus,
+ SnippetScope,
  SnippetSortOption,
 } from '@/types/knowledge-snippet'
 import type { EnhancedCodeBlockAttrs } from '@/types/code-block'
@@ -15,9 +18,16 @@ import type { SnippetVersionDetail, SnippetVersionListResult } from '@/types/sni
 
 /**
 * 获取片段集合列表（树形）。
+*
+* @param scope 数据作用域：`mine` 个人工作区，`public` 公共代码块库。
+*              不传则由后端按 `all`（个人 + 公共）返回，兼容旧调用方。
 */
-export function listKnowledgeSnippetCollections(): Promise<KnowledgeSnippetCollection[]> {
- return get<KnowledgeSnippetCollection[]>('/knowledge/snippets/collections/tree')
+export function listKnowledgeSnippetCollections(
+ scope?: SnippetScope
+): Promise<KnowledgeSnippetCollection[]> {
+ return get<KnowledgeSnippetCollection[]>('/knowledge/snippets/collections/tree', {
+  scope,
+ })
 }
 
 /**
@@ -42,11 +52,18 @@ export function updateKnowledgeSnippetCollection(
 
 /**
 * 更新片段集合排序。
+*
+* @param scope 拖拽完成后返回的树按哪个作用域构建。个人工作区必须传 `mine`，
+*              否则回来的「个人 + 公共」混合树会让侧栏凭空多出公共集合分支。
 */
 export function reorderKnowledgeSnippetCollections(
- items: KnowledgeSnippetCollectionReorderItem[]
+ items: KnowledgeSnippetCollectionReorderItem[],
+ scope?: SnippetScope
 ): Promise<KnowledgeSnippetCollection[]> {
- return post<KnowledgeSnippetCollection[]>('/knowledge/snippets/collections/reorder', { items })
+ return post<KnowledgeSnippetCollection[]>('/knowledge/snippets/collections/reorder', {
+  items,
+  scope,
+ })
 }
 
 /**
@@ -76,6 +93,11 @@ export function listKnowledgeSnippets(
   language?: string
   favorite?: boolean
   sort?: SnippetSortOption
+  /**
+   * 数据作用域：`mine` 个人工作区、`public` 公共代码块库。
+   * 不传则由后端按 `all`（个人 + 公共）返回，兼容收藏夹 / 最近浏览等旧调用方。
+   */
+  scope?: SnippetScope
   page?: number
   pageSize?: number
   /**
@@ -95,6 +117,7 @@ export function listKnowledgeSnippets(
       language: params?.language,
       favorite: params?.favorite,
       sort: params?.sort,
+      scope: params?.scope,
       page: params?.page,
       pageSize: params?.pageSize,
       // 显式 join 成逗号分隔（后端按 `ids` 参数解析）
@@ -262,6 +285,63 @@ export function copyKnowledgeSnippet(
  return post<KnowledgeSnippet>(`/knowledge/snippets/${id}/copy`, {
    collectionId: collectionId ?? null,
  })
+}
+
+// ── 发布到公共代码块库（作者侧） ──
+
+/**
+ * 提交发布：把自己的片段送审。管理员通过后才真正进入公共代码块库，
+ * 提交后 `isPublic` 仍为 false、`moderationStatus` 变为 `pending`。
+ */
+export function submitSnippetPublication(id: string): Promise<KnowledgeSnippet> {
+ return post<KnowledgeSnippet>(`/knowledge/snippets/${id}/publication`)
+}
+
+/**
+ * 取消发布：撤回待审（pending）或下架已发布（approved），一律回到私有。
+ */
+export function withdrawSnippetPublication(id: string): Promise<KnowledgeSnippet> {
+ return del<KnowledgeSnippet>(`/knowledge/snippets/${id}/publication`)
+}
+
+// ── 审核队列（管理员） ──
+
+/** 审核队列返回结构。 */
+export interface ModerationQueueResult {
+ items: ModerationQueueItem[]
+ total: number
+ page: number
+ pageSize: number
+}
+
+/**
+ * 拉取审核队列（仅管理员可访问，非管理员返回 403）。
+ * 不传 status 时后端默认返回 `pending`（待审）。
+ */
+export function listModerationQueue(
+ params?: { status?: SnippetModerationStatus; page?: number; pageSize?: number },
+ options?: RequestOptions
+): Promise<ModerationQueueResult> {
+ return get<ModerationQueueResult>(
+   '/knowledge/snippets/moderation/queue',
+   {
+     status: params?.status,
+     page: params?.page,
+     pageSize: params?.pageSize,
+   },
+   options
+ )
+}
+
+/**
+ * 裁决一条待审片段（仅管理员）。
+ * approve → 进入公共库；reject → 保持私有，`note` 作为未通过原因回传给作者。
+ */
+export function moderateKnowledgeSnippet(
+ id: string,
+ payload: { action: 'approve' | 'reject'; note?: string }
+): Promise<KnowledgeSnippet> {
+ return post<KnowledgeSnippet>(`/knowledge/snippets/${id}/moderation`, payload)
 }
 
 /**

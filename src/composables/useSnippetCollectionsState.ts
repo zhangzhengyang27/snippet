@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '@/api/client'
 import type {
   KnowledgeSnippetCollection,
   KnowledgeSnippetCollectionReorderItem,
+  SnippetScope,
 } from '@/types/knowledge-snippet'
 
 /**
@@ -220,15 +221,21 @@ const hasCycle = (items: KnowledgeSnippetCollection[], seen: Set<string> = new S
 
 /**
  * 管理片段集合列表与编辑弹窗状态。
+ *
+ * @param options.scope 数据作用域：`mine` 个人工作区、`public` 公共代码块库。
+ *                      不传为 `all`（个人 + 公共），兼容旧调用方。
  */
-export const useSnippetCollectionsState = () => {
+export const useSnippetCollectionsState = (options?: { scope?: SnippetScope }) => {
+  const scope: SnippetScope = options?.scope ?? 'all'
   const collections = ref<KnowledgeSnippetCollection[]>([])
   const loadingCollections = ref(false)
   const collectionError = ref('')
   const expandedCollectionIds = ref<Set<string>>(new Set())
 
-  // 恢复上次的展开偏好（updateExpandedCollectionIds 会过滤已删除的集合 id）
-  const EXPANDED_STORAGE_KEY = 'snippet-expanded-collections'
+  // 恢复上次的展开偏好（updateExpandedCollectionIds 会过滤已删除的集合 id）。
+  // 按作用域分键：个人集合与公共集合的 id 互不相干，共用一把键会让公共库的
+  // 展开状态覆盖个人工作区（反之亦然），表现为「刚展开的分组又收起来了」。
+  const EXPANDED_STORAGE_KEY = `snippet-expanded-collections:${scope}`
   try {
     const rawExpanded = localStorage.getItem(EXPANDED_STORAGE_KEY)
     if (rawExpanded) {
@@ -311,7 +318,7 @@ export const useSnippetCollectionsState = () => {
     collectionError.value = ''
 
     try {
-      const result = await listKnowledgeSnippetCollections()
+      const result = await listKnowledgeSnippetCollections(scope)
       // 丢弃过期响应：期间已发起新请求
       if (seq !== collectionLoadSeq) return result
       collections.value = result
@@ -434,7 +441,7 @@ export const useSnippetCollectionsState = () => {
     draggedCollectionId.value = ''
 
     try {
-      const result = await reorderKnowledgeSnippetCollections(reorderItems)
+      const result = await reorderKnowledgeSnippetCollections(reorderItems, scope)
       collections.value = result
       updateExpandedCollectionIds(result)
       return { status: 'success' as const }
@@ -465,7 +472,7 @@ export const useSnippetCollectionsState = () => {
     collections.value = normalizedTree
 
     try {
-      const result = await reorderKnowledgeSnippetCollections(reorderItems)
+      const result = await reorderKnowledgeSnippetCollections(reorderItems, scope)
       collections.value = result
       updateExpandedCollectionIds(result)
       return { status: 'success' as const }
@@ -489,7 +496,7 @@ export const useSnippetCollectionsState = () => {
     try {
       const normalizedTree = normalizeCollectionTree(cloneCollectionTree(collections.value))
       const reorderItems = flattenCollectionReorderItems(normalizedTree)
-      const result = await reorderKnowledgeSnippetCollections(reorderItems)
+      const result = await reorderKnowledgeSnippetCollections(reorderItems, scope)
       collections.value = result
       updateExpandedCollectionIds(result)
       return { status: 'success' as const }

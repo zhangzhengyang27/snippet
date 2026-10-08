@@ -5,7 +5,7 @@
  * 逻辑，单文件 800+ 行。这里**只搬移逻辑，不改行为**。
  */
 import { ref, type Ref } from 'vue'
-import { createKnowledgeSnippet } from '@/api/knowledge-snippets'
+import { createKnowledgeSnippet, listKnowledgeSnippetsByIds } from '@/api/knowledge-snippets'
 import { getApiErrorMessage } from '@/api/client'
 import { toast } from '@/composables/useToast'
 import type { KnowledgeSnippet, KnowledgeSnippetCollection } from '@/types/knowledge-snippet'
@@ -46,10 +46,20 @@ export function useSnippetImportExport(options: UseSnippetImportExportOptions) {
     if (!snippets.value.length) return
     exporting.value = true
     try {
-      if (format === 'json') exportSnippetsJson(snippets.value)
-      else exportSnippetsMarkdown(snippets.value)
+      // 列表接口为瘦身不回传正文（P0-3）→ 导出前按 id **批量**取回完整片段再落盘
+      // （列表项已带正文时，如详情 / 最近浏览来源，则跳过这一步）。
+      let source = snippets.value
+      if (source.some((snippet) => snippet.content === undefined)) {
+        const full = await listKnowledgeSnippetsByIds(source.map((snippet) => snippet.id))
+        // 全部 id 都取不到（如均已删除）时退回原列表，避免导出一个空文件
+        if (full.length) source = full
+      }
+      if (format === 'json') exportSnippetsJson(source)
+      else exportSnippetsMarkdown(source)
       exportOpen.value = false
-      toast.success(`已导出 ${snippets.value.length} 条片段`)
+      toast.success(`已导出 ${source.length} 条片段`)
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, '导出失败，请稍后重试'))
     } finally {
       exporting.value = false
     }

@@ -33,11 +33,17 @@ const props = defineProps<{
   selectable?: boolean
   /** 已选中的片段 id 集合 */
   selectedIds?: string[]
+  /** 公共代码块库：列表行展示「复制到我的代码块」入口 */
+  copyable?: boolean
+  /** 空态主文案覆盖（不同作用域/登录态下的引导语不同） */
+  emptyText?: string
 }>()
 
 const emit = defineEmits<{
   selectSnippet: [id: string]
   copySnippet: [id: string]
+  /** 公共代码块库：把该片段复制进当前用户的代码块库 */
+  copyToMine: [id: string]
   toggleCheck: [id: string]
   'update:page': [value: number]
   'update:pageSize': [value: number]
@@ -190,8 +196,10 @@ onBeforeUnmount(teardownScrollObserver)
         :size="28"
         class="mb-3 text-[var(--color-text-tertiary)] opacity-50"
       />
-      <p class="text-body-sm text-[var(--color-text-secondary)]">暂无匹配的代码片段</p>
-      <div class="mt-4 flex items-center gap-2">
+      <p class="text-body-sm text-[var(--color-text-secondary)]">
+        {{ props.emptyText || '暂无匹配的代码片段' }}
+      </p>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
         <AppButton
           v-if="props.hasActiveFilters"
           variant="glass"
@@ -210,6 +218,8 @@ onBeforeUnmount(teardownScrollObserver)
           <AppIcon icon="material-symbols:add" :size="14" />
           新建片段
         </AppButton>
+        <!-- 页面按作用域追加的引导（如未登录时的登录入口、去公共代码块库逛） -->
+        <slot name="empty-actions" />
       </div>
     </div>
 
@@ -229,8 +239,10 @@ onBeforeUnmount(teardownScrollObserver)
         :selected="props.selectedSnippetId === item.id"
         :checkable="props.selectable"
         :checked="isChecked(item.id)"
+        :copy-to-mine="props.copyable"
         @select="emit('selectSnippet', item.id)"
         @copy="emit('copySnippet', item.id)"
+        @copy-to-mine="emit('copyToMine', $event)"
         @toggle-check="emit('toggleCheck', $event)"
       />
       <!-- 追加加载指示（仅滚动追加视图） -->
@@ -261,8 +273,10 @@ onBeforeUnmount(teardownScrollObserver)
         :selected="props.selectedSnippetId === item.id"
         :checkable="props.selectable"
         :checked="isChecked(item.id)"
+        :copy-to-mine="props.copyable"
         @select="emit('selectSnippet', item.id)"
         @copy="emit('copySnippet', item.id)"
+        @copy-to-mine="emit('copyToMine', $event)"
         @toggle-check="emit('toggleCheck', $event)"
       />
       <!-- 无限滚动哨兵：滚到这里即请求追加下一页（本次加载中/已到末页时忽略） -->

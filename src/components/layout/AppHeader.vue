@@ -46,6 +46,9 @@ const userRoleLabel = computed(() => {
   return '普通用户'
 })
 
+/** 管理员才显示内容审核入口（后端另有 RolesGuard 兜底，这里只控入口可见性） */
+const isAdmin = computed(() => currentUser.value?.role === 'admin')
+
 function openSearch() {
   searchOpen.value = true
 }
@@ -107,6 +110,13 @@ const defaultLinks = computed<NavLink[]>(() => [
     label: '代码块',
     href: '/snippets',
     active: route.path.startsWith('/snippets'),
+  },
+  {
+    // 公共代码块库：与「代码块」（个人工作区）并列的一级入口。
+    // 用 path 前缀判 active，/library/:id 详情页也保持高亮。
+    label: '公共库',
+    href: '/library',
+    active: route.path.startsWith('/library'),
   },
   {
     label: '收藏夹',
@@ -262,6 +272,17 @@ function handleScroll() {
                   </div>
 
                   <div class="user-panel__grid">
+                    <router-link
+                      v-if="isAdmin"
+                      to="/admin/review"
+                      class="user-panel__action"
+                      @click="userMenuOpen = false"
+                    >
+                      <span class="user-panel__action-icon user-panel__action-icon--review">
+                        <AppIcon icon="lucide:shield-check" :size="18" />
+                      </span>
+                      <span class="user-panel__action-text">内容审核</span>
+                    </router-link>
                     <router-link
                       to="/profile"
                       class="user-panel__action"
@@ -655,6 +676,10 @@ function handleScroll() {
 .user-panel__action-icon--theme {
   background: linear-gradient(135deg, rgb(var(--color-warning-rgb)) 0%, rgb(var(--color-accent-amber-rgb)) 100%);
   box-shadow: 0 4px 14px rgb(var(--color-warning-rgb) / 0.3);
+}
+.user-panel__action-icon--review {
+  background: linear-gradient(135deg, rgb(var(--color-error-rgb)) 0%, rgb(var(--color-accent-rose-rgb)) 100%);
+  box-shadow: 0 4px 14px rgb(var(--color-error-rgb) / 0.3);
 }
 .user-panel__action-text {
   font-size: 0.75rem;

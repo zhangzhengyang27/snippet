@@ -16,21 +16,33 @@ import SnippetDetailPane from '@/components/snippets/SnippetDetailPane.vue'
 import SnippetsToolbar from '@/components/snippets/SnippetsToolbar.vue'
 import StatusToast from '@/components/snippets/StatusToast.vue'
 import { useToast } from '@/composables/useToast'
-import { snippetSortOptions } from '@/composables/useSnippetListState'
-import { isAppendingMore } from '@/composables/useSnippetListState'
+import {
+  ensureSnippetContent,
+  snippetSortOptions,
+  isAppendingMore,
+} from '@/composables/useSnippetListState'
 import { useKnowledgeSnippetsPage } from '@/composables/useKnowledgeSnippetsPage'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
 import { useSnippetImportExport } from '@/composables/useSnippetImportExport'
 import { useSnippetBatchOps } from '@/composables/useSnippetBatchOps'
 import { getKnowledgeSnippet } from '@/api/knowledge-snippets'
-import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
+import type { KnowledgeSnippet, SnippetScope } from '@/types/knowledge-snippet'
 
 const router = useRouter()
 const route = useRoute()
 const { toast } = useToast()
 const { pushRecent } = useRecentSnippets()
 
+/**
+ * 本页面实例的作用域，由路由 meta 决定：
+ * - `/snippets` → `mine`：个人工作区，只放当前用户自己的代码块，未登录为空态引导
+ * - `/library`  → `public`：公共代码块库，只读浏览 + 复制到我的
+ * 同一组件挂两个路由，故 scope 必须来自路由而非写死。
+ */
+const pageScope: SnippetScope = route.meta.scope === 'public' ? 'public' : 'mine'
+
 const {
+  isPublicScope,
   collections,
   collectAllCollectionIds,
   loadingCollections,
@@ -76,6 +88,9 @@ const {
   askDeleteSnippet,
   toggleFavorite,
   copySnippetCode,
+  copySnippetToMine,
+  submitSnippetPublication,
+  withdrawSnippetPublication,
   openCreateCollectionDialog,
   openEditCollectionDialog,
   toggleCollectionExpanded,
@@ -83,7 +98,12 @@ const {
   isLoggedIn,
   setPageSize,
   loadMore,
-} = useKnowledgeSnippetsPage()
+} = useKnowledgeSnippetsPage({ scope: pageScope })
+
+/** 本页面对应的路由前缀：个人工作区 `/snippets`、公共代码块库 `/library`。
+ *  所有 URL 写入（筛选同步、详情跳转）都必须基于它，否则在公共库里操作会把
+ *  用户带到个人工作区的 URL 上（导航高亮与 scope 语义同时错位）。 */
+const basePath = computed(() => (isPublicScope ? '/library' : '/snippets'))
 
 /** 深链 / 命令面板选中子集合时，自动展开其祖先链，否则选中行藏在折叠的父级里不可见。
  * 监听集合树本身：加载完成或树变化后，对当前选中集合再补一次祖先展开（幂等）。
@@ -134,14 +154,15 @@ const detailSnippet = computed(() => selectedSnippet.value)
 
 /** 列表项点击：page 模式跳转独立详情页，split 模式常驻右侧面板 */
 /** 下一次选中变化跳过 URL 同步：page 模式点击后随即 push 到详情页，
- *  此时再 replace 回 /snippets?focus= 会把用户从详情页拽回来 */
+ *  此时再 replace 回 列表页?focus= 会把用户从详情页拽回来 */
 let skipFocusSync = false
 const handleSelectSnippet = (id: string) => {
   selectedSnippetId.value = id
   pushRecent(id)
   if (detailLayout.value === 'page') {
     skipFocusSync = true
-    router.push(`/snippets/${encodeURIComponent(id)}`)
+    // 公共库的详情也留在 /library 下（同一组件），避免 URL 与导航高亮跳到个人工作区
+    router.push(`${basePath.value}/${encodeURIComponent(id)}`)
   }
 }
 
@@ -186,6 +207,31 @@ const handleCopySnippet = (id: string) => {
     copySnippetCode(snippet)
   }
 }
+
+/** 公共代码块库：把列表行对应的片段复制进自己的代码块库 */
+const handleCopyToMine = (id: string) => {
+  const snippet = snippets.value.find((item) => item.id === id)
+  if (snippet) void copySnippetToMine(snippet)
+}
+
+/** 空态里的「登录」入口：带上回跳地址，登录后回到当前页（个人工作区或公共库） */
+const goLogin = () => {
+  const redirect = encodeURIComponent(window.location.pathname + window.location.search)
+  router.push(`/login?redirect=${redirect}`)
+}
+
+/**
+ * 列表空态文案。
+ *
+ * 此前只有一句写死的「暂无匹配的代码片段」—— 在「我还没建过任何代码块」和
+ * 「筛选没命中」两种完全不同的处境下说同一句话，用户会以为数据丢了。
+ */
+const emptyStateText = computed(() => {
+  if (hasActiveFilters.value) return '暂无匹配的代码片段'
+  if (isPublicScope) return '没有找到公共代码块'
+  if (!isLoggedIn.value) return '登录后即可创建并管理你自己的代码块'
+  return '你还没有代码块，新建第一个吧'
+})
 
 const handleConfirmDialog = async () => {
   try {
@@ -239,7 +285,7 @@ function buildUrlQuery(): Record<string, string> {
  */
 function syncToUrl(mode: 'push' | 'replace' = 'push') {
   if (isApplyingFromUrl) return
-  const target = { path: '/snippets', query: buildUrlQuery() }
+  const target = { path: basePath.value, query: buildUrlQuery() }
   void (mode === 'replace' ? router.replace(target) : router.push(target))
 }
 
@@ -269,7 +315,10 @@ watch(
 
 /** 选中项 → URL 的 focus 参数（replace，不占历史）：刷新 / 分享能回到当前查看的片段。
  *  此前选中态只存在于内存，刷新后回到列表首项，正在看的上下文丢失。 */
-watch(selectedSnippetId, () => {
+watch(selectedSnippetId, (id) => {
+  // 列表接口不带正文（P0-3 瘦身）→ 选中即按需取回，供右侧预览与「编辑」弹窗使用。
+  // 放在此处（而非渲染时）是为了先拿正文再渲染，避免预览先闪一下空态。
+  if (id) void ensureSnippetContent(id)
   if (skipFocusSync) {
     skipFocusSync = false
     return
@@ -305,15 +354,18 @@ watch(
     if (q.focus && typeof q.focus === 'string') {
       selectedSnippetId.value = q.focus
     }
-    if (q.edit && typeof q.edit === 'string') {
+    if (q.edit && typeof q.edit === 'string' && !isPublicScope) {
       const target = selectedSnippet.value ?? snippets.value.find((s) => s.id === q.edit)
-      if (target) openEditSnippetDialog(target)
-      else {
+      // 列表已带正文（详情 / by-ids 已合并）才直接用；否则一律回查完整详情再打开。
+      // 否则从「瘦身后的列表」深链编辑会拿到空 content，保存即覆盖成空 —— 数据丢失。
+      if (target && target.content !== undefined) {
+        openEditSnippetDialog(target)
+      } else {
         getKnowledgeSnippet(q.edit)
           .then((s) => openEditSnippetDialog(s))
           .catch(() => toast.error('无法打开编辑'))
       }
-    } else if (q.new === '1') {
+    } else if (q.new === '1' && !isPublicScope) {
       openCreateSnippetDialog()
     }
     // edit/new 是一次性深链参数：消费后立即从地址栏剔除（router.replace 不占历史栈），
@@ -324,7 +376,7 @@ watch(
       const cleaned = { ...q }
       delete cleaned['edit']
       delete cleaned['new']
-      void router.replace({ path: '/snippets', query: cleaned })
+      void router.replace({ path: basePath.value, query: cleaned })
     }
   },
   { immediate: true }
@@ -398,6 +450,7 @@ watch(detailLayout, (next) => {
           :selected-tag="selectedTag"
           :favorites-only="favoritesOnly"
           :is-logged-in="isLoggedIn"
+          :readonly="isPublicScope"
           :detail-layout="detailLayout"
           @select-collection="selectedCollectionId = $event"
           @toggle-collection-expanded="toggleCollectionExpanded"
@@ -421,6 +474,7 @@ watch(detailLayout, (next) => {
             :loading="loadingSnippets"
             :total="total"
             :can-create="isLoggedIn"
+            :readonly="isPublicScope"
             :tags="tagOptions"
             :selected-tag="selectedTag"
             :languages="languages"
@@ -443,7 +497,7 @@ watch(detailLayout, (next) => {
                    ⚠️ 该菜单同时是**批量模式的唯一出口**，故下面用 watch 在切到分屏时自动退出批量，
                    否则批量栏会滞留却无路可退。 -->
               <SnippetMoreMenu
-                v-if="detailLayout !== 'split'"
+                v-if="detailLayout !== 'split' && !isPublicScope"
                 :batch-mode="batchMode"
                 :disable-export="!snippets.length"
                 :importing="importing"
@@ -505,30 +559,59 @@ watch(detailLayout, (next) => {
             :selected-snippet-id="selectedSnippetId"
             :view-mode="detailLayout === 'split' ? 'list' : 'grid'"
             :compact="detailLayout === 'split'"
-            :can-create="isLoggedIn"
+            :can-create="isLoggedIn && !isPublicScope"
             :has-active-filters="hasActiveFilters"
+            :copyable="isPublicScope"
+            :empty-text="emptyStateText"
             :selectable="batchMode"
             :selected-ids="selectedIds"
             @select-snippet="handleSelectSnippet"
             @copy-snippet="handleCopySnippet"
+            @copy-to-mine="handleCopyToMine"
             @toggle-check="handleToggleCheck"
             @clear-filters="clearFilters"
             @create-snippet="handleCreateSnippet"
             @update:page="page = $event"
             @update:page-size="setPageSize"
             @load-more="loadMore"
-          />
+          >
+            <!-- 空态补充引导：个人工作区没内容时，把「登录」和「去公共库逛逛」摆在手边 -->
+            <template #empty-actions>
+              <AppButton
+                v-if="!isPublicScope && !isLoggedIn"
+                variant="primary"
+                size="small"
+                @click="goLogin"
+              >
+                <AppIcon icon="material-symbols:login" :size="14" />
+                登录
+              </AppButton>
+              <AppButton
+                v-if="!isPublicScope && !hasActiveFilters"
+                variant="glass"
+                size="small"
+                @click="router.push('/library')"
+              >
+                <AppIcon icon="material-symbols:travel-explore" :size="14" />
+                浏览公共代码块库
+              </AppButton>
+            </template>
+          </SnippetListPanel>
         </div>
       </template>
       <template #detail>
         <SnippetDetailPane
           :active="detailPaneActive"
           :snippet="detailSnippet"
+          :readonly="isPublicScope"
           @close="handleCloseDetailPane"
           @copy="copySnippetCode"
           @toggle-favorite="toggleFavorite"
+          @copy-to-mine="copySnippetToMine"
           @edit="handleEditFromDetail"
           @delete="handleDeleteFromDetail"
+          @publish="submitSnippetPublication"
+          @withdraw-publication="withdrawSnippetPublication"
         />
       </template>
     </SnippetWorkspace>

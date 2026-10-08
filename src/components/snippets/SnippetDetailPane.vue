@@ -17,11 +17,20 @@ interface Props {
   active?: boolean
   /** 当前选中的片段；为空时展示空态占位 */
   snippet?: KnowledgeSnippet | null
+  /**
+   * 只读浏览模式（公共代码块库 `/library`）。
+   *
+   * ⚠️ 不能用 `snippet.isPublic` 代替：作者**自己发布的**片段 isPublic 也是 true，
+   * 但它在个人工作区里应当仍然可编辑 / 可下架。视图语义来自路由（页面作用域），
+   * 与片段自身的公开状态是两件事。
+   */
+  readonly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   active: false,
   snippet: null,
+  readonly: false,
 })
 
 const emit = defineEmits<{
@@ -30,7 +39,16 @@ const emit = defineEmits<{
   'toggle-favorite': [snippet: KnowledgeSnippet]
   edit: [snippet: KnowledgeSnippet]
   delete: [snippet: KnowledgeSnippet]
+  /** 公共代码块库：把该片段复制进当前用户的代码块库 */
+  copyToMine: [snippet: KnowledgeSnippet]
+  /** 提交发布到公共代码块库（个人工作区，作者侧） */
+  publish: [snippet: KnowledgeSnippet]
+  /** 撤回待审 / 下架已发布 */
+  'withdraw-publication': [snippet: KnowledgeSnippet]
 }>()
+
+/** 发布流程状态（缺省视为私有未提交） */
+const moderationStatus = computed(() => props.snippet?.moderationStatus ?? 'none')
 
 
 const snippetFiles = computed(() => props.snippet?.displayAttrs?.files ?? [])
@@ -95,7 +113,7 @@ function openPreviewWindow() {
                 />
               </button>
               <button
-                v-if="!snippet.isPublic"
+                v-if="!readonly"
                 type="button"
                 class="snippet-detail-drawer__action"
                 title="编辑"
@@ -105,7 +123,7 @@ function openPreviewWindow() {
                 <AppIcon icon="material-symbols:edit" :size="15" />
               </button>
               <button
-                v-if="!snippet.isPublic"
+                v-if="!readonly"
                 type="button"
                 class="snippet-detail-drawer__action snippet-detail-drawer__action--danger"
                 title="删除"
@@ -113,6 +131,17 @@ function openPreviewWindow() {
                 @click="emit('delete', snippet)"
               >
                 <AppIcon icon="material-symbols:delete" :size="15" />
+              </button>
+              <!-- 公共代码块库里的唯一写操作：复制一份进自己的代码块库（公共片段本身只读） -->
+              <button
+                v-if="readonly"
+                type="button"
+                class="snippet-detail-drawer__action"
+                title="复制到我的代码块"
+                aria-label="复制到我的代码块"
+                @click="emit('copyToMine', snippet)"
+              >
+                <AppIcon icon="material-symbols:library-add" :size="15" />
               </button>
               <button
                 type="button"
@@ -127,6 +156,63 @@ function openPreviewWindow() {
           <p v-if="snippet.description" class="snippet-detail-drawer__desc">
             {{ snippet.description }}
           </p>
+          <!--
+            发布状态条（仅个人工作区展示）。
+            让作者一眼看到自己的片段处于发布流程的哪一步 —— 未提交 / 审核中 / 已发布 / 未通过，
+            并在同一处给出下一步动作，避免去别处找入口。
+          -->
+          <div
+            v-if="!readonly"
+            class="snippet-detail-drawer__publication"
+            :class="`is-${moderationStatus}`"
+          >
+            <template v-if="moderationStatus === 'pending'">
+              <AppIcon icon="material-symbols:hourglass-top" :size="14" />
+              <span class="snippet-detail-drawer__pub-text">审核中 · 通过后将出现在公共代码块库</span>
+              <button
+                type="button"
+                class="snippet-detail-drawer__pub-btn"
+                @click="emit('withdraw-publication', snippet)"
+              >
+                撤回
+              </button>
+            </template>
+            <template v-else-if="moderationStatus === 'approved'">
+              <AppIcon icon="material-symbols:public" :size="14" />
+              <span class="snippet-detail-drawer__pub-text">已发布到公共代码块库</span>
+              <button
+                type="button"
+                class="snippet-detail-drawer__pub-btn"
+                @click="emit('withdraw-publication', snippet)"
+              >
+                下架
+              </button>
+            </template>
+            <template v-else-if="moderationStatus === 'rejected'">
+              <AppIcon icon="material-symbols:error-outline" :size="14" />
+              <span class="snippet-detail-drawer__pub-text" :title="snippet.moderationNote ?? ''">
+                审核未通过{{ snippet.moderationNote ? `：${snippet.moderationNote}` : '' }}
+              </span>
+              <button
+                type="button"
+                class="snippet-detail-drawer__pub-btn"
+                @click="emit('publish', snippet)"
+              >
+                重新提交
+              </button>
+            </template>
+            <template v-else>
+              <AppIcon icon="material-symbols:cloud-upload" :size="14" />
+              <span class="snippet-detail-drawer__pub-text">仅自己可见</span>
+              <button
+                type="button"
+                class="snippet-detail-drawer__pub-btn"
+                @click="emit('publish', snippet)"
+              >
+                发布到公共库
+              </button>
+            </template>
+          </div>
         </div>
       </div>
 
@@ -290,6 +376,58 @@ function openPreviewWindow() {
 .snippet-detail-drawer__action--danger:hover {
   background: rgb(var(--color-error-rgb) / 0.12);
   color: rgb(var(--color-error-rgb));
+}
+
+/* 发布状态条：未提交 / 审核中 / 已发布 / 未通过 四态各用一套语义色 */
+.snippet-detail-drawer__publication {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: var(--text-xs);
+  background: rgb(var(--color-surface-glass-rgb) / 0.6);
+  color: rgb(var(--color-text-secondary-rgb));
+}
+
+.snippet-detail-drawer__publication.is-pending {
+  background: rgb(var(--color-warning-rgb) / 0.12);
+  color: rgb(var(--color-warning-rgb));
+}
+
+.snippet-detail-drawer__publication.is-approved {
+  background: rgb(var(--color-success-rgb) / 0.12);
+  color: rgb(var(--color-success-rgb));
+}
+
+.snippet-detail-drawer__publication.is-rejected {
+  background: rgb(var(--color-error-rgb) / 0.12);
+  color: rgb(var(--color-error-rgb));
+}
+
+.snippet-detail-drawer__pub-text {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.snippet-detail-drawer__pub-btn {
+  flex: none;
+  padding: 2px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  line-height: 1.6;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.snippet-detail-drawer__pub-btn:hover {
+  background: rgb(var(--color-surface-glass-rgb) / 0.5);
 }
 
 .snippet-detail-drawer__close {

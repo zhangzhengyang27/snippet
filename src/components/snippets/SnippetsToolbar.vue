@@ -36,6 +36,14 @@ const props = defineProps<{
    * 搜索框在任何布局下都保留。
    */
   compact?: boolean
+  /**
+   * 只读浏览模式（公共代码块库 `/library`）。
+   *
+   * 公共代码块不属于当前用户：不渲染「新建片段」，也不渲染标签下拉
+   * （标签是个人私有数据，拿它筛公共片段只会得到空结果）。
+   * 搜索 / 语言 / 排序 / 清除筛选全部保留，浏览体验与个人工作区一致。
+   */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -76,7 +84,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
         class="text-brand drop-shadow-[0_0_12px_rgb(113_112_255/0.45)]"
       />
       <h2 class="font-heading text-[1.375rem] font-bold tracking-[-0.02em] text-(--color-text)">
-        代码块
+        {{ props.readonly ? '公共代码块库' : '代码块' }}
       </h2>
       <span class="text-code-sm text-(--color-text-tertiary)">{{ props.total }}</span>
       <AppIcon
@@ -108,7 +116,12 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
       />
     </div>
 
-    <AppButton variant="glass" class="h-8 shrink-0" @click="handleCreateClick">
+    <AppButton
+      v-if="!props.readonly"
+      variant="glass"
+      class="h-8 shrink-0"
+      @click="handleCreateClick"
+    >
       <AppIcon icon="material-symbols:add" :size="14" />
       新建片段
     </AppButton>
@@ -124,6 +137,7 @@ const tagOptions = computed(() => [{ label: '全部标签', value: '' }, ...prop
          「清除筛选」不在此列：它是逃生口，只在有筛选时出现。 -->
     <template v-if="!props.compact">
       <AppSelect
+        v-if="!props.readonly"
         :value="props.selectedTag"
         class="toolbar-select shrink-0"
         placeholder="全部标签"

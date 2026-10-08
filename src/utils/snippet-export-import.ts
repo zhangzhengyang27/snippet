@@ -162,7 +162,9 @@ function toExportItemFromSnippet(snippet: KnowledgeSnippet): SnippetExportItem {
     name: snippet.name,
     description: snippet.description ?? '',
     language: snippet.language,
-    code: snippet.content,
+    // 导出源必须**已带正文**（列表接口为瘦身不回传 content，调用方需先 hydrate）。
+    // `?? ''` 仅为防御，避免个别条目缺正文时整份导出崩掉。
+    code: snippet.content ?? '',
     tags: (snippet.tags ?? []).map((tag) => (typeof tag === 'string' ? tag : String((tag as { name?: unknown })?.name ?? ''))).filter(Boolean),
     collectionId: snippet.collectionId ?? undefined,
     favorite: snippet.favorite || undefined,
@@ -196,7 +198,7 @@ export function exportSnippetsMarkdown(snippets: KnowledgeSnippet[]): void {
     if (snippet.tags?.length) {
       lines.push(`标签：${snippet.tags.join('、')}`, '')
     }
-    lines.push('```' + snippet.language, snippet.content, '```', '')
+    lines.push('```' + snippet.language, snippet.content ?? '', '```', '')
     if (attrs?.files?.length) {
       for (const file of attrs.files) {
         lines.push(`### ${file.name}`, '', '```' + file.language, file.code, '```', '')

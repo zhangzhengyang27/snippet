@@ -81,6 +81,9 @@ data/
 # vue-tsc -b 的编译产物：会把 vite.config.ts 编译成 vite.config.js / .d.ts
 # ⚠️ 危险：vite 的配置查找顺序中 vite.config.js 优先于 .ts，
 #    一旦跟踪/保留它，后续对 vite.config.ts 的修改会被静默忽略。
+# 已从源头修复：tsconfig.node.json 设 outDir 到 node_modules/.tmp，
+# tsconfig.json 设 tsBuildInfoFile 到 node_modules/.tmp —— 构建不再往源码树落盘。
+# 以下规则保留为兜底（历史产物 / 误配置时仍能被忽略）。
 vite.config.js
 vite.config.d.ts
 *.tsbuildinfo

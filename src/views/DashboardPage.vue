@@ -22,7 +22,10 @@ const { recent: recentIds } = useRecentSnippets()
 
 /** 概览页聚合数据（一次请求拿齐，避免多个独立的 loading/error 状态） */
 interface DashboardData {
-  snippetTotal: number
+  /** 我自己的代码块数量（scope=mine，未登录恒 0） */
+  mineTotal: number
+  /** 公共代码块库数量（scope=public） */
+  publicTotal: number
   favoriteTotal: number
   favoriteSnippets: KnowledgeSnippet[]
   recentSnippets: KnowledgeSnippet[]
@@ -40,9 +43,13 @@ const {
   error,
   refresh: reload,
 } = useResourceFetch<DashboardData>(async () => {
+  // 代码块数量拆成「我的 / 公共」两个数：不再走默认 scope=all 的合计
+  // （3416 条里 3415+ 都是公共库内容，一个合计数字看不出「我自己有没有东西」）。
   // 收藏数走片段列表的 favorite 过滤（按用户）；未登录时后端返回空集，无需分支。
-  const [snipRes, favRes] = await Promise.all([
-    listKnowledgeSnippets({ page: 1, pageSize: 1 }),
+  // 三个请求都只要 total，pageSize=1 把回包压到最小。
+  const [mineRes, publicRes, favRes] = await Promise.all([
+    listKnowledgeSnippets({ scope: 'mine', page: 1, pageSize: 1 }),
+    listKnowledgeSnippets({ scope: 'public', page: 1, pageSize: 1 }),
     listKnowledgeSnippets({ favorite: true, page: 1, pageSize: 4 }),
   ])
 
@@ -51,14 +58,16 @@ const {
   const recent = await listKnowledgeSnippetsByIds(recentIds.value.slice(0, 6))
 
   return {
-    snippetTotal: snipRes.total ?? 0,
+    mineTotal: mineRes.total ?? 0,
+    publicTotal: publicRes.total ?? 0,
     favoriteTotal: favRes.total ?? 0,
     favoriteSnippets: favRes.items ?? [],
     recentSnippets: recent,
   }
 })
 
-const snippetTotal = computed(() => dash.value?.snippetTotal ?? 0)
+const mineTotal = computed(() => dash.value?.mineTotal ?? 0)
+const publicTotal = computed(() => dash.value?.publicTotal ?? 0)
 const favoriteTotal = computed(() => dash.value?.favoriteTotal ?? 0)
 const favoriteSnippets = computed(() => dash.value?.favoriteSnippets ?? [])
 const recentSnippets = computed(() => dash.value?.recentSnippets ?? [])
@@ -75,13 +84,23 @@ const dateLabel = computed(() => formatDateLabel(new Date()))
 
 const stats = computed(() => [
   {
-    key: 'snippets',
+    key: 'mine',
     icon: 'material-symbols:code-blocks',
-    num: snippetTotal.value.toLocaleString(),
-    label: '代码块',
-    sub: '含公共与私有',
+    // 未登录时「我的」没有意义（后端恒 0），显示「—」而不是 0，避免被读成「我的数据丢了」
+    num: authStore.isLoggedIn ? mineTotal.value.toLocaleString() : '—',
+    label: '我的代码块',
+    sub: authStore.isLoggedIn ? '个人工作区' : '登录后可创建',
     to: '/snippets',
     tone: 'indigo',
+  },
+  {
+    key: 'public',
+    icon: 'material-symbols:library-books',
+    num: publicTotal.value.toLocaleString(),
+    label: '公共库',
+    sub: '可复制到我的',
+    to: '/library',
+    tone: 'amber',
   },
   {
     key: 'favorites',
@@ -131,8 +150,14 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
       <div>
         <h1 class="dash__hello">👋 {{ greeting }}，{{ username }}</h1>
         <p class="dash__date">
-          {{ dateLabel }} · 你有 <b>{{ snippetTotal.toLocaleString() }}</b> 个代码块，收藏了
-          <b>{{ favoriteTotal.toLocaleString() }}</b> 个
+          <template v-if="authStore.isLoggedIn">
+            {{ dateLabel }} · 你有 <b>{{ mineTotal.toLocaleString() }}</b> 个代码块 · 公共库
+            <b>{{ publicTotal.toLocaleString() }}</b> 条，收藏了
+            <b>{{ favoriteTotal.toLocaleString() }}</b> 个
+          </template>
+          <template v-else>
+            {{ dateLabel }} · 公共库有 <b>{{ publicTotal.toLocaleString() }}</b> 条代码块，登录后可创建你自己的
+          </template>
         </p>
       </div>
       <div class="dash__greet-actions">
@@ -337,7 +362,8 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
 /* ─── 统计卡 ─── */
 .dash__stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 我的 / 公共 / 收藏三张卡：宽屏三列，窄屏按 230px 下限自动折成两列、一列 */
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -346,6 +372,9 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   position: relative;
   overflow: hidden;
   display: flex;
+  /* 显式声明方向：main.css 里曾有一条同名全局 .stat-card（flex-direction: column）把这里压成纵向，
+     现虽已删除，仍写死 row 自防御，保证「图标在左 + 数字标签在右」的横向结构不被外部污染 */
+  flex-direction: row;
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
@@ -389,6 +418,14 @@ const openPalette = () => window.dispatchEvent(new CustomEvent('snippet:open-com
   --stat-icon-bg: rgb(52 211 153 / 0.12);
   --stat-icon-fg: rgb(52 211 153);
   --stat-icon-border: rgb(52 211 153 / 0.3);
+}
+
+/* 公共库：琥珀色，与「我的（主色）」和「收藏（绿）」拉开区分 */
+.stat-card--amber {
+  --stat-glow: rgb(245 158 11 / 0.16);
+  --stat-icon-bg: rgb(245 158 11 / 0.13);
+  --stat-icon-fg: rgb(245 158 11);
+  --stat-icon-border: rgb(245 158 11 / 0.3);
 }
 
 .stat-card__icon {

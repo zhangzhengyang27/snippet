@@ -19,6 +19,7 @@
     "noFallthroughCasesInSwitch": true,
 
     "ignoreDeprecations": "5.0",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "paths": {
       "@/*": ["./src/*"],
       "@ioftv/*": ["./src/views/data-visualization/bigscreen/ioftv-screen/*"]

@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useCopy } from '@/composables/useCopy'
 import { useTransientToast } from '@/composables/useTransientToast'
 import { useSnippetCollectionsState } from '@/composables/useSnippetCollectionsState'
-import { useSnippetListState } from '@/composables/useSnippetListState'
+import { ensureSnippetContent, useSnippetListState } from '@/composables/useSnippetListState'
 import { getApiErrorMessage } from '@/api/client'
 import {
   buildSnippetPlaceholderValues,
@@ -14,14 +14,21 @@ import {
 import { logger } from '@/utils/logger'
 import { useAuthStore } from '@/stores/authStore'
 import {
+  copyKnowledgeSnippet,
   createKnowledgeSnippet,
   deleteKnowledgeSnippet,
   deleteKnowledgeSnippetCollection,
   listKnowledgeSnippetTags,
   recordKnowledgeSnippetUse,
+  submitSnippetPublication as apiSubmitSnippetPublication,
   updateKnowledgeSnippet,
+  withdrawSnippetPublication as apiWithdrawSnippetPublication,
 } from '@/api/knowledge-snippets'
-import type { KnowledgeSnippet, KnowledgeSnippetTagItem } from '@/types/knowledge-snippet'
+import type {
+  KnowledgeSnippet,
+  KnowledgeSnippetTagItem,
+  SnippetScope,
+} from '@/types/knowledge-snippet'
 
 type ConfirmState = {
   open: boolean
@@ -33,8 +40,16 @@ type ConfirmState = {
 
 /**
  * 管理知识片段页的筛选、详情与弹窗流程。
+ *
+ * @param options.scope 数据作用域。`mine` = 个人工作区（/snippets），
+ *                      `public` = 公共代码块库（/library），不传为 `all`。
  */
-export const useKnowledgeSnippetsPage = () => {
+export const useKnowledgeSnippetsPage = (options?: { scope?: SnippetScope }) => {
+  /** 本页面实例的数据作用域 */
+  const pageScope: SnippetScope = options?.scope ?? 'all'
+  /** 公共代码块库：只读浏览 + 复制到我的，不提供新建/编辑/删除/集合管理 */
+  const isPublicScope = pageScope === 'public'
+
   const {
     collections,
     loadingCollections,
@@ -52,7 +67,7 @@ export const useKnowledgeSnippetsPage = () => {
     openEditCollectionDialog,
     submitCollectionDialog,
     persistCollectionTree,
-  } = useSnippetCollectionsState()
+  } = useSnippetCollectionsState({ scope: pageScope })
 
   const {
     keyword,
@@ -77,7 +92,13 @@ export const useKnowledgeSnippetsPage = () => {
     loadSnippets,
     loadMore,
     setPageSize,
+    setScope,
   } = useSnippetListState()
+
+  // 立即把作用域注入共享的列表状态（单例），后续请求才会带上正确的 scope。
+  // 必须早于任何 loadSnippets 调用：集合树 / 标签的加载在 onMounted，
+  // 而 setScope 内部的 scope watch 会顺带触发首次列表加载。
+  setScope(pageScope)
 
   const { showToast, toastMessage, toastType, showToastMessage } = useTransientToast()
   // 复制统一走 useCopy（含 navigator.clipboard 不可用时的 execCommand 降级）
@@ -130,7 +151,13 @@ export const useKnowledgeSnippetsPage = () => {
   }
 
   const refreshAll = async () => {
-    await Promise.all([loadCollections().catch(() => undefined), loadTags(), loadSnippets()])
+    await Promise.all([
+      loadCollections().catch(() => undefined),
+      // 公共片段没有标签（标签是个人私有数据），公共库不请求标签接口，
+      // 也就不会渲染出「用我的标签筛公共片段」这种必然空结果的筛选面板。
+      isPublicScope ? Promise.resolve() : loadTags(),
+      loadSnippets(),
+    ])
   }
 
   onMounted(() => {
@@ -289,10 +316,14 @@ export const useKnowledgeSnippetsPage = () => {
         .join('\n\n')
     }
 
-    return resolveFileCode(snippet.language, snippet.content)
+    return resolveFileCode(snippet.language, snippet.content ?? '')
   }
 
   const copySnippetCode = async (snippet: KnowledgeSnippet, textOverride?: string) => {
+    // 列表接口不回传正文（P0-3 瘦身）→ 复制前按需取回；textOverride 已含正文则免取。
+    if (!textOverride && snippet.content === undefined) {
+      await ensureSnippetContent(snippet.id)
+    }
     // silent：复制失败的提示要带上片段名，故由本处自行反馈
     const ok = await copyToClipboard(textOverride ?? buildCopyText(snippet), { silent: true })
     if (!ok) {
@@ -309,7 +340,69 @@ export const useKnowledgeSnippetsPage = () => {
     }
   }
 
+  /**
+   * 把公共代码块复制一份进自己的代码块库 —— 公共库页面（`/library`）的主操作。
+   *
+   * 复制到「未分组」：不弹集合选择器，避免在浏览公共库时被多一步打断；
+   * 用户到个人工作区后可以随时再归类。后端 `copySnippet` 只接受公共片段，
+   * 因此个人片段不会走到这里（页面也只在公共库渲染该入口）。
+   */
+  const copySnippetToMine = async (snippet: KnowledgeSnippet) => {
+    if (!isLoggedIn.value) {
+      showToastMessage('请先登录，再复制到自己的代码块库。', 'info')
+      return
+    }
+
+    try {
+      await copyKnowledgeSnippet(snippet.id)
+      showToastMessage(`已复制「${snippet.name}」到我的代码块。`, 'success')
+    } catch (error) {
+      showToastMessage(getApiErrorMessage(error, '复制到我的代码块失败。'), 'error')
+    }
+  }
+
+  /**
+   * 提交发布到公共代码块库（作者侧）。
+   *
+   * 提交后进入**待审**状态（isPublic 仍为 false），管理员通过后才真正上架 ——
+   * 因此这里提示的是「已提交审核」而不是「已发布」，避免作者误以为立刻公开。
+   */
+  const submitSnippetPublication = async (snippet: KnowledgeSnippet) => {
+    if (!isLoggedIn.value) {
+      showToastMessage('请先登录，再发布到公共代码块库。', 'info')
+      return
+    }
+
+    try {
+      await apiSubmitSnippetPublication(snippet.id)
+      pendingSelectSnippetId.value = snippet.id
+      showToastMessage(`「${snippet.name}」已提交审核，通过后将出现在公共代码块库。`, 'success')
+      await loadSnippets()
+    } catch (error) {
+      showToastMessage(getApiErrorMessage(error, '提交审核失败。'), 'error')
+    }
+  }
+
+  /**
+   * 取消发布：撤回待审（pending）或下架已发布（approved），一律回到私有。
+   */
+  const withdrawSnippetPublication = async (snippet: KnowledgeSnippet) => {
+    try {
+      await apiWithdrawSnippetPublication(snippet.id)
+      pendingSelectSnippetId.value = snippet.id
+      showToastMessage(
+        snippet.isPublic ? `「${snippet.name}」已从公共代码块库下架。` : '已撤回发布申请。',
+        'success'
+      )
+      await loadSnippets()
+    } catch (error) {
+      showToastMessage(getApiErrorMessage(error, '取消发布失败。'), 'error')
+    }
+  }
+
   return {
+    pageScope,
+    isPublicScope,
     collections,
     collectAllCollectionIds,
     loadingCollections,
@@ -361,6 +454,9 @@ export const useKnowledgeSnippetsPage = () => {
     askDeleteSnippet,
     toggleFavorite,
     copySnippetCode,
+    copySnippetToMine,
+    submitSnippetPublication,
+    withdrawSnippetPublication,
     isLoggedIn,
     openCreateCollectionDialog,
     openEditCollectionDialog,

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { AuthUser, LoginUser } from '@/api/auth'
+import type { AuthUser } from '@/api/auth'
 import { checkMe, logout as apiLogout } from '@/api/auth'
 import { setAuthFailureHandler } from '@/api/client'
 import { clearFavorites } from '@/composables/useFavorites'
@@ -15,7 +15,7 @@ import { resetSnippetListState } from '@/composables/useSnippetListState'
  */
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as (LoginUser | AuthUser) | null,
+    user: null as AuthUser | null,
     initialized: false,
   }),
 
@@ -27,7 +27,7 @@ export const useAuthStore = defineStore('auth', {
     /**
      * 设置当前用户（登录成功后由登录页调用）。
      */
-    setAuth(user: LoginUser | AuthUser) {
+    setAuth(user: AuthUser) {
       this.user = user
     },
 
