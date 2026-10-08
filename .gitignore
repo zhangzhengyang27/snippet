@@ -6,7 +6,7 @@ dist/
 .worktrees/
 _downloads/
 .workbuddy/
-.workb
+.workbuddy-ai/
 
 # Debug / screenshot files
 *.png
@@ -90,3 +90,7 @@ vite.config.d.ts
 
 # 本地备份文件（不入库）
 *.css.bak
+*.bak
+
+# 损坏 / 残留的临时产物
+*.damaged
