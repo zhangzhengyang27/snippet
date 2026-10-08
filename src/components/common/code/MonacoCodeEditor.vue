@@ -6,7 +6,7 @@
  * 主题自动跟随应用主题（dark/light），支持 v-model 双向绑定。
  *
  * 设计原则：
- *  - 统一编辑器配置（minimap off、JetBrains Mono、13px、wordWrap on）
+ *  - 统一编辑器配置（minimap off、系统等宽字体栈、13px、wordWrap on）
  *  - 主题跟随 useTheme
  *  - 透传 Monaco 原生 options，方便上层覆盖
  *  - 仅负责编辑器本身，不内置 Tab/复制/保存等业务逻辑（由调用方处理）
@@ -255,7 +255,7 @@ const monacoLanguage = computed(() => mapLanguage(props.language))
 const monacoOptions = computed<MonacoOptions>(() => ({
   minimap: { enabled: props.minimap },
   lineNumbers: props.showLineNumbers ? 'on' : 'off',
-  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+  fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace",
   fontSize: props.fontSize,
   automaticLayout: true,
   scrollBeyondLastLine: false,
@@ -338,13 +338,25 @@ defineExpose({
 </template>
 
 <style scoped>
+/* 用 flex 列容器承载，而**不是**依赖 `height: 100%` 传递高度：
+ * 调用方的容器可能只给了 min-height（没有确定 height），此时内层 `height: 100%`
+ * 会解析成 auto、宿主塌成几个像素，Monaco 便按那个高度布局 —— 表现为「代码区整片空白、
+ * 编辑器只有 5px」。flex 让内层按容器**实际高度**拉伸，与父级怎么定高无关。 */
 .monaco-code-editor {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 200px;
   overflow: hidden;
   border-radius: var(--radius-md, 8px);
   background: var(--monaco-editor-bg, rgb(var(--color-surface-bright-rgb)));
+}
+
+/* @guolao/vue-monaco-editor 的根节点：撑满容器剩余高度（min-height:0 允许收缩） */
+.monaco-code-editor > * {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .monaco-code-editor :deep(.monaco-editor) {

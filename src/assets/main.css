@@ -29,9 +29,9 @@
   --color-accent-orange: rgb(var(--color-accent-orange-rgb) / <alpha-value>);
   --color-shadow: rgb(var(--color-shadow-rgb) / <alpha-value>);
 
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-heading: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
 
   /* Radius Scale — Linear (design.hagicode.com/zh-CN/designs/linear.app/) */
   --radius-sm: 0.125rem;    /* 2px */
@@ -253,7 +253,7 @@
     --space-10: 2.5rem;        /* 40px */
     --space-12: 3rem;          /* 48px */
 
-    /* Typography Scale — Linear (Inter 唯一字族) */
+    /* Typography Scale — 系统字体栈（原 Linear / Inter 字族已随 Google Fonts 外链一并移除） */
     --text-display: 4.5rem;          /* 72px Display */
     --text-display-md: 4rem;         /* 64px */
     --text-display-sm: 3rem;         /* 48px */
@@ -264,7 +264,7 @@
     --text-body: 1rem;               /* 16px Body / Medium / Semibold */
     --text-body-sm: 0.9375rem;       /* 15px Body text (Linear UI 正文) */
     --text-body-emphasis: 1.0625rem; /* 17px Body Emphasis */
-    --text-code: 0.875rem;           /* 14px code (JetBrains Mono) */
+    --text-code: 0.875rem;           /* 14px code */
     --text-code-sm: 0.75rem;         /* 12px */
     --text-headline-sm: 1.5rem;      /* 24px */
     --text-label-caps: 0.6875rem;
@@ -333,7 +333,7 @@
     min-height: 100vh;
     background: rgb(var(--color-background-rgb));
     color: rgb(var(--color-text-rgb));
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
     transition:
       background-color 0.3s ease,
       color 0.3s ease;
@@ -392,7 +392,7 @@
       rgb(var(--color-secondary-rgb)) 100%
     );
     color: rgb(var(--color-background-rgb));
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
     font-size: var(--text-body-sm);
     font-weight: 600;
     border: none;
@@ -418,7 +418,7 @@
     padding: 8px 16px;
     background: rgb(var(--color-surface-glass-rgb) / var(--color-surface-glass-alpha, 1));
     color: rgb(var(--color-text-secondary-rgb));
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
     font-size: var(--text-body-sm);
     font-weight: 500;
     border: 1px solid rgb(var(--color-border-glass-rgb) / var(--color-border-glass-alpha, 1));
@@ -449,7 +449,7 @@
      规则已删除，勿再加回 —— 概览页已在 scoped 内显式声明 flex-direction 自防御。 */
 
   .stat-value {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
     font-size: var(--text-h1);
     font-weight: 700;
     line-height: 1;
@@ -465,7 +465,7 @@
   }
 
   .stat-label {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
     font-size: var(--text-xs);
     color: rgb(var(--color-text-secondary-rgb));
     text-transform: uppercase;
@@ -481,14 +481,14 @@
   }
 
   .section-title {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
     font-size: var(--text-h2);
     font-weight: 700;
     color: rgb(var(--color-text-rgb));
   }
 
   .result-count {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
     font-size: var(--text-sm);
     color: rgb(var(--color-text-secondary-rgb));
   }
@@ -539,7 +539,7 @@
 
   /* Code Block Styling */
   .code-block {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;
     font-size: var(--text-sm);
     line-height: 1.7;
     background: rgb(var(--color-surface-dim-rgb));

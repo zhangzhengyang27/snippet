@@ -11,7 +11,6 @@ import SnippetPlaceholderInspector from '@/components/snippets/SnippetPlaceholde
 import SnippetTagInput from '@/components/snippets/SnippetTagInput.vue'
 import {
   useSnippetEditorForm,
-  SNIPPET_DESCRIPTION_LIMITS,
   type SnippetEditorSubmitPayload,
 } from '@/composables/useSnippetEditorForm'
 import { codeBlockLanguages, codeBlockThemes, snippetDifficultyOptions } from '@/types/code-block'
@@ -36,12 +35,12 @@ const {
   validationMessage,
   collectionOptions,
   placeholderState,
-  nameLength,
-  nameIssue,
-  nameMaxLength,
-  descriptionLength,
-  descriptionIssue,
+  nameHint,
+  nameHintIsError,
+  descriptionHint,
+  descriptionHintIsError,
   descriptionPlaceholder,
+  markTouched,
   validate,
   buildSubmitPayload,
 } = useSnippetEditorForm({
@@ -70,6 +69,18 @@ const handleSubmit = () => {
 
 const handleCancel = () => {
   emit('update:open', false)
+}
+
+/** 名称输入：同步表单并标记「已改动」——此后该字段才允许报红。 */
+const handleNameInput = (value: unknown) => {
+  Object.assign(form, { name: String(value ?? '') })
+  markTouched('name')
+}
+
+/** 描述输入：同上。 */
+const handleDescriptionInput = (value: unknown) => {
+  Object.assign(form, { description: String(value ?? '') })
+  markTouched('description')
 }
 
 const titleText = computed(() => (props.mode === 'create' ? '新建片段' : '编辑片段'))
@@ -101,19 +112,19 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
              因而误判为「label 未关联控件」。关联由这些组件自身负责，故本区块禁用该规则。 -->
         <div class="snippet-editor-dialog__meta">
           <div class="snippet-editor-dialog__row snippet-editor-dialog__row--2">
-            <label class="snippet-editor-dialog__field">
+            <label class="snippet-editor-dialog__field snippet-editor-dialog__field--stacked">
               <span class="snippet-editor-dialog__label">名称</span>
               <AppInput
                 :value="form.name"
                 placeholder="例如：Vue 数据加载状态"
-                @update:value="Object.assign(form, { name: String($event ?? '') })"
+                @update:value="handleNameInput"
               />
-              <!-- 实时校验：合格显示字数，超长把原因写在字段下面（后端 30 字上限会 400） -->
+              <!-- 实时校验：未改动只显示字数，改动过 / 点过创建才把原因写在字段下面（后端 30 字上限会 400） -->
               <p
                 class="snippet-editor-dialog__hint"
-                :class="{ 'snippet-editor-dialog__hint--error': Boolean(nameIssue) }"
+                :class="{ 'snippet-editor-dialog__hint--error': nameHintIsError }"
               >
-                {{ nameIssue || `${nameLength} / ${nameMaxLength} 字` }}
+                {{ nameHint }}
               </p>
             </label>
 
@@ -137,17 +148,14 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
                 :value="form.description"
                 :rows="2"
                 :placeholder="descriptionPlaceholder"
-                @update:value="Object.assign(form, { description: String($event ?? '') })"
+                @update:value="handleDescriptionInput"
               />
-              <!-- 实时校验：合格显示字数，不合格直接把原因写在字段下面（别让用户点保存才吃 400） -->
+              <!-- 实时校验：未改动只显示字数，改动过 / 点过创建才把原因写在字段下面（别让用户点保存才吃 400） -->
               <p
                 class="snippet-editor-dialog__hint"
-                :class="{ 'snippet-editor-dialog__hint--error': Boolean(descriptionIssue) }"
+                :class="{ 'snippet-editor-dialog__hint--error': descriptionHintIsError }"
               >
-                {{
-                  descriptionIssue ||
-                  `${descriptionLength} / ${SNIPPET_DESCRIPTION_LIMITS.min}-${SNIPPET_DESCRIPTION_LIMITS.max} 字`
-                }}
+                {{ descriptionHint }}
               </p>
             </div>
           </label>
@@ -203,8 +211,8 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
               :language="form.language"
               :show-line-numbers="form.lineNumbers"
               :word-wrap="form.wrap"
-              :min-height="'320px'"
-              :max-height="'50vh'"
+              min-height="100%"
+              max-height="100%"
             />
           </div>
         </div>
@@ -287,6 +295,21 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
   align-items: flex-start;
 }
 
+/* 控件下方带实时校验提示的字段（如「名称」）：
+ * 提示原本是 flex 行的第三个子项，会跟输入框抢横向空间、把输入框压窄，
+ * 故改用 grid —— 标签占第 1 列，控件与提示都落在第 2 列（提示排在控件下一行）。 */
+.snippet-editor-dialog__field--stacked {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.snippet-editor-dialog__field--stacked .snippet-editor-dialog__hint {
+  grid-column: 2;
+  margin: 0;
+}
+
 .snippet-editor-dialog__label {
   flex: 0 0 auto;
   width: 56px;
@@ -356,7 +379,9 @@ const titleIcon = computed(() => (props.mode === 'create' ? 'material-symbols:no
 
 .snippet-editor-dialog__code {
   flex: 1 1 auto;
-  min-height: 320px;
+  /* 必须给**确定高度**：MonacoCodeEditor 内部靠 height:100% 撑开，
+   * 父级只写 min-height 时百分比高度会失效（曾导致代码区整片空白、编辑器只有 5px）。 */
+  height: 320px;
   max-height: 50vh;
   overflow: hidden;
   background: rgb(var(--color-surface-rgb));

@@ -8,6 +8,7 @@
  * 把标题里的空格换成 `/` 就能绕过（当时全库 112 条数据正是这样进来的）。
  */
 import { describe, expect, it } from 'vitest'
+import { nextTick, ref } from 'vue'
 import {
   SNIPPET_DESCRIPTION_LIMITS,
   SNIPPET_DESCRIPTION_NAME_RESIDUE_MIN,
@@ -15,6 +16,7 @@ import {
   describeDescriptionIssue,
   describeNameIssue,
   normalizeSnippetMetadataText,
+  useSnippetEditorForm,
 } from './useSnippetEditorForm'
 
 const PINIA_NAME = 'stores user.js - Pinia 状态管理'
@@ -144,5 +146,85 @@ describe('describeDescriptionIssue', () => {
     expect(SNIPPET_DESCRIPTION_LIMITS.min).toBe(20)
     expect(SNIPPET_DESCRIPTION_LIMITS.max).toBe(400)
     expect(SNIPPET_NAME_MAX_LENGTH).toBe(30)
+  })
+})
+
+/**
+ * 字段提示的「未触碰不报红」行为（2026-10-08 修）。
+ *
+ * 原实现把 `nameIssue` / `descriptionIssue` 无条件渲染到字段下方，导致**刚打开的空表单**
+ * 就满屏红字。现在只有「改过该字段」或「点过创建 / 保存」才报错，否则显示中性字数计数。
+ */
+describe('useSnippetEditorForm 字段提示', () => {
+  const setup = () => {
+    const open = ref(true)
+    const form = useSnippetEditorForm({
+      open: () => open.value,
+      snippet: () => null,
+      collections: () => [],
+      suggestedCollectionId: () => null,
+    })
+    return { open, form }
+  }
+
+  it('新建弹窗刚打开：只显示中性字数，不报红', () => {
+    const { form } = setup()
+
+    expect(form.nameHint.value).toBe(`0 / ${SNIPPET_NAME_MAX_LENGTH} 字`)
+    expect(form.nameHintIsError.value).toBe(false)
+    expect(form.descriptionHint.value).toBe(
+      `0 / ${SNIPPET_DESCRIPTION_LIMITS.min}-${SNIPPET_DESCRIPTION_LIMITS.max} 字`
+    )
+    expect(form.descriptionHintIsError.value).toBe(false)
+  })
+
+  it('标记触碰且字段为空：开始报红', () => {
+    const { form } = setup()
+
+    form.markTouched('name')
+    form.markTouched('description')
+
+    expect(form.nameHintIsError.value).toBe(true)
+    expect(form.nameHint.value).toBe('片段名称不能为空')
+    expect(form.descriptionHintIsError.value).toBe(true)
+    expect(form.descriptionHint.value).toContain('描述不能为空')
+  })
+
+  it('未触碰但点过创建：validate 后强制报红（否则用户不知道为何没提交）', () => {
+    const { form } = setup()
+
+    expect(form.validate()).toBe(false)
+
+    expect(form.nameHintIsError.value).toBe(true)
+    expect(form.descriptionHintIsError.value).toBe(true)
+    expect(form.validationMessage.value).toBe('片段名称不能为空')
+  })
+
+  it('触碰后填到合格：回到中性字数', () => {
+    const { form } = setup()
+
+    form.markTouched('name')
+    expect(form.nameHintIsError.value).toBe(true)
+
+    form.form.name = 'Vue 数据加载状态'
+    expect(form.nameHintIsError.value).toBe(false)
+    expect(form.nameHint.value).toMatch(/\/ 30 字$/)
+  })
+
+  it('重新打开弹窗会重置触碰与提交状态（编辑已有片段不立刻标红）', async () => {
+    const { open, form } = setup()
+
+    form.markTouched('name')
+    form.validate()
+    expect(form.nameHintIsError.value).toBe(true)
+    expect(form.validationMessage.value).not.toBe('')
+
+    open.value = false
+    await nextTick()
+    open.value = true
+    await nextTick()
+
+    expect(form.nameHintIsError.value).toBe(false)
+    expect(form.validationMessage.value).toBe('')
   })
 })

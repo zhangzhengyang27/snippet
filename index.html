@@ -5,13 +5,8 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>代码块 · Snippet</title>
-    <!-- Linear 字体：Inter（正文/标题统一字族，Google Fonts 加载）+ JetBrains Mono（Berkeley Mono 替身，后者为付费字体不可用） -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400..700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- 字体：全部使用系统字体栈（见 src/assets/main.css 的 --font-heading / --font-body / --font-mono），
+         不外链任何字体 CDN。原 Google Fonts（Inter + JetBrains Mono）已移除，避免国内首屏字体请求超时。 -->
   </head>
   <body>
     <div id="app"></div>

@@ -174,6 +174,14 @@ export function useSnippetEditorForm(options: {
   })
   const validationMessage = ref('')
 
+  /**
+   * 字段是否被用户改动过。未改动（且未点过提交）时字段下方只显示中性字数、不报红 ——
+   * 否则刚打开的新建弹窗会直接满屏红字。
+   */
+  const touched = reactive({ name: false, description: false })
+  /** 是否点过「创建 / 保存」：点过后即便没改动也要把问题亮出来，否则用户不知道为何没提交。 */
+  const submitAttempted = ref(false)
+
   const initialFormState = (): FormState => ({
     name: '',
     description: '',
@@ -248,6 +256,35 @@ export function useSnippetEditorForm(options: {
     describeDescriptionIssue(form.name, form.description)
   )
 
+  /** 名称提示是否该显示为错误：只有「改过」或「点过提交」才报红，否则只报字数。 */
+  const nameHintIsError = computed(
+    () => Boolean(nameIssue.value) && (touched.name || submitAttempted.value)
+  )
+
+  /** 名称字段下方要显示的文案：未触碰时只显示字数计数。 */
+  const nameHint = computed(() =>
+    nameHintIsError.value
+      ? nameIssue.value
+      : `${nameLength.value} / ${SNIPPET_NAME_MAX_LENGTH} 字`
+  )
+
+  /** 描述提示是否该显示为错误：同上。 */
+  const descriptionHintIsError = computed(
+    () => Boolean(descriptionIssue.value) && (touched.description || submitAttempted.value)
+  )
+
+  /** 描述字段下方要显示的文案：未触碰时只显示字数计数。 */
+  const descriptionHint = computed(() =>
+    descriptionHintIsError.value
+      ? descriptionIssue.value
+      : `${descriptionLength.value} / ${SNIPPET_DESCRIPTION_LIMITS.min}-${SNIPPET_DESCRIPTION_LIMITS.max} 字`
+  )
+
+  /** 标记字段已被用户改动（首次输入时调用），此后该字段才允许报红。 */
+  const markTouched = (field: 'name' | 'description') => {
+    touched[field] = true
+  }
+
   const applySnippet = () => {
     const nextState = initialFormState()
     const snippet = options.snippet()
@@ -275,6 +312,11 @@ export function useSnippetEditorForm(options: {
 
     Object.assign(form, nextState)
     validationMessage.value = ''
+    // 打开 / 切换片段时重置「已触碰」状态：
+    // 编辑已有片段不该把它历史遗留的问题立刻标红。
+    touched.name = false
+    touched.description = false
+    submitAttempted.value = false
   }
 
   watch(
@@ -288,6 +330,9 @@ export function useSnippetEditorForm(options: {
   )
 
   const validate = () => {
+    // 用户点了提交 —— 从此字段提示强制显示，不再因「未触碰」而隐藏
+    submitAttempted.value = true
+
     // 名称必填 + 长度上限：与后端 snippet-metadata 闸门同口径，前端先拦，别让用户吃 400
     if (nameIssue.value) {
       validationMessage.value = nameIssue.value
@@ -349,10 +394,15 @@ export function useSnippetEditorForm(options: {
     previewHtml,
     descriptionLength,
     descriptionIssue,
+    descriptionHint,
+    descriptionHintIsError,
     descriptionPlaceholder: SNIPPET_DESCRIPTION_PLACEHOLDER,
     nameLength,
     nameIssue,
+    nameHint,
+    nameHintIsError,
     nameMaxLength: SNIPPET_NAME_MAX_LENGTH,
+    markTouched,
     applySnippet,
     validate,
     buildSubmitPayload,
