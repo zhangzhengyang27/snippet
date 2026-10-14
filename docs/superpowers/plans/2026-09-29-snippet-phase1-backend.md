@@ -15,7 +15,7 @@
 - 后端根目录：`/Users/xiaoye/Desktop/20260810/nas-projects/snippet-server`（下称 SRV）；原版参考：`/Users/xiaoye/Desktop/html5-examples/server`（下称 ORIG）
 - 表主键约定：知识片段域 = varchar(12) NanoID（`generateId()`）；User = uuid；Favorite = uuid 自动生成
 - 全局 `JwtAuthGuard` 必须为**宽容模式**（无凭证放行，`req.user` 为 undefined）；写接口用 `RequireAuthGuard` 强制登录（knowledge-snippets.controller.ts 头注释为规范原文）
-- 认证：仅 login/logout/me；默认管理员 admin（`ADMIN_DEFAULT_PASSWORD`，默认 admin123 并告警）
+- 认证：仅 login/logout/me；默认管理员 admin（`ADMIN_DEFAULT_PASSWORD`；未设置时用内置弱口令并告警）
 - 前端端口 5556（vite proxy /api→http://localhost:3000），后端 CORS 允许 5556；PG 用本机 5433 端口（避让 5432）
 - 禁止把 ORIG 的 `.env`（含真实 OSS 密钥）复制到任何新位置；新 `.env` 只含 DB/JWT/ADMIN/PORT
 - snippets JSON 种子来自 ORIG 根目录三份文件（code-snippets.json / snippets-frontend.json / snippets-shell.json）
@@ -639,7 +639,7 @@ services:
     container_name: snippet-pg
     environment:
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: root1234
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
       POSTGRES_DB: html5_examples
     ports:
       - '5433:5432'
@@ -657,14 +657,14 @@ volumes:
 DB_HOST=localhost
 DB_PORT=5433
 DB_USERNAME=root
-DB_PASSWORD=root1234
+DB_PASSWORD=<你的数据库密码>
 DB_NAME=html5_examples
 DB_SYNC=true
 
 JWT_SECRET=snippet-dev-secret-change-me
 JWT_EXPIRES_IN=7d
 
-ADMIN_DEFAULT_PASSWORD=admin123
+ADMIN_DEFAULT_PASSWORD=<请替换为强口令>
 
 PORT=3000
 NODE_ENV=development
@@ -689,7 +689,7 @@ curl -s http://localhost:3000/api/examples | head -c 200          # 期望 {"dat
 curl -s http://localhost:3000/api/knowledge/snippets | head -c 200 # 期望 200（宽容模式），非 401
 curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/favorites   # 期望 401
 curl -s -X POST http://localhost:3000/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"admin123"}' | head -c 200    # 期望 access_token
+  -d '{"username":"admin","password":"$ADMIN_DEFAULT_PASSWORD"}' | head -c 200    # 期望 access_token
 ```
 
 - [ ] **Step 4: 提交**
@@ -732,7 +732,7 @@ Expected: 第二次输出「跳过已存在」且各表计数不变。
 - [ ] **Step 4: 双身份数据隔离验证（Review Focus #2）**
 
 ```bash
-TOKEN=$(curl -s -X POST localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin123"}' | python3 -c 'import json,sys;print(json.load(sys.stdin)["access_token"])')
+TOKEN=$(curl -s -X POST localhost:3000/api/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"$ADMIN_DEFAULT_PASSWORD"}' | python3 -c 'import json,sys;print(json.load(sys.stdin)["access_token"])')
 # admin 建一条私有片段
 curl -s -X POST localhost:3000/api/knowledge/snippets -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"name":"admin私有片段","content":"console.log(1)","language":"javascript","collectionId":null}' | head -c 120

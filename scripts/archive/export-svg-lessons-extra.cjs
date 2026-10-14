@@ -60,7 +60,7 @@ async function main() {
     host: ENV.DB_HOST || 'localhost',
     port: parseInt(ENV.DB_PORT || '5432', 10),
     user: ENV.DB_USERNAME || 'root',
-    password: ENV.DB_PASSWORD || 'root1234',
+    password: ENV.DB_PASSWORD,
     database: ENV.DB_NAME || 'html5_examples',
   })
   await client.connect()

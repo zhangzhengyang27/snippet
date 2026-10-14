@@ -15,7 +15,13 @@
 const { execSync } = require('child_process')
 const fs = require('fs')
 
-const DB = 'postgresql://root:root1234@localhost:5432/html5_examples'
+// 连接串从环境变量拼装；口令不入库（本文件曾硬编码本机口令，已清除）
+const DB_PASSWORD = process.env.DB_PASSWORD
+if (!DB_PASSWORD) {
+  console.error('缺少环境变量 DB_PASSWORD，请先设置后再运行。')
+  process.exit(1)
+}
+const DB = `postgresql://${process.env.DB_USERNAME ?? 'root'}:${DB_PASSWORD}@${process.env.DB_HOST ?? 'localhost'}:${process.env.DB_PORT ?? '5432'}/${process.env.DB_NAME ?? 'html5_examples'}`
 
 function psql(sql) {
   return execSync(`psql "${DB}" -t -A -c "${sql.replace(/"/g, '\\"')}"`, {
