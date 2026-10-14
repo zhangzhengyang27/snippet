@@ -1,0 +1,35 @@
+# 代码块（snippet）全栈部署 — NAS 适配版
+# 链路：VPS Nginx:443(snippet.zhangzhengyang.com) → frps:6300 → NAS frpc → host 6300 → 容器 80
+# 数据库/缓存复用 NAS dev-stack（dev-postgres / dev-redis），外部网络 dev-stack_devnet
+services:
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: snippet-frontend
+    restart: unless-stopped
+    ports:
+      - "6300:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx-snippet.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [devnet]
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: snippet-backend:latest
+    container_name: snippet-backend
+    restart: unless-stopped
+    env_file: .env
+    networks: [devnet]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  devnet:
+    external: true
+    name: dev-stack_devnet

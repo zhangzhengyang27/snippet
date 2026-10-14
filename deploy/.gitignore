@@ -1,0 +1,2 @@
+# 含生产密钥，禁止提交
+.env.production
