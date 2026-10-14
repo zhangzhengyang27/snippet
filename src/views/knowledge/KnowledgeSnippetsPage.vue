@@ -19,7 +19,6 @@ import { useToast } from '@/composables/useToast'
 import {
   ensureSnippetContent,
   snippetSortOptions,
-  isAppendingMore,
 } from '@/composables/useSnippetListState'
 import { useKnowledgeSnippetsPage } from '@/composables/useKnowledgeSnippetsPage'
 import { useRecentSnippets } from '@/composables/useRecentSnippets'
@@ -97,7 +96,6 @@ const {
   expandCollectionWithAncestors,
   isLoggedIn,
   setPageSize,
-  loadMore,
 } = useKnowledgeSnippetsPage({ scope: pageScope })
 
 /** 本页面对应的路由前缀：个人工作区 `/snippets`、公共代码块库 `/library`。
@@ -297,7 +295,7 @@ watch(
     sort.value,
     page.value,
   ],
-  () => syncToUrl(isAppendingMore.value ? 'replace' : 'push')
+  () => syncToUrl('push')
 )
 
 /** 关键词：300ms 防抖后同步，避免每次按键都触发路由写入；用 replace 不占历史栈 */
@@ -573,7 +571,6 @@ watch(detailLayout, (next) => {
             @create-snippet="handleCreateSnippet"
             @update:page="page = $event"
             @update:page-size="setPageSize"
-            @load-more="loadMore"
           >
             <!-- 空态补充引导：个人工作区没内容时，把「登录」和「去公共库逛逛」摆在手边 -->
             <template #empty-actions>

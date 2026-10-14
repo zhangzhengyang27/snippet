@@ -3,21 +3,19 @@
  * CommonCodeBlock - 课程示例通用只读代码块（恢复推断：无直接调用点）
  *
  * 供课程示例 SFC 通过 `@/components/common/code/CommonCodeBlock.vue`
- * （或 re-export 别名 GalleryCommonCodeBlock）引用，基于 MonacoCodeEditor
- * 的只读模式做轻量封装。
+ * （或 re-export 别名 GalleryCommonCodeBlock）引用，基于 ShikiCodeBlock
+ * 的只读模式做轻量封装（不再加载 Monaco）。
  *
  * 用法：
- *   <CommonCodeBlock :code="content" language="typescript" read-only />
+ *   <CommonCodeBlock :code="content" language="typescript" />
  */
-import MonacoCodeEditor from './MonacoCodeEditor.vue'
+import ShikiCodeBlock from './ShikiCodeBlock.vue'
 
 interface Props {
   /** 代码内容 */
   code?: string
-  /** 代码语言（与 MonacoCodeEditor 一致的语言标识） */
+  /** 代码语言（与 ShikiCodeBlock 一致的语言标识） */
   language?: string
-  /** 是否只读（默认 true：展示场景） */
-  readOnly?: boolean
   /** 是否显示行号 */
   showLineNumbers?: boolean
   /** 最小 / 最大高度 */
@@ -28,7 +26,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   code: '',
   language: 'plaintext',
-  readOnly: true,
   showLineNumbers: true,
   minHeight: '120px',
   maxHeight: '480px',
@@ -36,11 +33,11 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <MonacoCodeEditor
-    :model-value="props.code"
+  <ShikiCodeBlock
+    :code="props.code"
     :language="props.language"
-    :read-only="props.readOnly"
     :show-line-numbers="props.showLineNumbers"
+    :word-wrap="true"
     :min-height="props.minHeight"
     :max-height="props.maxHeight"
   />

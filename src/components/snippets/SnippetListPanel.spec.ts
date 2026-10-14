@@ -8,50 +8,13 @@
  *  2. 加载中**不重建列表**（否则滚动位置会被甩回顶部）
  *  3. 子组件事件正确上抛（selectSnippet / clearFilters / createSnippet）
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SnippetListPanel from './SnippetListPanel.vue'
 import SnippetListRow from './SnippetListRow.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import Pagination from '@/components/layout/Pagination.vue'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
-
-/**
- * jsdom 没有 IntersectionObserver（面板一挂载就会 `new` 它）。
- * 这里装一个**可控**替身：保留「disconnect 后不再回调」的真实语义，
- * 从而既能避免 ReferenceError，也能直接驱动「滚到底 → 追加」这条新补回的链路。
- */
-type IOCallback = (entries: Array<{ isIntersecting: boolean }>) => void
-/** 当前「已连接」的观察器回调（disconnect 会移除，与真实语义一致） */
-const activeObservers: IOCallback[] = []
-
-class MockIntersectionObserver {
-  constructor(private readonly cb: IOCallback) {
-    activeObservers.push(this.cb)
-  }
-  observe() {}
-  unobserve() {}
-  disconnect() {
-    const index = activeObservers.indexOf(this.cb)
-    if (index >= 0) activeObservers.splice(index, 1)
-  }
-  takeRecords() {
-    return []
-  }
-}
-
-/** 模拟哨兵进入/离开可视区 */
-function triggerIntersect(isIntersecting = true) {
-  for (const cb of [...activeObservers]) {
-    cb([{ isIntersecting }])
-  }
-}
-
-beforeEach(() => {
-  activeObservers.length = 0
-  ;(globalThis as { IntersectionObserver?: unknown }).IntersectionObserver =
-    MockIntersectionObserver
-})
 
 function makeSnippet(id: string): KnowledgeSnippet {
   return {
@@ -161,17 +124,17 @@ describe('SnippetListPanel · 分页门控', () => {
     expect(wrapper.findComponent(Pagination).exists()).toBe(true)
   })
 
-  it('条状视图：走滚动追加，未达上限时不渲染分页（两套翻页不并存）', () => {
+  it('条状视图：多页时渲染分页（与卡片视图一致，不再做滚动追加）', () => {
     const wrapper = mountPanel({
       snippets: [makeSnippet('a')],
       total: 40,
       totalPages: 2,
       viewMode: 'list',
     })
-    expect(wrapper.findComponent(Pagination).exists()).toBe(false)
+    expect(wrapper.findComponent(Pagination).exists()).toBe(true)
   })
 
-  it('条状视图：追加到 DOM 保护上限后放出分页兜底', () => {
+  it('条状视图：大量片段时仍渲染分页', () => {
     const snippets = Array.from({ length: 200 }, (_, i) => makeSnippet(`s${i}`))
     const wrapper = mountPanel({ snippets, total: 3399, totalPages: 170, viewMode: 'list' })
     expect(wrapper.findComponent(Pagination).exists()).toBe(true)
@@ -224,43 +187,5 @@ describe('SnippetListPanel · 空状态操作引导', () => {
     expect(button).toBeTruthy()
     await button!.trigger('click')
     expect(wrapper.emitted('createSnippet')).toHaveLength(1)
-  })
-})
-
-describe('SnippetListPanel · 无限滚动触发点', () => {
-  it('哨兵进入可视区时上抛 loadMore', () => {
-    const wrapper = mountPanel({ snippets: [makeSnippet('a')], total: 40, totalPages: 2 })
-    triggerIntersect(true)
-    expect(wrapper.emitted('loadMore')).toHaveLength(1)
-  })
-
-  it('加载中时忽略触发（避免重复追加同一页）', () => {
-    const wrapper = mountPanel({
-      snippets: [makeSnippet('a')],
-      total: 40,
-      totalPages: 2,
-      loading: true,
-    })
-    triggerIntersect(true)
-    expect(wrapper.emitted('loadMore')).toBeUndefined()
-  })
-
-  it('已是最后一页时忽略触发', () => {
-    const wrapper = mountPanel({ snippets: [makeSnippet('a')], total: 1, totalPages: 1 })
-    triggerIntersect(true)
-    expect(wrapper.emitted('loadMore')).toBeUndefined()
-  })
-
-  it('哨兵离开可视区不触发', () => {
-    const wrapper = mountPanel({ snippets: [makeSnippet('a')], total: 40, totalPages: 2 })
-    triggerIntersect(false)
-    expect(wrapper.emitted('loadMore')).toBeUndefined()
-  })
-
-  it('卸载后断开观察器，不再触发（避免泄漏与幽灵请求）', () => {
-    const wrapper = mountPanel({ snippets: [makeSnippet('a')], total: 40, totalPages: 2 })
-    wrapper.unmount()
-    triggerIntersect(true)
-    expect(wrapper.emitted('loadMore')).toBeUndefined()
   })
 })

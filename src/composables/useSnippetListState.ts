@@ -22,20 +22,6 @@ export const snippetListPageSize = 20
 export const snippetPageSizeOptions = [12, 20, 24, 36, 48]
 
 /**
- * 追加加载的条数硬上限。
- *
- * 分页模式下每页最多 48 条，渲染量天然有界；但追加加载（`loadMore`）一旦被触发，
- * 「总数很大 + 持续追加」会让 DOM 无界增长。这里留一道上限兜底：达到后不再追加，
- * 用户只能靠翻页继续浏览。
- *
- * ⚠️ 现状备注：`loadMore` 目前**没有任何调用方** —— `SnippetListPanel` 声明了
- * `loadMore` emit、`KnowledgeSnippetsPage` 也绑定了 `@load-more`，但面板内部从未
- * `emit('loadMore')`，整条追加链路不可达（疑为数据恢复事故中丢失触发点，同类问题见
- * 报告 4.10 的「批量功能入口缺失」）。此处先加上界，待确定是补回触发点还是移除死代码。
- */
-export const snippetMaxAppendedItems = 200
-
-/**
  * 片段列表支持的排序选项。
  */
 export const snippetSortOptions: Array<{ label: string; value: SnippetSortOption }> = [
@@ -298,32 +284,6 @@ const setPageSize = (next: number) => {
   }
 }
 
-/**
- * 加载下一页并追加到列表（移动端无限滚动使用）。
- * 已到末页或正在加载时忽略。
- */
-/**
- * 追加加载标志：防止 watch(page) 在 loadMore 期间触发覆盖式加载。
- *
- * 同时对外暴露：页面的 URL 同步需要据此判断本次 page 变化是「用户点分页」还是
- * 「滚动自动追加」——后者必须走 replace，否则每追加一页就往浏览器历史里塞一条记录，
- * 滚 170 页后后退键彻底失效（详见页面 syncToUrl 注释）。
- */
-export const isAppendingMore = ref(false)
-const loadMore = async () => {
-  if (loadingSnippets.value) return
-  if (page.value >= totalPages.value) return
-  // 达到追加上限：停止继续堆 DOM，交给分页
-  if (snippets.value.length >= snippetMaxAppendedItems) return
-  isAppendingMore.value = true
-  try {
-    page.value += 1
-    await loadSnippets(true)
-  } finally {
-    isAppendingMore.value = false
-  }
-}
-
 // watch / 生命周期必须在 setup 上下文注册，故放入函数内；
 // 用模块级标志保证只注册一次（状态为单例，重复注册会多触发无效监听）
 let watchersRegistered = false
@@ -378,8 +338,6 @@ export const useSnippetListState = () => {
       watch(
         () => page.value,
         () => {
-          // 追加模式（loadMore）已自行加载，跳过覆盖式加载
-          if (isAppendingMore.value) return
           void loadSnippets()
         }
       )
@@ -417,7 +375,6 @@ export const useSnippetListState = () => {
     selectedSnippetPreviewHtml,
     loadSnippets,
     scheduleLoadSnippets,
-    loadMore,
     setPageSize,
   }
 }

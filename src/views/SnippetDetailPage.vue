@@ -21,7 +21,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppModal from '@/components/common/AppModal.vue'
-import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
+import ShikiCodeBlock from '@/components/common/code/ShikiCodeBlock.vue'
 import SnippetPreviewPane from '@/components/common/SnippetPreviewPane.vue'
 import SnippetEditorDialog from '@/components/snippets/SnippetEditorDialog.vue'
 import SnippetVersionDialog from '@/components/snippets/SnippetVersionDialog.vue'
@@ -719,11 +719,10 @@ function openRelated(id: string) {
             :html="previewHtml"
             :files="previewFiles"
           />
-          <MonacoCodeEditor
+          <ShikiCodeBlock
             v-else
-            :model-value="activeCode"
+            :code="activeCode"
             :language="activeLanguage"
-            read-only
             :show-line-numbers="showLineNumbers"
             :word-wrap="wrap"
             min-height="100%"

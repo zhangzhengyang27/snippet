@@ -1,12 +1,16 @@
 <script setup lang="ts">
 /** 代码片段编辑弹窗：以对话框形式承载片段创建与编辑表单。 */
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppInput from '@/components/common/AppInput.vue'
 import AppModal from '@/components/common/AppModal.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
-import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
+// Monaco 体积大（2–3MB），通过异步组件把它拆成独立 chunk，仅在打开编辑对话框时才加载，
+// 从而把 Monaco 移出首屏与详情页主包。
+const MonacoCodeEditor = defineAsyncComponent(
+  () => import('@/components/common/code/MonacoCodeEditor.vue'),
+)
 import SnippetPlaceholderInspector from '@/components/snippets/SnippetPlaceholderInspector.vue'
 import SnippetTagInput from '@/components/snippets/SnippetTagInput.vue'
 import {

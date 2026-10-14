@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /** 面板组件，负责片段列表以卡片网格或条状列表形式展示与交互操作。 */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import Pagination from '@/components/layout/Pagination.vue'
 import SnippetListRow from '@/components/snippets/SnippetListRow.vue'
 import {
-  snippetMaxAppendedItems,
   snippetPageSizeOptions,
 } from '@/composables/useSnippetListState'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
@@ -49,7 +48,6 @@ const emit = defineEmits<{
   'update:pageSize': [value: number]
   clearFilters: []
   createSnippet: []
-  loadMore: []
 }>()
 
 const isChecked = (id: string) => props.selectedIds?.includes(id) ?? false
@@ -58,8 +56,7 @@ const isChecked = (id: string) => props.selectedIds?.includes(id) ?? false
 const scrollContainer = ref<HTMLElement | null>(null)
 
 
-// 列表首项 id 变化 = 换页/筛选导致的数据替换（而非 loadMore 追加——追加时首项不变），
-// 此时把滚动容器归位到顶部；追加加载保持滚动位置，避免用户被甩回列表开头。
+// 列表首项 id 变化 = 换页/筛选导致的数据替换，此时把滚动容器归位到顶部。
 watch(
   () => props.snippets[0]?.id,
   () => {
@@ -67,70 +64,9 @@ watch(
   }
 )
 
-/**
- * 追加加载的触发点。
- *
- * ⚠️ 只服务条状（list）视图：列表视图走「滚动追加」，卡片（grid）视图走「分页器跳页」，
- * 两套机制不能同时挂在同一份 `page` 上——此前二者并存，滚动追加会让页码自动上涨、
- * 分页器当前页跟着跑，用户点页码又把累积的数据整页替换掉。
- */
-const loadMoreSentinel = ref<HTMLElement | null>(null)
-let scrollObserver: IntersectionObserver | null = null
 
-/** 当前视图是否走滚动追加 */
-const isAppendMode = computed(() => props.viewMode === 'list')
-
-/** 追加已停止（达到 DOM 数量上限）→ 需要把分页器放出来兜底 */
-const appendExhausted = computed(() => props.snippets.length >= snippetMaxAppendedItems)
-
-/** 是否渲染分页器：卡片视图恒显示；滚动追加视图仅在追加被上限截断后兜底显示 */
-const showPagination = computed(() => {
-  if (props.totalPages <= 1) return false
-  return isAppendMode.value ? appendExhausted.value : true
-})
-
-function teardownScrollObserver() {
-  scrollObserver?.disconnect()
-  scrollObserver = null
-}
-
-/**
- * 建立/重建哨兵观察器。
- *
- * 用 IntersectionObserver 而非 scroll 事件：scroll 回调在高频滚动下开销大，还要自己
- * 计算「距底还剩多少像素」；观察器由浏览器在合成线程判定，代价低得多。
- * 预取边距 200px —— 用户滑到底之前就开始加载下一页。
- */
-function setupScrollObserver() {
-  teardownScrollObserver()
-
-  // 卡片视图走分页器，不挂追加观察器
-  if (!isAppendMode.value) return
-
-  const root = scrollContainer.value
-  const target = loadMoreSentinel.value
-  if (!root || !target) return
-
-  scrollObserver = new IntersectionObserver(
-    (entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return
-      // 加载中、或已到最后一页 → 不再请求（重复触发由这两条挡住）
-      if (props.loading || props.page >= props.totalPages) return
-      // 结果不足一屏时哨兵始终可见：此时总量已被全部取回，再请求只会拉回一个空页
-      // （实测搜索「WAL」命中 7 条，滚不动却会把 page 顶到 2 并多发一次请求）
-      if (props.total > 0 && props.snippets.length >= props.total) return
-      emit('loadMore')
-    },
-    { root, rootMargin: '200px 0px', threshold: 0 }
-  )
-
-  scrollObserver.observe(target)
-}
-
-// 容器与哨兵会被 v-if 重建（切换视图模式、空态与列表互切），refs 变化时重挂
-onMounted(setupScrollObserver)
-watch([scrollContainer, loadMoreSentinel], setupScrollObserver, { flush: 'post' })
-onBeforeUnmount(teardownScrollObserver)
+/** 是否渲染分页器：多页时统一展示（grid / list 两种视图都走分页器，不再做滚动追加） */
+const showPagination = computed(() => props.totalPages > 1)
 </script>
 
 <template>
@@ -245,16 +181,6 @@ onBeforeUnmount(teardownScrollObserver)
         @copy-to-mine="emit('copyToMine', $event)"
         @toggle-check="emit('toggleCheck', $event)"
       />
-      <!-- 追加加载指示（仅滚动追加视图） -->
-      <div
-        v-if="isAppendMode && props.loading"
-        class="flex shrink-0 items-center justify-center gap-2 py-3 text-[0.6875rem] text-[var(--color-text-tertiary)]"
-      >
-        <AppIcon icon="material-symbols:sync" :size="14" class="animate-spin" />
-        正在加载更多…
-      </div>
-      <!-- 无限滚动哨兵：滚到这里即请求追加下一页（本次加载中/已到末页时忽略） -->
-      <div ref="loadMoreSentinel" class="col-span-full h-px w-full shrink-0" aria-hidden="true" />
     </div>
 
     <!-- 列表：卡片（基于面板宽度的容器查询：每列舒适宽度≈240px，最多 5 列）。刷新态同条状列表 -->
@@ -279,8 +205,6 @@ onBeforeUnmount(teardownScrollObserver)
         @copy-to-mine="emit('copyToMine', $event)"
         @toggle-check="emit('toggleCheck', $event)"
       />
-      <!-- 无限滚动哨兵：滚到这里即请求追加下一页（本次加载中/已到末页时忽略） -->
-      <div ref="loadMoreSentinel" class="col-span-full h-px w-full shrink-0" aria-hidden="true" />
     </div>
 
     <!-- 分页：卡片视图始终显示（该视图不做滚动追加）；

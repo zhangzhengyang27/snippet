@@ -3,7 +3,7 @@
 import { computed, ref, watch } from 'vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
-import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
+import ShikiCodeBlock from '@/components/common/code/ShikiCodeBlock.vue'
 import type { KnowledgeSnippet, SnippetFile } from '@/types/knowledge-snippet'
 import { snippetDifficultyLabel, type SnippetDifficulty } from '@/types/code-block'
 import { formatDateTime } from '@/utils/date-format'
@@ -148,10 +148,9 @@ const handleClose = () => {
           </button>
         </div>
         <div class="snippet-detail-drawer__code-body">
-          <MonacoCodeEditor
-            :model-value="activeCode"
+          <ShikiCodeBlock
+            :code="activeCode"
             :language="activeLanguage"
-            read-only
             :show-line-numbers="props.snippet.displayAttrs.lineNumbers"
             :word-wrap="props.snippet.displayAttrs.wrap"
             min-height="100%"

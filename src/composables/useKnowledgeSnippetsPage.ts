@@ -90,7 +90,6 @@ export const useKnowledgeSnippetsPage = (options?: { scope?: SnippetScope }) => 
     selectedSnippet,
     selectedSnippetPreviewHtml,
     loadSnippets,
-    loadMore,
     setPageSize,
     setScope,
   } = useSnippetListState()
@@ -465,7 +464,6 @@ export const useKnowledgeSnippetsPage = (options?: { scope?: SnippetScope }) => 
     toggleCollectionExpanded,
     loadCollections,
     loadSnippets,
-    loadMore,
     setPageSize,
   }
 }

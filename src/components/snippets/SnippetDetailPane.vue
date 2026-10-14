@@ -6,7 +6,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import type { KnowledgeSnippet } from '@/types/knowledge-snippet'
-import MonacoCodeEditor from '@/components/common/code/MonacoCodeEditor.vue'
+import ShikiCodeBlock from '@/components/common/code/ShikiCodeBlock.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { formatDateTime } from '@/utils/date-format'
@@ -230,10 +230,9 @@ function openPreviewWindow() {
           </button>
         </div>
         <div class="snippet-detail-drawer__code-body">
-          <MonacoCodeEditor
-            :model-value="activeCode"
+          <ShikiCodeBlock
+            :code="activeCode"
             :language="activeLanguage"
-            read-only
             :show-line-numbers="snippet.displayAttrs.lineNumbers"
             :word-wrap="snippet.displayAttrs.wrap"
             min-height="100%"

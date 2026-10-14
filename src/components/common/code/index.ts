@@ -8,8 +8,11 @@
  * 稳定后再补充导出），避免把损坏文件暴露进主包。
  */
 
-// 统一的 Monaco 编辑器（可读写），SourcePane / 片段编辑器均使用
+// 统一的 Monaco 编辑器（可读写），仅用于「新建/编辑片段」对话框
 export { default as MonacoCodeEditor } from './MonacoCodeEditor.vue'
 
-// 课程示例通用的只读代码块（Monaco 只读封装）
+// 只读代码高亮展示（shiki，无 worker、体积小，替代只读场景下的 Monaco）
+export { default as ShikiCodeBlock } from './ShikiCodeBlock.vue'
+
+// 课程示例通用的只读代码块（ShikiCodeBlock 封装）
 export { default as CommonCodeBlock } from './CommonCodeBlock.vue'
